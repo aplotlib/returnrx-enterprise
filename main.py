@@ -103,60 +103,37 @@ class ReturnRxSimple:
 
         self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
 
-st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Vive_Health_Logo.svg/2560px-Vive_Health_Logo.svg.png", width=200)
 st.title("📊 VIVE-RX | Returns Intelligence Toolkit")
 st.caption("Analyze return reduction strategies and financial impact for Vive Health")
 
-if "app" not in st.session_state:
-    st.session_state.app = ReturnRxSimple()
-app = st.session_state.app
+with st.sidebar:
+    st.header("📘 Help & Formulas")
+    st.markdown("""
+    **Input Field Explanations:**
 
-with st.form("scenario_form"):
-    st.subheader("Add New Scenario")
-    col1, col2 = st.columns(2)
-    scenario_name = col1.text_input("Scenario Name")
-    sku = col2.text_input("SKU")
-    sales_30 = col1.number_input("30-day Sales", min_value=0.0)
-    avg_sale_price = col2.number_input("Avg Sale Price", min_value=0.0)
-    returns_30 = col1.number_input("30-day Returns", min_value=0.0)
-    current_unit_cost = col2.number_input("Current Unit Cost", min_value=0.0)
-    additional_cost_per_item = col1.number_input("Extra Cost per Item", min_value=0.0)
-    solution_cost = col2.number_input("Solution Cost", min_value=0.0)
-    reduction_rate = col1.slider("Estimated Return Reduction (%)", 0, 100, 10)
-    sales_channel = col2.text_input("Top Sales Channel")
-    solution = col1.text_input("Proposed Solution")
-    submitted = st.form_submit_button("Add Scenario")
-    if submitted and sku:
-        app.add_scenario(scenario_name, sku, sales_30, avg_sale_price, sales_channel,
-                         returns_30, solution, solution_cost, additional_cost_per_item,
-                         current_unit_cost, reduction_rate)
-        st.success("Scenario added.")
+    - **Scenario Name**: Custom name for your analysis.
+    - **SKU**: The product identifier.
+    - **30-day Sales**: Total units sold over the last 30 days.
+    - **Avg Sale Price**: Average selling price per unit.
+    - **30-day Returns**: Units returned in the past 30 days.
+    - **Current Unit Cost**: Current production/purchase cost per unit.
+    - **Extra Cost per Item**: Any added cost from the proposed solution (e.g., better packaging, quality material).
+    - **Solution Cost**: One-time or fixed cost to implement the solution (e.g., software, redesign project).
+    - **Estimated Return Reduction (%)**: Expected percentage drop in return rate due to the solution.
+    - **Top Sales Channel**: Main source of sales (e.g., Amazon, DTC site).
+    - **Proposed Solution**: Description of the intervention being evaluated.
 
-st.header("Scenario Dashboard")
-if app.scenarios.empty:
-    st.info("No scenarios added yet.")
-else:
-    df = app.scenarios.copy()
-    selected = st.selectbox("Filter by SKU", ["All"] + sorted(df['sku'].unique()))
-    if selected != "All":
-        df = df[df['sku'] == selected]
+    **Formulas Used:**
 
-    st.dataframe(df.style.format({
-        'return_rate': '{:.2%}',
-        'roi': '{:.2f}',
-        'break_even_months': '{:.2f}',
-        'net_benefit': '${:,.2f}',
-        'annual_savings': '${:,.2f}',
-        'annual_additional_costs': '${:,.2f}'
-    }), use_container_width=True)
-
-    st.subheader("ROI & Breakeven Charts")
-    plot_df = df.dropna(subset=['roi', 'break_even_months'])
-    if not plot_df.empty:
-        fig = make_subplots(rows=1, cols=2, subplot_titles=("ROI", "Breakeven (months)"))
-        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['roi'], name="ROI", marker_color='#23b2be'), row=1, col=1)
-        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['break_even_months'], name="Breakeven", marker_color='#F0B323'), row=1, col=2)
-        fig.update_layout(height=400, showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
-
-    st.download_button("📥 Download CSV", data=df.to_csv(index=False).encode(), file_name="vive_rx_export.csv", mime="text/csv")
+    - **Return Rate** = Returns / Sales
+    - **Avoided Returns** = Returns × (% Reduction)
+    - **Savings** = Avoided Returns × (Avg Price − New Unit Cost)
+    - **Annual Savings** = Savings × 12
+    - **Annual Add-On Cost** = Extra Cost per Item × Sales × 12
+    - **Net Benefit** = Annual Savings − Annual Add-On Cost
+    - **ROI** = Net Benefit / Solution Cost
+    - **Breakeven** = Months to recover solution cost from net benefit
+    - **Profit Margin (Before)** = Avg Sale Price − Current Unit Cost
+    - **Profit Margin (After)** = Avg Sale Price − (Current Unit Cost + Extra Cost)
+    - **Profit Margin (Amortized)** = Margin After − (Solution Cost ÷ Annual Sales)
+    """)
