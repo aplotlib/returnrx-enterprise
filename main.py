@@ -137,3 +137,62 @@ with st.sidebar:
     - **Profit Margin (After)** = Avg Sale Price − (Current Unit Cost + Extra Cost)
     - **Profit Margin (Amortized)** = Margin After − (Solution Cost ÷ Annual Sales)
     """)
+
+if "app" not in st.session_state:
+    st.session_state.app = ReturnRxSimple()
+app = st.session_state.app
+
+with st.form("scenario_form"):
+    st.subheader("➕ Add New Scenario")
+    col1, col2 = st.columns(2)
+    scenario_name = col1.text_input("Scenario Name")
+    sku = col2.text_input("SKU")
+    sales_30 = col1.number_input("30-day Sales", min_value=0.0)
+    avg_sale_price = col2.number_input("Avg Sale Price", min_value=0.0)
+    returns_30 = col1.number_input("30-day Returns", min_value=0.0)
+    current_unit_cost = col2.number_input("Current Unit Cost", min_value=0.0)
+    additional_cost_per_item = col1.number_input("Extra Cost per Item", min_value=0.0)
+    solution_cost = col2.number_input("Solution Cost", min_value=0.0)
+    reduction_rate = col1.slider("Estimated Return Reduction (%)", 0, 100, 10)
+    sales_channel = col2.text_input("Top Sales Channel")
+    solution = col1.text_input("Proposed Solution")
+    submitted = st.form_submit_button("Add Scenario")
+    if submitted and sku:
+        app.add_scenario(scenario_name, sku, sales_30, avg_sale_price, sales_channel,
+                         returns_30, solution, solution_cost, additional_cost_per_item,
+                         current_unit_cost, reduction_rate)
+        st.success("Scenario added.")
+
+st.header("📊 Scenario Dashboard")
+if app.scenarios.empty:
+    st.info("No scenarios added yet.")
+else:
+    df = app.scenarios.copy()
+    selected = st.selectbox("Filter by SKU", ["All"] + sorted(df['sku'].unique()))
+    if selected != "All":
+        df = df[df['sku'] == selected]
+
+    formatters = {
+        'return_rate': '{:.2%}'.format,
+        'roi': '{:.2f}'.format,
+        'break_even_months': '{:.2f}'.format,
+        'net_benefit': '${:,.2f}'.format,
+        'annual_savings': '${:,.2f}'.format,
+        'annual_additional_costs': '${:,.2f}'.format,
+        'margin_before': '${:,.2f}'.format,
+        'margin_after': '${:,.2f}'.format,
+        'margin_after_amortized': '${:,.2f}'.format,
+    }
+
+    st.dataframe(df.style.format(formatters), use_container_width=True)
+
+    st.subheader("📈 ROI & Breakeven Charts")
+    plot_df = df.dropna(subset=['roi', 'break_even_months'])
+    if not plot_df.empty:
+        fig = make_subplots(rows=1, cols=2, subplot_titles=("ROI", "Breakeven (months)"))
+        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['roi'], name="ROI", marker_color='#23b2be'), row=1, col=1)
+        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['break_even_months'], name="Breakeven", marker_color='#F0B323'), row=1, col=2)
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.download_button("📥 Download CSV", data=df.to_csv(index=False).encode(), file_name="vive_rx_export.csv", mime="text/csv")
