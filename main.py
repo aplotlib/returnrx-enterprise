@@ -19,7 +19,7 @@ body, .stApp { background-color: #f7f9fc; font-family: 'Poppins', sans-serif; }
 class ReturnRxSimple:
     def __init__(self):
         self.scenarios = pd.DataFrame(columns=[
-            'scenario_name', 'sku', 'sales_30', 'avg_sale_price', 
+            'scenario_name', 'sku', 'sales_30', 'avg_sale_price',
             'sales_channel', 'returns_30', 'return_rate', 'solution', 'solution_cost',
             'additional_cost_per_item', 'current_unit_cost', 'reduction_rate',
             'return_cost_30', 'return_cost_annual', 'revenue_impact_30',
@@ -28,13 +28,18 @@ class ReturnRxSimple:
             'roi', 'score', 'timestamp', 'annual_additional_costs', 'net_benefit',
             'margin_before', 'margin_after', 'margin_after_amortized'])
 
-    def add_scenario(self, scenario_name, sku, sales_30, avg_sale_price, sales_channel, 
-                     returns_30, solution, solution_cost, additional_cost_per_item, 
+    def add_scenario(self, scenario_name, sku, sales_30, avg_sale_price, sales_channel,
+                     returns_30, solution, solution_cost, additional_cost_per_item,
                      current_unit_cost, reduction_rate):
         if not scenario_name:
             scenario_name = f"Scenario {len(self.scenarios) + 1}"
 
-        return_rate = (returns_30 / sales_30) if sales_30 > 0 else 0
+        if sales_30 <= 0:
+            return_rate = 0
+            amortized_solution_cost = 0
+        else:
+            return_rate = returns_30 / sales_30
+            amortized_solution_cost = solution_cost / (sales_30 * 12)
 
         return_cost_30 = returns_30 * current_unit_cost
         return_cost_annual = return_cost_30 * 12
@@ -62,7 +67,6 @@ class ReturnRxSimple:
 
         margin_before = avg_sale_price - current_unit_cost
         margin_after = avg_sale_price - new_unit_cost
-        amortized_solution_cost = solution_cost / (sales_30 * 12) if sales_30 > 0 else 0
         margin_after_amortized = margin_after - amortized_solution_cost
 
         new_row = {
