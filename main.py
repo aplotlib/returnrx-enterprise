@@ -4281,30 +4281,44 @@ def display_monte_carlo_analysis():
         st.markdown("### Statistical Performance Metrics")
         st.markdown(f"**Confidence Level:** {confidence_level}%")
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("Mean ROI", f"{roi_mean:.1f}%")
-            st.metric("ROI Confidence Interval", f"({ci_lower_roi:.1f}% - {ci_upper_roi:.1f}%)")
-            st.metric("Probability of Positive ROI", f"{prob_positive_roi:.1f}%")
-        
-        with col2:
-            st.metric("Mean NPV", f"${npv_mean:.2f}")
-            st.metric("NPV Confidence Interval", f"(${ci_lower_npv:.2f} - ${ci_upper_npv:.2f})")
-            st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
-        
-        with col3:
+        # Create columns for metrics display
+col1, col2, col3 = st.columns(3)
+
+# First column
+with col1:
+    st.metric("Mean ROI", f"{roi_mean:.1f}%")
+    st.metric("ROI Confidence Interval", f"({ci_lower_roi:.1f}% - {ci_upper_roi:.1f}%)")
+    st.metric("Probability of Positive ROI", f"{prob_positive_roi:.1f}%")
+
+# Second column
+with col2:
+    st.metric("Mean NPV", f"${npv_mean:.2f}")
+    st.metric("NPV Confidence Interval", f"(${ci_lower_npv:.2f} - ${ci_upper_npv:.2f})")
+    st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
+
+# Third column - completely rewritten
+with col3:
+    mean_payback = results['payback']['mean']
     if not np.isinf(mean_payback):
         st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
+        
+        # Safely get lower bound
         if 'min' in results['payback']:
             ci_lower_payback = results['payback']['min']
         else:
-            # Calculate min from distribution if missing
             valid_values = results['payback']['distribution'][~np.isinf(results['payback']['distribution'])]
             ci_lower_payback = np.min(valid_values) if len(valid_values) > 0 else float('inf')
-            
-        ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
+        
+        # Get upper bound
+        non_inf_values = results['payback']['distribution'][~np.isinf(results['payback']['distribution'])]
+        if len(non_inf_values) > 0:
+            ci_upper_payback = np.percentile(non_inf_values, 95)
+        else:
+            ci_upper_payback = float('inf')
+        
         st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
+        
+        # Calculate probability
         prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
         st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
     else:
