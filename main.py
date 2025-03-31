@@ -1,3 +1,11 @@
+"""
+KaizenROI - Smart Return Optimization Suite
+A comprehensive analytics tool for evaluating e-commerce return reduction investments.
+
+This application helps businesses analyze and optimize return reduction strategies
+with precise ROI calculations, scenario planning, and interactive visualizations.
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -1801,3 +1809,12 @@ else:
     
     elif nav_option == "Settings":
         display_settings()
+
+# Entry point for setup.py
+def main():
+    """Entry point for the application."""
+    # The Streamlit script is already executing, so this function is just a noop when run directly
+    pass
+
+if __name__ == "__main__":
+    main()
