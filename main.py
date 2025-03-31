@@ -4294,26 +4294,24 @@ def display_monte_carlo_analysis():
             st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
         
         with col3:
-            # Update this block of code
-if not np.isinf(mean_payback):
-    st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
-    
-    # Handle the case where 'min' might not exist
-    if 'min' in results['payback']:
-        ci_lower_payback = results['payback']['min']
+    # This entire block needs to be indented under the "with" statement
+    if not np.isinf(mean_payback):
+        st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
+        if 'min' in results['payback']:
+            ci_lower_payback = results['payback']['min']
+        else:
+            # Calculate min from distribution if missing
+            valid_values = results['payback']['distribution'][~np.isinf(results['payback']['distribution'])]
+            ci_lower_payback = np.min(valid_values) if len(valid_values) > 0 else float('inf')
+            
+        ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
+        st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
+        prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
+        st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
     else:
-        # Calculate min from distribution if missing
-        valid_values = results['payback']['distribution'][~np.isinf(results['payback']['distribution'])]
-        ci_lower_payback = np.min(valid_values) if len(valid_values) > 0 else float('inf')
-        
-    ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
-    st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
-    prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
-    st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
-else:
-    st.metric("Mean Payback Period", "Not achievable")
-    st.metric("Payback Period Range", "N/A")
-    st.metric("Probability of Payback ≤ 1 year", "0.0%")
+        st.metric("Mean Payback Period", "Not achievable")
+        st.metric("Payback Period Range", "N/A")
+        st.metric("Probability of Payback ≤ 1 year", "0.0%")
         
         # Display ROI histogram with confidence interval
         st.markdown("### ROI Probability Distribution")
