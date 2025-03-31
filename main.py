@@ -1,15 +1,17 @@
 import streamlit as st
 import pandas as pd
+import uuid
 from datetime import datetime
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import io
 
-st.set_page_config(page_title="VIVE-RX | Returns Intelligence Toolkit", layout="wide")
+st.set_page_config(page_title="RECAP | Returns & Cost Analysis Platform", layout="wide")
 
 st.markdown("""
 <style>
-body, .stApp { background-color: #f7f9fc; font-family: 'Poppins', sans-serif; }
+body, .stApp { background-color: #f2f2f2; font-family: 'Poppins', sans-serif; }
 .stDataFrame thead tr th { background-color: #23b2be; color: white; }
 .css-1d391kg { color: #004366; font-family: 'Montserrat'; font-weight: bold; }
 .css-10trblm { font-family: 'Poppins'; font-size: 16px; }
@@ -19,27 +21,25 @@ body, .stApp { background-color: #f7f9fc; font-family: 'Poppins', sans-serif; }
 class ReturnRxSimple:
     def __init__(self):
         self.scenarios = pd.DataFrame(columns=[
-            'scenario_name', 'sku', 'sales_30', 'avg_sale_price',
+            'uid', 'scenario_name', 'sku', 'sales_30', 'avg_sale_price',
             'sales_channel', 'returns_30', 'return_rate', 'solution', 'solution_cost',
             'additional_cost_per_item', 'current_unit_cost', 'reduction_rate',
             'return_cost_30', 'return_cost_annual', 'revenue_impact_30',
             'revenue_impact_annual', 'new_unit_cost', 'savings_30',
             'annual_savings', 'break_even_days', 'break_even_months',
             'roi', 'score', 'timestamp', 'annual_additional_costs', 'net_benefit',
-            'margin_before', 'margin_after', 'margin_after_amortized'])
+            'margin_before', 'margin_after', 'margin_after_amortized',
+            'sales_365', 'returns_365'])
 
     def add_scenario(self, scenario_name, sku, sales_30, avg_sale_price, sales_channel,
                      returns_30, solution, solution_cost, additional_cost_per_item,
-                     current_unit_cost, reduction_rate):
+                     current_unit_cost, reduction_rate, sales_365, returns_365):
         if not scenario_name:
             scenario_name = f"Scenario {len(self.scenarios) + 1}"
 
-        if sales_30 <= 0:
-            return_rate = 0
-            amortized_solution_cost = 0
-        else:
-            return_rate = returns_30 / sales_30
-            amortized_solution_cost = solution_cost / (sales_30 * 12)
+        uid = str(uuid.uuid4())[:8]
+        return_rate = returns_30 / sales_30 if sales_30 else 0
+        amortized_solution_cost = solution_cost / (sales_30 * 12) if sales_30 else 0
 
         return_cost_30 = returns_30 * current_unit_cost
         return_cost_annual = return_cost_30 * 12
@@ -50,15 +50,10 @@ class ReturnRxSimple:
         avoided_returns = returns_30 * (reduction_rate / 100)
         savings_30 = avoided_returns * (avg_sale_price - new_unit_cost)
         annual_savings = savings_30 * 12
-
         annual_additional_costs = additional_cost_per_item * sales_30 * 12
         net_benefit = annual_savings - annual_additional_costs
 
-        roi = None
-        break_even_days = None
-        break_even_months = None
-        score = None
-
+        roi = break_even_days = break_even_months = score = None
         if solution_cost > 0 and net_benefit > 0:
             roi = net_benefit / solution_cost
             break_even_days = solution_cost / net_benefit
@@ -70,6 +65,7 @@ class ReturnRxSimple:
         margin_after_amortized = margin_after - amortized_solution_cost
 
         new_row = {
+            'uid': uid,
             'scenario_name': scenario_name,
             'sku': sku,
             'sales_30': sales_30,
@@ -98,44 +94,32 @@ class ReturnRxSimple:
             'net_benefit': net_benefit,
             'margin_before': margin_before,
             'margin_after': margin_after,
-            'margin_after_amortized': margin_after_amortized
+            'margin_after_amortized': margin_after_amortized,
+            'sales_365': sales_365,
+            'returns_365': returns_365
         }
 
         self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
 
-st.title("📊 VIVE-RX | Returns Intelligence Toolkit")
-st.caption("Analyze return reduction strategies and financial impact for Vive Health")
+st.title("📊 RECAP | Returns & Cost Analysis Platform")
+st.caption("Analyze return reduction strategies and financial impact")
 
 with st.sidebar:
     st.header("📘 Help & Formulas")
     st.markdown("""
     **Input Field Explanations:**
+    - 30/365 Sales: Units sold in past 30 or 365 days
+    - Avg Sale Price: Price per unit sold
+    - Returns 30/365: Units returned in timeframe
+    - Extra Cost per Item: Added cost (better materials, packaging, etc.)
+    - Solution Cost: Total cost of implementing the solution
+    - Estimated Return Reduction: Expected % drop in return rate
 
-    - **Scenario Name**: Custom name for your analysis.
-    - **SKU**: The product identifier.
-    - **30-day Sales**: Total units sold over the last 30 days.
-    - **Avg Sale Price**: Average selling price per unit.
-    - **30-day Returns**: Units returned in the past 30 days.
-    - **Current Unit Cost**: Current production/purchase cost per unit.
-    - **Extra Cost per Item**: Any added cost from the proposed solution (e.g., better packaging, quality material).
-    - **Solution Cost**: One-time or fixed cost to implement the solution (e.g., software, redesign project).
-    - **Estimated Return Reduction (%)**: Expected percentage drop in return rate due to the solution.
-    - **Top Sales Channel**: Main source of sales (e.g., Amazon, DTC site).
-    - **Proposed Solution**: Description of the intervention being evaluated.
-
-    **Formulas Used:**
-
-    - **Return Rate** = Returns / Sales
-    - **Avoided Returns** = Returns × (% Reduction)
-    - **Savings** = Avoided Returns × (Avg Price − New Unit Cost)
-    - **Annual Savings** = Savings × 12
-    - **Annual Add-On Cost** = Extra Cost per Item × Sales × 12
-    - **Net Benefit** = Annual Savings − Annual Add-On Cost
-    - **ROI** = Net Benefit / Solution Cost
-    - **Breakeven** = Months to recover solution cost from net benefit
-    - **Profit Margin (Before)** = Avg Sale Price − Current Unit Cost
-    - **Profit Margin (After)** = Avg Sale Price − (Current Unit Cost + Extra Cost)
-    - **Profit Margin (Amortized)** = Margin After − (Solution Cost ÷ Annual Sales)
+    **Calculated:**
+    - Return Rate = Returns ÷ Sales
+    - Net Benefit = Annual Savings − Annual Add-on Cost
+    - ROI = Net Benefit ÷ Solution Cost
+    - Margin = Sale Price − Cost (with/without amortization)
     """)
 
 if "app" not in st.session_state:
@@ -148,19 +132,21 @@ with st.form("scenario_form"):
     scenario_name = col1.text_input("Scenario Name")
     sku = col2.text_input("SKU")
     sales_30 = col1.number_input("30-day Sales", min_value=0.0)
-    avg_sale_price = col2.number_input("Avg Sale Price", min_value=0.0)
-    returns_30 = col1.number_input("30-day Returns", min_value=0.0)
+    returns_30 = col2.number_input("30-day Returns", min_value=0.0)
+    sales_365 = col1.number_input("365-day Sales (optional)", min_value=0.0)
+    returns_365 = col2.number_input("365-day Returns (optional)", min_value=0.0)
+    avg_sale_price = col1.number_input("Avg Sale Price", min_value=0.0)
     current_unit_cost = col2.number_input("Current Unit Cost", min_value=0.0)
     additional_cost_per_item = col1.number_input("Extra Cost per Item", min_value=0.0)
     solution_cost = col2.number_input("Solution Cost", min_value=0.0)
-    reduction_rate = col1.slider("Estimated Return Reduction (%)", 0, 100, 10)
+    reduction_rate = col1.slider("Est. Return Reduction (%)", 0, 100, 10)
     sales_channel = col2.text_input("Top Sales Channel")
     solution = col1.text_input("Proposed Solution")
     submitted = st.form_submit_button("Add Scenario")
     if submitted and sku:
         app.add_scenario(scenario_name, sku, sales_30, avg_sale_price, sales_channel,
                          returns_30, solution, solution_cost, additional_cost_per_item,
-                         current_unit_cost, reduction_rate)
+                         current_unit_cost, reduction_rate, sales_365, returns_365)
         st.success("Scenario added.")
 
 st.header("📊 Scenario Dashboard")
@@ -172,19 +158,19 @@ else:
     if selected != "All":
         df = df[df['sku'] == selected]
 
-    formatters = {
-        'return_rate': '{:.2%}'.format,
-        'roi': '{:.2f}'.format,
-        'break_even_months': '{:.2f}'.format,
-        'net_benefit': '${:,.2f}'.format,
-        'annual_savings': '${:,.2f}'.format,
-        'annual_additional_costs': '${:,.2f}'.format,
-        'margin_before': '${:,.2f}'.format,
-        'margin_after': '${:,.2f}'.format,
-        'margin_after_amortized': '${:,.2f}'.format,
-    }
+    styled = df.style.format({
+        'return_rate': '{:.2%}',
+        'roi': '{:.2f}',
+        'break_even_months': '{:.2f}',
+        'net_benefit': '${:,.0f}',
+        'annual_savings': '${:,.0f}',
+        'annual_additional_costs': '${:,.0f}',
+        'margin_before': '${:,.2f}',
+        'margin_after': '${:,.2f}',
+        'margin_after_amortized': '${:,.2f}'
+    }).background_gradient(subset=['roi', 'net_benefit', 'return_rate'], cmap='Greens')
 
-    st.dataframe(df.style.format(formatters), use_container_width=True)
+    st.dataframe(styled, use_container_width=True)
 
     st.subheader("📈 ROI & Breakeven Charts")
     plot_df = df.dropna(subset=['roi', 'break_even_months'])
@@ -195,4 +181,10 @@ else:
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    st.download_button("📥 Download CSV", data=df.to_csv(index=False).encode(), file_name="vive_rx_export.csv", mime="text/csv")
+    csv_data = df.to_csv(index=False).encode()
+    st.download_button("📥 Download CSV", data=csv_data, file_name="recap_export.csv", mime="text/csv")
+
+    excel_data = io.BytesIO()
+    with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Scenarios')
+    st.download_button("📊 Download Excel", data=excel_data.getvalue(), file_name="recap_export.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
