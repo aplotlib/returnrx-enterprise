@@ -37,7 +37,6 @@ COLOR_SCHEME = {
     "subtle": "#C5CFD6",        # Slightly darker subtle elements
     "highlight": "#CB2D3E",     # Adjusted highlight for better visibility
 }
-}
 
 # Custom CSS with Vive Health styling
 st.markdown(f"""
