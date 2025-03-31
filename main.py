@@ -1636,6 +1636,111 @@ def display_what_if_analysis():
         
         fig_heatmap.update_layout(height=500)
         st.plotly_chart(fig_heatmap, use_container_width=True)
+
+# Add this to the display_what_if_analysis() function, right after the sensitivity heatmap section
+
+# Monte Carlo simulation
+st.markdown("---")
+st.markdown("### Monte Carlo Risk Simulation")
+st.caption("Simulate thousands of scenarios with random variations to understand risk and confidence intervals")
+
+with st.expander("Configure and Run Monte Carlo Simulation", expanded=True):
+    # Simulation parameters
+    st.markdown("#### Configure Uncertainty Parameters")
+    st.caption("Set the standard deviation for each parameter as a percentage of its value")
+    
+    param_col1, param_col2 = st.columns(2)
+    
+    with param_col1:
+        sim_sales_std = st.slider("Sales Volume Variability (%)", 
+                                min_value=1, max_value=30, value=10,
+                                help="Higher values indicate more uncertainty in monthly sales volume")
+        
+        sim_return_std = st.slider("Return Rate Variability (%)", 
+                                min_value=1, max_value=30, value=15,
+                                help="Higher values indicate more uncertainty in return rates")
+        
+        sim_reduction_std = st.slider("Reduction Rate Variability (%)", 
+                                    min_value=1, max_value=40, value=20,
+                                    help="Higher values indicate more uncertainty in how effective the solution will be")
+    
+    with param_col2:
+        sim_price_std = st.slider("Price Variability (%)", 
+                                min_value=1, max_value=20, value=5,
+                                help="Higher values indicate more uncertainty in product pricing")
+        
+        sim_cost_std = st.slider("Additional Cost Variability (%)", 
+                                min_value=1, max_value=30, value=10,
+                                help="Higher values indicate more uncertainty in additional costs")
+        
+        sim_iterations = st.slider("Number of Simulations", 
+                                min_value=100, max_value=10000, value=1000, step=100,
+                                help="More simulations provide more accurate results but take longer to compute")
+    
+    # Create scenario dict for simulation
+    simulation_scenario = {
+        'sales_30': new_sales_30,
+        'return_rate': new_return_rate,
+        'reduction_rate': new_reduction_rate,
+        'avg_sale_price': new_avg_price,
+        'solution_cost': new_solution_cost,
+        'additional_cost_per_item': new_additional_cost,
+        'current_unit_cost': base_scenario['current_unit_cost']
+    }
+    
+    # Run simulation button
+    if st.button("Run Monte Carlo Simulation"):
+        with st.spinner("Running simulation..."):
+            # Convert percentages to decimals for the function
+            sim_results = run_monte_carlo_simulation(
+                simulation_scenario, 
+                iterations=sim_iterations,
+                sales_std=sim_sales_std/100,
+                return_rate_std=sim_return_std/100,
+                reduction_rate_std=sim_reduction_std/100,
+                price_std=sim_price_std/100,
+                additional_cost_std=sim_cost_std/100
+            )
+            
+            # Display results
+            display_monte_carlo_results(sim_results)
+            
+            # Allow saving the scenario with risk assessment
+            st.markdown("---")
+            if st.button("Save What-If Scenario with Risk Assessment"):
+                # Create a new scenario name
+                risk_level = "Low Risk"
+                if sim_results['probability_positive_roi'] < 0.7:
+                    risk_level = "High Risk"
+                elif sim_results['probability_positive_roi'] < 0.85:
+                    risk_level = "Medium Risk"
+                
+                new_name = f"{base_scenario_name} ({risk_level})"
+                
+                # Calculate confidence intervals for description
+                roi_ci = (
+                    sim_results['roi']['percentiles'][5],
+                    sim_results['roi']['percentiles'][95]
+                )
+                
+                # Add risk info to solution description
+                risk_description = (
+                    f"{base_scenario['solution']} | Risk: {risk_level} | "
+                    f"ROI: {sim_results['roi']['mean']:.1f}% (90% CI: {roi_ci[0]:.1f}%-{roi_ci[1]:.1f}%) | "
+                    f"POI: {sim_results['probability_positive_roi']*100:.1f}%"
+                )
+                
+                success, message = optimizer.add_scenario(
+                    new_name, base_scenario['sku'], new_sales_30, new_avg_price,
+                    base_scenario['sales_channel'], new_returns_30, risk_description,
+                    new_solution_cost, new_additional_cost, base_scenario['current_unit_cost'],
+                    new_reduction_rate, new_sales_30 * 12, new_returns_30 * 12, base_scenario['tag']
+                )
+                
+                if success:
+                    st.success(f"What-if scenario with risk assessment saved as '{new_name}'!")
+                else:
+                    st.error(message)
         
         # Option to save as new scenario
         if st.button("Save as New Scenario"):
