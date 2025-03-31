@@ -169,6 +169,22 @@ else:
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
+    st.subheader("📉 Return Rate vs. Reduction")
+    line_df = df.dropna(subset=['return_rate', 'reduction_rate'])
+    if not line_df.empty:
+        line_chart = px.scatter(line_df, x='return_rate', y='reduction_rate', color='scenario_name',
+                                labels={'return_rate': 'Current Return Rate', 'reduction_rate': 'Estimated Reduction (%)'},
+                                title="Return Rate vs. Estimated Reduction", height=400)
+        st.plotly_chart(line_chart, use_container_width=True)
+
+    st.subheader("💰 Net Benefit & Margin Impact")
+    if not df.empty:
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(x=df['scenario_name'], y=df['net_benefit'], name="Net Benefit", marker_color='seagreen'))
+        fig2.add_trace(go.Bar(x=df['scenario_name'], y=df['margin_after_amortized'], name="Amortized Margin", marker_color='indianred'))
+        fig2.update_layout(barmode='group', title="Net Benefit & Margin Impact", height=400)
+        st.plotly_chart(fig2, use_container_width=True)
+
     csv_data = df.to_csv(index=False).encode()
     st.download_button("📥 Download CSV", data=csv_data, file_name="recap_export.csv", mime="text/csv")
 
