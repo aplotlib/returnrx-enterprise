@@ -23,19 +23,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Define Vive Health color scheme (based on brand guide)
+# Enhanced Vive Health color scheme with improved contrast
 COLOR_SCHEME = {
-    "primary": "#23b2be",       # Main teal color
-    "secondary": "#004366",     # Dark blue
-    "warning": "#F0B323",       # Yellow
-    "negative": "#EB3300",      # Orange-red
-    "neutral": "#777473",       # Gray
-    "background": "#e6eff3",    # Light blue background
-    "text_dark": "#2c3e50",     # Dark text
-    "text_light": "#ecf0f1",    # Light text
-    "positive": "#1e8449",      # Green for positive outcomes
-    "subtle": "#bdc3c7",        # Light gray for subtle elements
-    "highlight": "#e74c3c"      # Red for highlights
+    "primary": "#0A9DAB",       # Darker teal for better contrast
+    "secondary": "#003A5C",     # Adjusted dark blue for better visibility
+    "warning": "#E29A00",       # Darker yellow for better readability
+    "negative": "#D62B00",      # Adjusted red for better contrast
+    "neutral": "#5A5A5A",       # Darker gray for better readability
+    "background": "#F0F5F9",    # Lighter background for reduced eye strain
+    "text_dark": "#1A2530",     # Darker text for better contrast
+    "text_light": "#FFFFFF",    # Pure white for maximum contrast on dark backgrounds
+    "positive": "#168F3E",      # Adjusted green for better contrast
+    "subtle": "#C5CFD6",        # Slightly darker subtle elements
+    "highlight": "#CB2D3E",     # Adjusted highlight for better visibility
+}
 }
 
 # Custom CSS with Vive Health styling
