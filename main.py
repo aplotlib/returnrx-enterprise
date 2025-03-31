@@ -7,7 +7,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import io
 
-st.set_page_config(page_title="RECAP | Returns & Cost Analysis Platform", layout="wide")
+st.set_page_config(page_title="KaizenCBA | Product Return Optimization Toolkit", layout="wide")
 
 st.markdown("""
 <style>
@@ -101,94 +101,85 @@ class ReturnRxSimple:
 
         self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
 
-st.title("📊 RECAP | Returns & Cost Analysis Platform")
-st.caption("Analyze return reduction strategies and financial impact")
-
-with st.sidebar:
-    st.header("📘 Help & Formulas")
-    st.markdown("""
-    **Input Field Explanations:**
-    - 30/365 Sales: Units sold in past 30 or 365 days
-    - Avg Sale Price: Price per unit sold
-    - Returns 30/365: Units returned in timeframe
-    - Extra Cost per Item: Added cost (better materials, packaging, etc.)
-    - Solution Cost: Total cost of implementing the solution
-    - Estimated Return Reduction: Expected % drop in return rate
-
-    **Calculated:**
-    - Return Rate = Returns ÷ Sales
-    - Net Benefit = Annual Savings − Annual Add-on Cost
-    - ROI = Net Benefit ÷ Solution Cost
-    - Margin = Sale Price − Cost (with/without amortization)
-    """)
+st.title("📊 KaizenCBA | Product Return Optimization Toolkit")
+st.caption("A continuous improvement approach to financial decision making for returns management.")
 
 if "app" not in st.session_state:
     st.session_state.app = ReturnRxSimple()
 app = st.session_state.app
 
-with st.form("scenario_form"):
-    st.subheader("➕ Add New Scenario")
-    col1, col2 = st.columns(2)
-    scenario_name = col1.text_input("Scenario Name")
-    sku = col2.text_input("SKU")
-    sales_30 = col1.number_input("30-day Sales", min_value=0.0)
-    returns_30 = col2.number_input("30-day Returns", min_value=0.0)
-    sales_365 = col1.number_input("365-day Sales (optional)", min_value=0.0)
-    returns_365 = col2.number_input("365-day Returns (optional)", min_value=0.0)
-    avg_sale_price = col1.number_input("Avg Sale Price", min_value=0.0)
-    current_unit_cost = col2.number_input("Current Unit Cost", min_value=0.0)
-    additional_cost_per_item = col1.number_input("Extra Cost per Item", min_value=0.0)
-    solution_cost = col2.number_input("Solution Cost", min_value=0.0)
-    reduction_rate = col1.slider("Est. Return Reduction (%)", 0, 100, 10)
-    sales_channel = col2.text_input("Top Sales Channel")
-    solution = col1.text_input("Proposed Solution")
-    submitted = st.form_submit_button("Add Scenario")
-    if submitted and sku:
-        app.add_scenario(scenario_name, sku, sales_30, avg_sale_price, sales_channel,
-                         returns_30, solution, solution_cost, additional_cost_per_item,
-                         current_unit_cost, reduction_rate, sales_365, returns_365)
-        st.success("Scenario added.")
+st.sidebar.header("📘 Help & Formulas")
+st.sidebar.markdown("""
+### How to Use This Tool
+1. **Enter scenario details** such as SKU, sales data, return count, and proposed solution.
+2. Input **costs associated** with the solution and any expected **return rate reduction**.
+3. View the **automated financial impact analysis**, ROI, and breakeven projections.
 
-st.header("📊 Scenario Dashboard")
-if app.scenarios.empty:
-    st.info("No scenarios added yet.")
-else:
+---
+
+### Field Guide:
+- **30-day Sales / Returns**: Monthly product performance baseline.
+- **365-day Sales / Returns** (optional): Full-year perspective.
+- **Avg Sale Price**: Average revenue per item sold.
+- **Current Unit Cost**: How much each item costs before the solution.
+- **Extra Cost per Item**: Cost added per item with the solution.
+- **Solution Cost**: Upfront or implementation cost for the solution.
+- **Reduction %**: Estimated % improvement in return rates.
+
+---
+
+### Formulas Used:
+- **Return Rate** = `30-day Returns ÷ 30-day Sales`
+- **Avoided Returns** = `30-day Returns × (% Reduction)`
+- **Savings** = `Avoided Returns × (Sale Price − New Unit Cost)`
+- **Annual Savings** = `Savings × 12`
+- **Annual Add-on Cost** = `Extra Cost × Sales × 12`
+- **Net Benefit** = `Annual Savings − Annual Add-on Cost`
+- **ROI** = `Net Benefit ÷ Solution Cost`
+- **Breakeven (Months)** = `Solution Cost ÷ Monthly Net Benefit`
+- **Margins** = `Sale Price − Cost (before/after/amortized)`
+
+---
+
+### Example
+- Sales: 500, Returns: 50, Price: $40, Cost: $20
+- Extra Cost: $2, Solution Cost: $5,000, Reduction: 20%
+- See how avoided returns + added costs yield ROI and breakeven insight
+
+👇 Or click below to generate an example scenario.
+""")
+
+if st.sidebar.button("▶️ Run Example Scenario"):
+    app.add_scenario(
+        scenario_name="Example ROI Positive",
+        sku="DEMO-001",
+        sales_30=500,
+        avg_sale_price=40,
+        sales_channel="Amazon",
+        returns_30=50,
+        solution="Premium Packaging",
+        solution_cost=5000,
+        additional_cost_per_item=2,
+        current_unit_cost=20,
+        reduction_rate=20,
+        sales_365=6000,
+        returns_365=600
+    )
+    st.success("Example scenario added! Scroll down to view analysis.")
+
+if not app.scenarios.empty:
     df = app.scenarios.copy()
-    selected = st.selectbox("Filter by SKU", ["All"] + sorted(df['sku'].unique()))
-    if selected != "All":
-        df = df[df['sku'] == selected]
+    latest = df.iloc[-1]
+    days = list(range(0, 366))
+    daily_costs = [(latest['solution_cost'] / 365) + (latest['additional_cost_per_item'] * latest['sales_30']) / 30] * 365
+    daily_savings = [(latest['annual_savings'] / 365)] * 365
+    cumulative_profit = [sum(daily_savings[:i+1]) - sum(daily_costs[:i+1]) for i in range(365)]
 
-    st.dataframe(df, use_container_width=True)
+    st.subheader("📈 Breakeven and Net Benefit Over Time")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=days, y=cumulative_profit, mode='lines', name='Cumulative Net Benefit', line=dict(color='green')))
+    fig.add_trace(go.Scatter(x=days, y=[0]*365, mode='lines', name='Breakeven Line', line=dict(dash='dash', color='gray')))
+    fig.update_layout(title="Projected Profit Over 12 Months", xaxis_title="Day", yaxis_title="Cumulative Net Profit ($)", height=450)
+    st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("📈 ROI & Breakeven Charts")
-    plot_df = df.dropna(subset=['roi', 'break_even_months'])
-    if not plot_df.empty:
-        fig = make_subplots(rows=1, cols=2, subplot_titles=("ROI", "Breakeven (months)"))
-        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['roi'], name="ROI", marker_color='#23b2be'), row=1, col=1)
-        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['break_even_months'], name="Breakeven", marker_color='#F0B323'), row=1, col=2)
-        fig.update_layout(height=400, showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
-
-    st.subheader("📉 Return Rate vs. Reduction")
-    line_df = df.dropna(subset=['return_rate', 'reduction_rate'])
-    if not line_df.empty:
-        line_chart = px.scatter(line_df, x='return_rate', y='reduction_rate', color='scenario_name',
-                                labels={'return_rate': 'Current Return Rate', 'reduction_rate': 'Estimated Reduction (%)'},
-                                title="Return Rate vs. Estimated Reduction", height=400)
-        st.plotly_chart(line_chart, use_container_width=True)
-
-    st.subheader("💰 Net Benefit & Margin Impact")
-    if not df.empty:
-        fig2 = go.Figure()
-        fig2.add_trace(go.Bar(x=df['scenario_name'], y=df['net_benefit'], name="Net Benefit", marker_color='seagreen'))
-        fig2.add_trace(go.Bar(x=df['scenario_name'], y=df['margin_after_amortized'], name="Amortized Margin", marker_color='indianred'))
-        fig2.update_layout(barmode='group', title="Net Benefit & Margin Impact", height=400)
-        st.plotly_chart(fig2, use_container_width=True)
-
-    csv_data = df.to_csv(index=False).encode()
-    st.download_button("📥 Download CSV", data=csv_data, file_name="recap_export.csv", mime="text/csv")
-
-    excel_data = io.BytesIO()
-    with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Scenarios')
-    st.download_button("📊 Download Excel", data=excel_data.getvalue(), file_name="recap_export.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    st.caption(f"📌 Based on scenario: {latest['scenario_name']} | ROI: {latest['roi']:.2f} | Breakeven: {latest['break_even_months']:.2f} months")
