@@ -158,19 +158,7 @@ else:
     if selected != "All":
         df = df[df['sku'] == selected]
 
-    styled = df.style.format({
-        'return_rate': '{:.2%}',
-        'roi': '{:.2f}',
-        'break_even_months': '{:.2f}',
-        'net_benefit': '${:,.0f}',
-        'annual_savings': '${:,.0f}',
-        'annual_additional_costs': '${:,.0f}',
-        'margin_before': '${:,.2f}',
-        'margin_after': '${:,.2f}',
-        'margin_after_amortized': '${:,.2f}'
-    }).background_gradient(subset=['roi', 'net_benefit', 'return_rate'], cmap='Greens')
-
-    st.dataframe(styled, use_container_width=True)
+    st.dataframe(df, use_container_width=True)
 
     st.subheader("📈 ROI & Breakeven Charts")
     plot_df = df.dropna(subset=['roi', 'break_even_months'])
