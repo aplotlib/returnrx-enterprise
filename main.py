@@ -1316,7 +1316,7 @@ def display_what_if_analysis():
                 min_value=-50, 
                 max_value=100, 
                 value=0,
-                help="Adjust projected sales volume"
+                help="Adjust projected monthly sales volume. For example, +20% means monthly sales will increase by 20% compared to the base scenario. This affects both revenue and per-unit cost allocation."
             )
             
             # Return rate change
@@ -1325,7 +1325,7 @@ def display_what_if_analysis():
                 min_value=-50, 
                 max_value=50, 
                 value=0,
-                help="Adjust projected return rate"
+                help="Adjust the projected return rate relative to current rate. For example, if current return rate is 10%, a +20% change means the new return rate would be 12% (10% × 1.2)."
             )
             
             # Solution cost change
@@ -1334,7 +1334,7 @@ def display_what_if_analysis():
                 min_value=-50, 
                 max_value=100, 
                 value=0,
-                help="Adjust solution implementation cost"
+                help="Adjust the one-time implementation cost of the solution. For example, -20% means the solution will cost 20% less than the original estimate."
             )
         
         with col2:
@@ -1344,7 +1344,7 @@ def display_what_if_analysis():
                 min_value=-50, 
                 max_value=50, 
                 value=0,
-                help="Adjust how effective the solution is at reducing returns"
+                help="Adjust how effective the solution is at reducing returns compared to the initial estimate. For example, if you originally estimated a 30% reduction in returns, a +20% effectiveness change means the actual reduction would be 36% (30% × 1.2)."
             )
             
             # Additional cost change
@@ -1353,7 +1353,7 @@ def display_what_if_analysis():
                 min_value=-50, 
                 max_value=100, 
                 value=0,
-                help="Adjust additional per-unit cost"
+                help="Adjust the ongoing additional cost per unit that results from implementing the solution. For example, if the original additional cost was $1.00 per unit, a +10% change would mean $1.10 per unit."
             )
             
             # Average sale price change
@@ -1362,7 +1362,7 @@ def display_what_if_analysis():
                 min_value=-25, 
                 max_value=25, 
                 value=0,
-                help="Adjust average selling price"
+                help="Adjust the average selling price of the product. This affects both revenue from sales and the value recovered from avoided returns. For example, a +5% change means products will sell for 5% more than in the base scenario."
             )
         
         # Calculate new values
