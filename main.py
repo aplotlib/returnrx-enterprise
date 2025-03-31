@@ -4,9 +4,8 @@ from datetime import datetime
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import io
 
-st.set_page_config(page_title="RECAP | Returns & Cost Analysis Platform", layout="wide")
+st.set_page_config(page_title="VIVE-RX | Returns Intelligence Toolkit", layout="wide")
 
 st.markdown("""
 <style>
@@ -104,8 +103,8 @@ class ReturnRxSimple:
 
         self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
 
-st.title("📊 RECAP | Returns & Cost Analysis Platform")
-st.caption("Analyze return reduction strategies and financial impact")
+st.title("📊 VIVE-RX | Returns Intelligence Toolkit")
+st.caption("Analyze return reduction strategies and financial impact for Vive Health")
 
 with st.sidebar:
     st.header("📘 Help & Formulas")
@@ -118,18 +117,25 @@ with st.sidebar:
     - **Avg Sale Price**: Average selling price per unit.
     - **30-day Returns**: Units returned in the past 30 days.
     - **Current Unit Cost**: Current production/purchase cost per unit.
-    - **Extra Cost per Item**: Added cost per unit (e.g. better materials).
-    - **Solution Cost**: One-time implementation cost (e.g. platform or R&D).
-    - **Estimated Return Reduction (%)**: Estimated reduction in returns.
-    - **Top Sales Channel**: Where most sales come from.
-    - **Proposed Solution**: The intervention or product change being considered.
+    - **Extra Cost per Item**: Any added cost from the proposed solution (e.g., better packaging, quality material).
+    - **Solution Cost**: One-time or fixed cost to implement the solution (e.g., software, redesign project).
+    - **Estimated Return Reduction (%)**: Expected percentage drop in return rate due to the solution.
+    - **Top Sales Channel**: Main source of sales (e.g., Amazon, DTC site).
+    - **Proposed Solution**: Description of the intervention being evaluated.
 
-    **Formulas:**
-    - Return Rate = Returns / Sales
-    - Net Benefit = Annual Savings - Annual Add-on Cost
-    - ROI = Net Benefit / Solution Cost
-    - Breakeven = Solution Cost / (Net Benefit / 12)
-    - Profit Margin Before/After/Amortized = Sale Price - Cost
+    **Formulas Used:**
+
+    - **Return Rate** = Returns / Sales
+    - **Avoided Returns** = Returns × (% Reduction)
+    - **Savings** = Avoided Returns × (Avg Price − New Unit Cost)
+    - **Annual Savings** = Savings × 12
+    - **Annual Add-On Cost** = Extra Cost per Item × Sales × 12
+    - **Net Benefit** = Annual Savings − Annual Add-On Cost
+    - **ROI** = Net Benefit / Solution Cost
+    - **Breakeven** = Months to recover solution cost from net benefit
+    - **Profit Margin (Before)** = Avg Sale Price − Current Unit Cost
+    - **Profit Margin (After)** = Avg Sale Price − (Current Unit Cost + Extra Cost)
+    - **Profit Margin (Amortized)** = Margin After − (Solution Cost ÷ Annual Sales)
     """)
 
 if "app" not in st.session_state:
@@ -166,7 +172,19 @@ else:
     if selected != "All":
         df = df[df['sku'] == selected]
 
-    st.dataframe(df, use_container_width=True)
+    formatters = {
+        'return_rate': '{:.2%}'.format,
+        'roi': '{:.2f}'.format,
+        'break_even_months': '{:.2f}'.format,
+        'net_benefit': '${:,.2f}'.format,
+        'annual_savings': '${:,.2f}'.format,
+        'annual_additional_costs': '${:,.2f}'.format,
+        'margin_before': '${:,.2f}'.format,
+        'margin_after': '${:,.2f}'.format,
+        'margin_after_amortized': '${:,.2f}'.format,
+    }
+
+    st.dataframe(df.style.format(formatters), use_container_width=True)
 
     st.subheader("📈 ROI & Breakeven Charts")
     plot_df = df.dropna(subset=['roi', 'break_even_months'])
@@ -177,10 +195,4 @@ else:
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    csv_data = df.to_csv(index=False).encode()
-    st.download_button("📥 Download CSV", data=csv_data, file_name="recap_export.csv", mime="text/csv")
-
-    excel_data = io.BytesIO()
-    with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Scenarios')
-    st.download_button("📊 Download Excel", data=excel_data.getvalue(), file_name="recap_export.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    st.download_button("📥 Download CSV", data=df.to_csv(index=False).encode(), file_name="vive_rx_export.csv", mime="text/csv")
