@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import matplotlib.pyplot as plt
-import seaborn as sns
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="ReturnRx Enterprise", layout="wide")
-sns.set(style="whitegrid")  # Apply a clean style globally
 
 class ReturnRxSimple:
     def __init__(self):
@@ -25,7 +24,6 @@ class ReturnRxSimple:
         if not scenario_name:
             scenario_name = f"Scenario {len(self.scenarios) + 1}"
 
-        # Refined: avoid rounding errors
         return_cost_30 = returns_30 * current_unit_cost
         return_cost_annual = return_cost_30 * 12
         revenue_impact_30 = returns_30 * avg_sale_price
@@ -33,7 +31,7 @@ class ReturnRxSimple:
         new_unit_cost = current_unit_cost + additional_cost_per_item
 
         avoided_returns = returns_30 * (reduction_rate / 100)
-        savings_30 = avoided_returns * (avg_sale_price - current_unit_cost)
+        savings_30 = avoided_returns * (avg_sale_price - new_unit_cost)
         annual_savings = savings_30 * 12
 
         annual_additional_costs = additional_cost_per_item * sales_30 * 12
@@ -80,92 +78,90 @@ class ReturnRxSimple:
 
         self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
 
-# Initialize App
-st.title("📦 ReturnRx Enterprise - Product Return Optimizer")
+# UI starts here
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f7f9fc;
+    }
+    .stApp {
+        background-color: #ffffff;
+    }
+    .stDataFrame thead tr th {
+        background-color: #e3efff;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("📦 ReturnRx Enterprise")
+st.caption("A decision-support tool for evaluating return reduction strategies.")
+
 if "app" not in st.session_state:
     st.session_state.app = ReturnRxSimple()
 app = st.session_state.app
 
-# Help Sidebar
 with st.sidebar:
-    st.header("ℹ️ Help & Info")
+    st.header("📘 Help & Formulas")
     st.markdown("""
-    **Formulas Used:**
-    - **Avoided Returns** = Returns × (% Reduction / 100)
-    - **Savings (30 days)** = Avoided Returns × (Avg Sale Price − Unit Cost)
-    - **Annual Savings** = Savings × 12
-    - **Annual Extra Cost** = Add-On Cost per Item × Sales × 12
-    - **Net Benefit** = Annual Savings − Annual Cost
-    - **ROI** = Net Benefit ÷ Solution Cost
-    - **Breakeven** = Months until Net Benefit covers Cost
+    **Avoided Returns** = Returns × (% Reduction)
+    
+    **Savings** = Avoided Returns × (Avg Price − New Unit Cost)
+
+    **Annual Savings** = Savings × 12
+
+    **Annual Add-On Cost** = Extra Cost per Item × Sales × 12
+
+    **Net Benefit** = Annual Savings − Annual Add-On Cost
+
+    **ROI** = Net Benefit / Solution Cost
+
+    **Breakeven** = Months to recover solution cost from net benefit
     """)
 
-# Input form
-st.subheader("➕ Add New Scenario")
+st.header("➕ Add Scenario")
 with st.form("scenario_form"):
-    scenario_name = st.text_input("Scenario Name")
-    sku = st.text_input("SKU")
-    sales_30 = st.number_input("Sales (Last 30 Days)", min_value=0.0)
-    avg_sale_price = st.number_input("Average Sale Price", min_value=0.0)
-    sales_channel = st.text_input("Top Sales Channel")
-    returns_30 = st.number_input("Returns (Last 30 Days)", min_value=0.0)
-    solution = st.text_input("Suggested Solution")
-    solution_cost = st.number_input("Total Solution Cost", min_value=0.0)
-    additional_cost_per_item = st.number_input("Additional Cost per Item", value=0.0)
-    current_unit_cost = st.number_input("Current Unit Cost", min_value=0.0)
-    reduction_rate = st.slider("Est. Return Rate Reduction (%)", 0, 100)
-
+    cols = st.columns(2)
+    scenario_name = cols[0].text_input("Scenario Name")
+    sku = cols[1].text_input("SKU")
+    sales_30 = cols[0].number_input("30-day Sales", min_value=0.0)
+    avg_sale_price = cols[1].number_input("Avg Sale Price", min_value=0.0)
+    returns_30 = cols[0].number_input("30-day Returns", min_value=0.0)
+    current_unit_cost = cols[1].number_input("Current Unit Cost", min_value=0.0)
+    additional_cost_per_item = cols[0].number_input("Extra Cost per Item", value=0.0)
+    solution_cost = cols[1].number_input("Solution Cost", value=0.0)
+    reduction_rate = cols[0].slider("Estimated Return Reduction (%)", 0, 100, 10)
+    sales_channel = cols[1].text_input("Top Sales Channel")
+    solution = cols[0].text_input("Proposed Solution")
     submitted = st.form_submit_button("Add Scenario")
-    if submitted and sku.strip():
-        app.add_scenario(
-            scenario_name, sku, sales_30, avg_sale_price, sales_channel,
-            returns_30, solution, solution_cost, additional_cost_per_item,
-            current_unit_cost, reduction_rate
-        )
-        st.success(f"✅ Scenario '{scenario_name or 'Default'}' added.")
-    elif submitted:
-        st.warning("⚠️ SKU is required.")
+    if submitted and sku:
+        app.add_scenario(scenario_name, sku, sales_30, avg_sale_price, sales_channel, returns_30, solution, solution_cost, additional_cost_per_item, current_unit_cost, reduction_rate)
+        st.success("Scenario added!")
 
-# Scenario Display
-st.markdown("""---""")
-st.subheader("📊 Scenario Overview")
-
+# Display Section
+st.header("📊 Scenario Dashboard")
 if app.scenarios.empty:
-    st.info("No scenarios yet. Add one above to get started.")
+    st.info("Add a scenario to get started.")
 else:
-    selected_sku = st.selectbox("Filter by SKU", ["All"] + sorted(app.scenarios['sku'].unique()))
-    filtered_df = app.scenarios if selected_sku == "All" else app.scenarios[app.scenarios['sku'] == selected_sku]
+    df = app.scenarios.copy()
+    selected = st.selectbox("Filter by SKU", ["All"] + sorted(df['sku'].unique()))
+    if selected != "All":
+        df = df[df['sku'] == selected]
 
-    st.dataframe(filtered_df, use_container_width=True)
+    st.dataframe(df.style.format({
+        'roi': '{:.2f}',
+        'break_even_months': '{:.2f}',
+        'net_benefit': '${:,.2f}',
+        'annual_savings': '${:,.2f}',
+        'annual_additional_costs': '${:,.2f}'
+    }), use_container_width=True)
 
-    # Summary Cards
-    for _, row in filtered_df.iterrows():
-        with st.expander(f"📦 Scenario: {row['scenario_name']}"):
-            st.metric("ROI", f"{row['roi']:.2f}" if pd.notnull(row['roi']) else "N/A")
-            st.metric("Breakeven (months)", f"{row['break_even_months']:.2f}" if pd.notnull(row['break_even_months']) else "N/A")
-            st.markdown(f"**💰 Net Benefit:** ${row['net_benefit']:,.2f}")
-            st.markdown(f"**💸 Annual Savings:** ${row['annual_savings']:,.2f}")
-            st.markdown(f"**📦 Extra Annual Cost:** ${row['annual_additional_costs']:,.2f}")
-            st.markdown(f"**💡 Solution Cost:** ${row['solution_cost']:,.2f}")
+    st.subheader("📈 ROI and Breakeven Chart")
+    plot_df = df.dropna(subset=['roi', 'break_even_months'])
+    if not plot_df.empty:
+        fig = make_subplots(rows=1, cols=2, subplot_titles=("ROI", "Breakeven (months)"))
+        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['roi'], name="ROI", marker_color='seagreen'), row=1, col=1)
+        fig.add_trace(go.Bar(x=plot_df['scenario_name'], y=plot_df['break_even_months'], name="Breakeven", marker_color='indianred'), row=1, col=2)
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Visuals
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("📈 ROI per Scenario")
-        if not filtered_df.dropna(subset=['roi']).empty:
-            fig = px.bar(filtered_df, x='scenario_name', y='roi', color='roi', title="ROI")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No ROI data to visualize.")
-
-    with col2:
-        st.subheader("⏳ Breakeven Time")
-        if not filtered_df.dropna(subset=['break_even_months']).empty:
-            fig2 = px.bar(filtered_df, x='scenario_name', y='break_even_months', color='break_even_months', title="Breakeven (months)")
-            st.plotly_chart(fig2, use_container_width=True)
-        else:
-            st.info("Not enough breakeven data.")
-
-    # CSV Download
-    st.download_button("📥 Download CSV", data=filtered_df.to_csv(index=False).encode(), file_name="returnrx_data.csv", mime="text/csv")
+    st.download_button("📥 Download Data as CSV", data=df.to_csv(index=False).encode(), file_name="returnrx_export.csv", mime="text/csv")
