@@ -619,7 +619,9 @@ def generate_monte_carlo_simulation(scenario, num_simulations=1000, include_risk
             "mean": np.mean(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),
             "median": np.median(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),
             "std": np.std(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else 0,
+            "min": np.min(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),  # Add this line
             "distribution": payback_results
+},
         },
         "benefit": {
             "mean": np.mean(benefit_results),
@@ -4293,18 +4295,26 @@ def display_monte_carlo_analysis():
             st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
         
         with col3:
-            mean_payback = results['payback']['mean']
-            if not np.isinf(mean_payback):
-                st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
-                ci_lower_payback = results['payback']['min']
-                ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
-                st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
-                prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
-                st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
-            else:
-                st.metric("Mean Payback Period", "Not achievable")
-                st.metric("Payback Period Range", "N/A")
-                st.metric("Probability of Payback ≤ 1 year", "0.0%")
+            # Update this block of code
+if not np.isinf(mean_payback):
+    st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
+    
+    # Handle the case where 'min' might not exist
+    if 'min' in results['payback']:
+        ci_lower_payback = results['payback']['min']
+    else:
+        # Calculate min from distribution if missing
+        valid_values = results['payback']['distribution'][~np.isinf(results['payback']['distribution'])]
+        ci_lower_payback = np.min(valid_values) if len(valid_values) > 0 else float('inf')
+        
+    ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
+    st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
+    prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
+    st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
+else:
+    st.metric("Mean Payback Period", "Not achievable")
+    st.metric("Payback Period Range", "N/A")
+    st.metric("Probability of Payback ≤ 1 year", "0.0%")
         
         # Display ROI histogram with confidence interval
         st.markdown("### ROI Probability Distribution")
