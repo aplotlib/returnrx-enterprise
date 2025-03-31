@@ -4279,6 +4279,10 @@ st.markdown("## Monte Carlo Simulation Results")
 
 # Display summary statistics
 st.markdown("### Statistical Performance Metrics")
+st.markdown("### Statistical Performance Metrics")
+confidence_level = 95  # or fetch from session_state
+st.markdown(f"**Confidence Level:** {confidence_level}%")
+
 st.markdown(f"**Confidence Level:** {confidence_level}%")
 
 col1, col2, col3 = st.columns(3)
