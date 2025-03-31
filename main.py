@@ -4275,28 +4275,24 @@ def display_monte_carlo_analysis():
                 yield_improvement = target_yield - current_yield
         
         # Display results
-        st.markdown("## Monte Carlo Simulation Results")
-        
-        # Display summary statistics
-        st.markdown("### Statistical Performance Metrics")
-        st.markdown(f"**Confidence Level:** {confidence_level}%")
-        
-        # Create columns for metrics display
+st.markdown("## Monte Carlo Simulation Results")
+
+# Display summary statistics
+st.markdown("### Statistical Performance Metrics")
+st.markdown(f"**Confidence Level:** {confidence_level}%")
+
 col1, col2, col3 = st.columns(3)
 
-# First column
 with col1:
     st.metric("Mean ROI", f"{roi_mean:.1f}%")
     st.metric("ROI Confidence Interval", f"({ci_lower_roi:.1f}% - {ci_upper_roi:.1f}%)")
     st.metric("Probability of Positive ROI", f"{prob_positive_roi:.1f}%")
 
-# Second column
 with col2:
     st.metric("Mean NPV", f"${npv_mean:.2f}")
     st.metric("NPV Confidence Interval", f"(${ci_lower_npv:.2f} - ${ci_upper_npv:.2f})")
     st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
 
-# Third column - completely rewritten
 with col3:
     mean_payback = results['payback']['mean']
     if not np.isinf(mean_payback):
