@@ -4294,7 +4294,6 @@ def display_monte_carlo_analysis():
             st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
         
         with col3:
-    # This entire block needs to be indented under the "with" statement
     if not np.isinf(mean_payback):
         st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
         if 'min' in results['payback']:
