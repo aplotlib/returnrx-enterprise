@@ -30,7 +30,7 @@ KaizenROI is a powerful analytics tool that helps e-commerce and retail business
 
 The KaizenROI dashboard provides at-a-glance metrics for your return reduction strategies:
 
-![Dashboard Overview](https://via.placeholder.com/800x400?text=Dashboard+Screenshot)
+
 
 ## 🔍 Key Features Explained
 
@@ -38,7 +38,7 @@ The KaizenROI dashboard provides at-a-glance metrics for your return reduction s
 
 Analyze your entire portfolio of return reduction investments with interactive bubble charts that highlight the best performing scenarios based on ROI, break-even time, and reduction effectiveness.
 
-![Portfolio Analysis](https://via.placeholder.com/800x400?text=Portfolio+Analysis+Screenshot)
+
 
 ### What-If Analysis
 
@@ -55,7 +55,7 @@ The What-If Analysis tool allows you to adjust:
 
 Each change dynamically updates all calculations and shows impacts through visual charts, helping you understand which factors most significantly influence your ROI.
 
-![What-If Analysis](https://via.placeholder.com/800x400?text=What-If+Analysis+Screenshot)
+
 
 ### ROI Scoring Methodology
 
