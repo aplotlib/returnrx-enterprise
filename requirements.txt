@@ -10,3 +10,9 @@ openpyxl==3.1.2
 statsmodels==0.14.1
 pyarrow==14.0.1
 pillow==10.2.0
+uuid
+datetime
+tqdm
+rich
+weasyprint
+markdown-pdf
