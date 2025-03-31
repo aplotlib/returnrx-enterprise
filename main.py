@@ -11,7 +11,7 @@ class ReturnRxSimple:
     def __init__(self):
         self.scenarios = pd.DataFrame(columns=[
             'scenario_name', 'sku', 'sales_30', 'avg_sale_price', 
-            'sales_channel', 'returns_30', 'solution', 'solution_cost',
+            'sales_channel', 'returns_30', 'return_rate', 'solution', 'solution_cost',
             'additional_cost_per_item', 'current_unit_cost', 'reduction_rate',
             'return_cost_30', 'return_cost_annual', 'revenue_impact_30',
             'revenue_impact_annual', 'new_unit_cost', 'savings_30',
@@ -23,6 +23,8 @@ class ReturnRxSimple:
                      current_unit_cost, reduction_rate):
         if not scenario_name:
             scenario_name = f"Scenario {len(self.scenarios) + 1}"
+
+        return_rate = (returns_30 / sales_30) if sales_30 > 0 else 0
 
         return_cost_30 = returns_30 * current_unit_cost
         return_cost_annual = return_cost_30 * 12
@@ -55,6 +57,7 @@ class ReturnRxSimple:
             'avg_sale_price': avg_sale_price,
             'sales_channel': sales_channel,
             'returns_30': returns_30,
+            'return_rate': return_rate,
             'solution': solution,
             'solution_cost': solution_cost,
             'additional_cost_per_item': additional_cost_per_item,
@@ -103,8 +106,10 @@ app = st.session_state.app
 with st.sidebar:
     st.header("📘 Help & Formulas")
     st.markdown("""
+    **Return Rate** = Returns / Sales
+
     **Avoided Returns** = Returns × (% Reduction)
-    
+
     **Savings** = Avoided Returns × (Avg Price − New Unit Cost)
 
     **Annual Savings** = Savings × 12
@@ -148,6 +153,7 @@ else:
         df = df[df['sku'] == selected]
 
     st.dataframe(df.style.format({
+        'return_rate': '{:.2%}',
         'roi': '{:.2f}',
         'break_even_months': '{:.2f}',
         'net_benefit': '${:,.2f}',
