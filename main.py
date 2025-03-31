@@ -37,7 +37,6 @@ COLOR_SCHEME = {
     "subtle": "#C5CFD6",        # Slightly darker subtle elements
     "highlight": "#CB2D3E",     # Adjusted highlight for better visibility
 }
-
 # Custom CSS with Vive Health styling
 st.markdown(f"""
 <style>
@@ -1302,7 +1301,11 @@ class ProductUpgradeAnalyzer:
             }
 
             # Add to dataframe
-            self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
+            new_row_df = pd.DataFrame([new_row])
+            for col in self.scenarios.columns:
+                if col not in new_row_df.columns:
+                    new_row_df[col] = None
+            self.scenarios = pd.concat([self.scenarios, new_row_df], ignore_index=True)
             self.save_data()
             
             # Add to audit trail
@@ -1598,7 +1601,7 @@ def authenticate():
             if password == "Vive8955!!":
                 st.session_state.authenticated = True
                 st.success("Login successful!")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Incorrect password.")
                 
@@ -1616,7 +1619,7 @@ def display_scenario_table(df):
         if st.button("Add Example Scenarios"):
             num_added = optimizer.add_example_scenarios()
             st.success(f"Added {num_added} example scenarios!")
-            st.experimental_rerun()
+            st.rerun()
         return
     
     st.subheader("Product Improvement Scenarios")
@@ -1695,7 +1698,7 @@ def display_scenario_table(df):
         if st.button("View Details"):
             st.session_state['view_scenario'] = True
             st.session_state['selected_scenario'] = selected_uid
-            st.experimental_rerun()
+            st.rerun()()
     
     with col2:
         # Delete scenario
@@ -1705,7 +1708,7 @@ def display_scenario_table(df):
                 # Reset view if we're deleting the currently viewed scenario
                 if 'selected_scenario' in st.session_state and st.session_state['selected_scenario'] == selected_uid:
                     st.session_state['view_scenario'] = False
-                st.experimental_rerun()
+                st.rerun()()
             else:
                 st.error("Failed to delete scenario")
     
@@ -1715,7 +1718,7 @@ def display_scenario_table(df):
             success, message = optimizer.clone_scenario(selected_uid)
             if success:
                 st.success(message)
-                st.experimental_rerun()
+                st.rerun()()
             else:
                 st.error(message)
     
@@ -1772,7 +1775,7 @@ def display_scenario_table(df):
             json_str = uploaded_file.read().decode("utf-8")
             if optimizer.upload_json(json_str):
                 st.success("Scenarios imported successfully!")
-                st.experimental_rerun()
+                st.rerun()()
             else:
                 st.error("Failed to import scenarios")
 
@@ -1787,7 +1790,7 @@ def display_scenario_details(scenario_uid):
     # Back button
     if st.button("← Back to Scenarios"):
         st.session_state['view_scenario'] = False
-        st.experimental_rerun()
+        st.rerun()()
     
     # Display scenario details
     st.title(scenario['scenario_name'])
@@ -2415,7 +2418,7 @@ def display_scenario_details(scenario_uid):
         st.session_state['view_scenario'] = False
         st.session_state['monte_carlo_scenario'] = scenario_uid
         st.session_state['nav_option'] = "Monte Carlo Analysis"
-        st.experimental_rerun()
+        st.rerun()()
 
 def display_header():
     """Display app header with logo and navigation"""
@@ -3088,7 +3091,7 @@ def create_scenario_form():
                 new_scenario = optimizer.scenarios[optimizer.scenarios['scenario_name'] == scenario_name].iloc[-1]
                 st.session_state['view_scenario'] = True
                 st.session_state['selected_scenario'] = new_scenario['uid']
-                st.experimental_rerun()
+                st.rerun()()
         else:
             st.error(message)
 
