@@ -23,20 +23,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced Vive Health color scheme with improved contrast
+# Define Vive Health color scheme (based on brand guide)
 COLOR_SCHEME = {
-    "primary": "#0A9DAB",       # Darker teal for better contrast
-    "secondary": "#003A5C",     # Adjusted dark blue for better visibility
-    "warning": "#E29A00",       # Darker yellow for better readability
-    "negative": "#D62B00",      # Adjusted red for better contrast
-    "neutral": "#5A5A5A",       # Darker gray for better readability
-    "background": "#F0F5F9",    # Lighter background for reduced eye strain
-    "text_dark": "#1A2530",     # Darker text for better contrast
-    "text_light": "#FFFFFF",    # Pure white for maximum contrast on dark backgrounds
-    "positive": "#168F3E",      # Adjusted green for better contrast
-    "subtle": "#C5CFD6",        # Slightly darker subtle elements
-    "highlight": "#CB2D3E",     # Adjusted highlight for better visibility
+    "primary": "#23b2be",       # Main teal color
+    "secondary": "#004366",     # Dark blue
+    "warning": "#F0B323",       # Yellow
+    "negative": "#EB3300",      # Orange-red
+    "neutral": "#777473",       # Gray
+    "background": "#e6eff3",    # Light blue background
+    "text_dark": "#2c3e50",     # Dark text
+    "text_light": "#ecf0f1",    # Light text
+    "positive": "#1e8449",      # Green for positive outcomes
+    "subtle": "#bdc3c7",        # Light gray for subtle elements
+    "highlight": "#e74c3c"      # Red for highlights
 }
+
 # Custom CSS with Vive Health styling
 st.markdown(f"""
 <style>
@@ -619,9 +620,7 @@ def generate_monte_carlo_simulation(scenario, num_simulations=1000, include_risk
             "mean": np.mean(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),
             "median": np.median(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),
             "std": np.std(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else 0,
-            "min": np.min(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),  # Add this line
             "distribution": payback_results
-},
         },
         "benefit": {
             "mean": np.mean(benefit_results),
@@ -1303,11 +1302,7 @@ class ProductUpgradeAnalyzer:
             }
 
             # Add to dataframe
-            new_row_df = pd.DataFrame([new_row])
-            for col in self.scenarios.columns:
-                if col not in new_row_df.columns:
-                    new_row_df[col] = None
-            self.scenarios = pd.concat([self.scenarios, new_row_df], ignore_index=True)
+            self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
             self.save_data()
             
             # Add to audit trail
@@ -1603,7 +1598,7 @@ def authenticate():
             if password == "Vive8955!!":
                 st.session_state.authenticated = True
                 st.success("Login successful!")
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("Incorrect password.")
                 
@@ -1621,7 +1616,7 @@ def display_scenario_table(df):
         if st.button("Add Example Scenarios"):
             num_added = optimizer.add_example_scenarios()
             st.success(f"Added {num_added} example scenarios!")
-            st.rerun()
+            st.experimental_rerun()
         return
     
     st.subheader("Product Improvement Scenarios")
@@ -1700,7 +1695,7 @@ def display_scenario_table(df):
         if st.button("View Details"):
             st.session_state['view_scenario'] = True
             st.session_state['selected_scenario'] = selected_uid
-            st.rerun()()
+            st.experimental_rerun()
     
     with col2:
         # Delete scenario
@@ -1710,7 +1705,7 @@ def display_scenario_table(df):
                 # Reset view if we're deleting the currently viewed scenario
                 if 'selected_scenario' in st.session_state and st.session_state['selected_scenario'] == selected_uid:
                     st.session_state['view_scenario'] = False
-                st.rerun()()
+                st.experimental_rerun()
             else:
                 st.error("Failed to delete scenario")
     
@@ -1720,7 +1715,7 @@ def display_scenario_table(df):
             success, message = optimizer.clone_scenario(selected_uid)
             if success:
                 st.success(message)
-                st.rerun()()
+                st.experimental_rerun()
             else:
                 st.error(message)
     
@@ -1777,7 +1772,7 @@ def display_scenario_table(df):
             json_str = uploaded_file.read().decode("utf-8")
             if optimizer.upload_json(json_str):
                 st.success("Scenarios imported successfully!")
-                st.rerun()()
+                st.experimental_rerun()
             else:
                 st.error("Failed to import scenarios")
 
@@ -1792,7 +1787,7 @@ def display_scenario_details(scenario_uid):
     # Back button
     if st.button("← Back to Scenarios"):
         st.session_state['view_scenario'] = False
-        st.rerun()()
+        st.experimental_rerun()
     
     # Display scenario details
     st.title(scenario['scenario_name'])
@@ -2420,7 +2415,7 @@ def display_scenario_details(scenario_uid):
         st.session_state['view_scenario'] = False
         st.session_state['monte_carlo_scenario'] = scenario_uid
         st.session_state['nav_option'] = "Monte Carlo Analysis"
-        st.rerun()()
+        st.experimental_rerun()
 
 def display_header():
     """Display app header with logo and navigation"""
@@ -3093,7 +3088,7 @@ def create_scenario_form():
                 new_scenario = optimizer.scenarios[optimizer.scenarios['scenario_name'] == scenario_name].iloc[-1]
                 st.session_state['view_scenario'] = True
                 st.session_state['selected_scenario'] = new_scenario['uid']
-                st.rerun()()
+                st.experimental_rerun()
         else:
             st.error(message)
 
@@ -4295,26 +4290,18 @@ def display_monte_carlo_analysis():
             st.metric("Probability of Target ROI", f"{prob_target_roi:.1f}%")
         
         with col3:
-            # Update this block of code
-if not np.isinf(mean_payback):
-    st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
-    
-    # Handle the case where 'min' might not exist
-    if 'min' in results['payback']:
-        ci_lower_payback = results['payback']['min']
-    else:
-        # Calculate min from distribution if missing
-        valid_values = results['payback']['distribution'][~np.isinf(results['payback']['distribution'])]
-        ci_lower_payback = np.min(valid_values) if len(valid_values) > 0 else float('inf')
-        
-    ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
-    st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
-    prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
-    st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
-else:
-    st.metric("Mean Payback Period", "Not achievable")
-    st.metric("Payback Period Range", "N/A")
-    st.metric("Probability of Payback ≤ 1 year", "0.0%")
+            mean_payback = results['payback']['mean']
+            if not np.isinf(mean_payback):
+                st.metric("Mean Payback Period", f"{mean_payback:.2f} years")
+                ci_lower_payback = results['payback']['min']
+                ci_upper_payback = np.percentile(results['payback']['distribution'][~np.isinf(results['payback']['distribution'])], 95) if np.any(~np.isinf(results['payback']['distribution'])) else float('inf')
+                st.metric("Payback Period Range", f"({ci_lower_payback:.2f} - {ci_upper_payback:.2f} years)")
+                prob_payback_1yr = np.sum(results['payback']['distribution'] <= 1) / num_simulations * 100
+                st.metric("Probability of Payback ≤ 1 year", f"{prob_payback_1yr:.1f}%")
+            else:
+                st.metric("Mean Payback Period", "Not achievable")
+                st.metric("Payback Period Range", "N/A")
+                st.metric("Probability of Payback ≤ 1 year", "0.0%")
         
         # Display ROI histogram with confidence interval
         st.markdown("### ROI Probability Distribution")
