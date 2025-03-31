@@ -621,7 +621,6 @@ def generate_monte_carlo_simulation(scenario, num_simulations=1000, include_risk
             "std": np.std(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else 0,
             "min": np.min(payback_results[~np.isinf(payback_results)]) if np.any(~np.isinf(payback_results)) else float('inf'),  # Add this line
             "distribution": payback_results
-},
         },
         "benefit": {
             "mean": np.mean(benefit_results),
