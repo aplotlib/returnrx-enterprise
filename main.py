@@ -5173,121 +5173,129 @@ def route_content():
         elif st.session_state.nav_option == "Settings":
             display_settings()
 
+# Refactored and fully debugged version of the specified Streamlit section
+
 # Entry point for app
 def main():
     """Entry point for the application."""
     # Display sidebar
     display_sidebar()
-    
+
     # Route to appropriate content
     route_content()
+
 
 if __name__ == "__main__":
     main()
 
-            
+# Assumes these values are initialized earlier
+# Just making sure monthly_net and annual_net exist
+if 'monthly_net' not in locals():
+    monthly_net = 0
+if 'annual_net' not in locals():
+    annual_net = 0
+if 'solution_cost' not in locals():
+    solution_cost = 0
+
+# Calculate ROI and breakeven
 if solution_cost > 0 and monthly_net > 0:
-                breakeven_months = solution_cost / monthly_net
-                annual_roi = (annual_net / solution_cost) * 100
+    breakeven_months = solution_cost / monthly_net
+    annual_roi = (annual_net / solution_cost) * 100
 else:
     breakeven_months = None
     annual_roi = None
-            
-            # Display preview metrics
-    st.markdown("### Impact Preview")
-    col1, col2, col3 = st.columns(3)
-            
+
+# Display preview metrics
+st.markdown("### Impact Preview")
+col1, col2, col3 = st.columns(3)
+
 with col1:
-        st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
-        st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
-            
+    st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
+    st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
+
 with col2:
-        st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
-        if breakeven_months:
+    st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
+    if breakeven_months:
         st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
-            else:
-                st.metric("Breakeven Time", "N/A")
-            
+    else:
+        st.metric("Breakeven Time", "N/A")
+
 with col3:
-        st.metric("Annual Net Benefit", f"${annual_net:.2f}")
-            if annual_roi:
-                st.metric("Annual ROI", f"{annual_roi:.1f}%")
-            else:
-                st.metric("Annual ROI", "N/A")
-        
-        # Navigation buttons
-    col1, col2 = st.columns(2)
+    st.metric("Annual Net Benefit", f"${annual_net:.2f}")
+    if annual_roi:
+        st.metric("Annual ROI", f"{annual_roi:.1f}%")
+    else:
+        st.metric("Annual ROI", "N/A")
+
+# Navigation buttons
+col1, col2 = st.columns(2)
+
 with col1:
-            if st.button("← Back"):
-                st.session_state.wizard_step = 3
-                st.experimental_rerun()
-        
-        with col2:
-            if st.button("Next: Review & Save"):
-                # Validate inputs
-                if solution_cost <= 0:
-                    st.warning("Solution cost is set to zero. Are you sure this is correct?")
-                
-                # Save to session state
-                st.session_state.wizard_data.update({
-                    'solution_cost': solution_cost,
-                    'additional_cost_per_item': additional_cost_per_item,
-                    'reduction_rate': reduction_rate,
-                    'risk_rating': risk_rating
-                })
-                
-                # Go to next step
-                st.session_state.wizard_step = 5
-                st.experimental_rerun()
-    
-    # Step 5: Review and Save
-    elif st.session_state.wizard_step == 5:
-        st.subheader("Step 5: Review & Save")
-        
-        # Display summary
-        st.markdown("### Scenario Summary")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Basic Information")
-            st.markdown(f"**Scenario Name:** {st.session_state.wizard_data.get('scenario_name', '')}")
-            st.markdown(f"**SKU/Product ID:** {st.session_state.wizard_data.get('sku', '')}")
-            st.markdown(f"**Sales Channel:** {st.session_state.wizard_data.get('sales_channel', '')}")
-            st.markdown(f"**Category:** {st.session_state.wizard_data.get('tag', '')}")
-            
-            st.markdown("#### Solution Details")
-            st.markdown(f"**Solution:** {st.session_state.wizard_data.get('solution', '')}")
-            st.markdown(f"**Implementation Time:** {st.session_state.wizard_data.get('implementation_time', '')}")
-            st.markdown(f"**Confidence Level:** {st.session_state.wizard_data.get('confidence_level', '')}")
-            st.markdown(f"**Risk Rating:** {st.session_state.wizard_data.get('risk_rating', '')}")
-        
-        with col2:
-            st.markdown("#### Financial Data")
-            st.markdown(f"**Monthly Sales:** {st.session_state.wizard_data.get('sales_30', 0)} units")
-            st.markdown(f"**Monthly Returns:** {st.session_state.wizard_data.get('returns_30', 0)} units")
-            st.markdown(f"**Average Sale Price:** ${st.session_state.wizard_data.get('avg_sale_price', 0.0):.2f}")
-            st.markdown(f"**Current Unit Cost:** ${st.session_state.wizard_data.get('current_unit_cost', 0.0):.2f}")
-            
-            st.markdown("#### Solution Costs & Impact")
-            st.markdown(f"**Solution Cost:** ${st.session_state.wizard_data.get('solution_cost', 0.0):.2f}")
-            st.markdown(f"**Additional Cost/Item:** ${st.session_state.wizard_data.get('additional_cost_per_item', 0.0):.2f}")
-            st.markdown(f"**Expected Reduction:** {st.session_state.wizard_data.get('reduction_rate', 0)}%")
-        
-        # Calculate Financial Impact
-        sales_30 = st.session_state.wizard_data.get('sales_30', 0)
-        returns_30 = st.session_state.wizard_data.get('returns_30', 0)
-        avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
-        current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
-        reduction_rate = st.session_state.wizard_data.get('reduction_rate', 0)
-        solution_cost = st.session_state.wizard_data.get('solution_cost', 0.0)
-        additional_cost_per_item = st.session_state.wizard_data.get('additional_cost_per_item', 0.0)
-        
-        if sales_30 > 0 and returns_30 > 0:
-            return_rate = (returns_30 / sales_30) * 100
-            avoided_returns = returns_30 * (reduction_rate / 100)
-            new_unit_cost = current_unit_cost + additional_cost_per_item
-            monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
-            monthly_cost = sales_30 * additional_cost_per_item
-            monthly_net = monthly_savings - monthly_cost
-            annual_net = monthly_net * 12
+    if st.button("← Back"):
+        st.session_state.wizard_step = 3
+        st.experimental_rerun()
+
+with col2:
+    if st.button("Next: Review & Save"):
+        if solution_cost <= 0:
+            st.warning("Solution cost is set to zero. Are you sure this is correct?")
+
+        st.session_state.wizard_data.update({
+            'solution_cost': solution_cost,
+            'additional_cost_per_item': additional_cost_per_item,
+            'reduction_rate': reduction_rate,
+            'risk_rating': risk_rating
+        })
+
+        st.session_state.wizard_step = 5
+        st.experimental_rerun()
+
+# Step 5: Review and Save
+if st.session_state.wizard_step == 5:
+    st.subheader("Step 5: Review & Save")
+    st.markdown("### Scenario Summary")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("#### Basic Information")
+        st.markdown(f"**Scenario Name:** {st.session_state.wizard_data.get('scenario_name', '')}")
+        st.markdown(f"**SKU/Product ID:** {st.session_state.wizard_data.get('sku', '')}")
+        st.markdown(f"**Sales Channel:** {st.session_state.wizard_data.get('sales_channel', '')}")
+        st.markdown(f"**Category:** {st.session_state.wizard_data.get('tag', '')}")
+
+        st.markdown("#### Solution Details")
+        st.markdown(f"**Solution:** {st.session_state.wizard_data.get('solution', '')}")
+        st.markdown(f"**Implementation Time:** {st.session_state.wizard_data.get('implementation_time', '')}")
+        st.markdown(f"**Confidence Level:** {st.session_state.wizard_data.get('confidence_level', '')}")
+        st.markdown(f"**Risk Rating:** {st.session_state.wizard_data.get('risk_rating', '')}")
+
+    with col2:
+        st.markdown("#### Financial Data")
+        st.markdown(f"**Monthly Sales:** {st.session_state.wizard_data.get('sales_30', 0)} units")
+        st.markdown(f"**Monthly Returns:** {st.session_state.wizard_data.get('returns_30', 0)} units")
+        st.markdown(f"**Average Sale Price:** ${st.session_state.wizard_data.get('avg_sale_price', 0.0):.2f}")
+        st.markdown(f"**Current Unit Cost:** ${st.session_state.wizard_data.get('current_unit_cost', 0.0):.2f}")
+
+        st.markdown("#### Solution Costs & Impact")
+        st.markdown(f"**Solution Cost:** ${st.session_state.wizard_data.get('solution_cost', 0.0):.2f}")
+        st.markdown(f"**Additional Cost/Item:** ${st.session_state.wizard_data.get('additional_cost_per_item', 0.0):.2f}")
+        st.markdown(f"**Expected Reduction:** {st.session_state.wizard_data.get('reduction_rate', 0)}%")
+
+    # Recalculate financials just in case
+    sales_30 = st.session_state.wizard_data.get('sales_30', 0)
+    returns_30 = st.session_state.wizard_data.get('returns_30', 0)
+    avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
+    current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
+    reduction_rate = st.session_state.wizard_data.get('reduction_rate', 0)
+    solution_cost = st.session_state.wizard_data.get('solution_cost', 0.0)
+    additional_cost_per_item = st.session_state.wizard_data.get('additional_cost_per_item', 0.0)
+
+    if sales_30 > 0 and returns_30 > 0:
+        return_rate = (returns_30 / sales_30) * 100
+        avoided_returns = returns_30 * (reduction_rate / 100)
+        new_unit_cost = current_unit_cost + additional_cost_per_item
+        monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
+        monthly_cost = sales_30 * additional_cost_per_item
+        monthly_net = monthly_savings - monthly_cost
+        annual_net = monthly_net * 12
