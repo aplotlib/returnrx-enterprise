@@ -5201,23 +5201,23 @@ with col1:
         st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
         st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
             
-            with col2:
-                st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
-                if breakeven_months:
-                    st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
-                else:
-                    st.metric("Breakeven Time", "N/A")
+with col2:
+        st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
+            if breakeven_months:
+        st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
+            else:
+                st.metric("Breakeven Time", "N/A")
             
-            with col3:
-                st.metric("Annual Net Benefit", f"${annual_net:.2f}")
-                if annual_roi:
-                    st.metric("Annual ROI", f"{annual_roi:.1f}%")
-                else:
-                    st.metric("Annual ROI", "N/A")
+with col3:
+        st.metric("Annual Net Benefit", f"${annual_net:.2f}")
+            if annual_roi:
+                st.metric("Annual ROI", f"{annual_roi:.1f}%")
+            else:
+                st.metric("Annual ROI", "N/A")
         
         # Navigation buttons
-        col1, col2 = st.columns(2)
-        with col1:
+    col1, col2 = st.columns(2)
+with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 3
                 st.experimental_rerun()
