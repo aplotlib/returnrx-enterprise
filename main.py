@@ -24,11 +24,6 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
-import weasyprint
-from jinja2 import Template
-import tempfile
-import pdfkit
-import xlsxwriter
 from fpdf import FPDF
 import warnings
 warnings.filterwarnings('ignore')
@@ -1258,162 +1253,6 @@ class ReturnOptimizer:
             stats['portfolio_roi'] = 0
         
         return stats
-    
-    def export_to_pdf(self, filename=None):
-        """Export scenarios to PDF report"""
-        if self.scenarios.empty:
-            return False, "No scenarios to export"
-        
-        try:
-            # Create HTML content for PDF
-            html_content = f"""
-            <html>
-            <head>
-                <title>ReturnRx Enterprise Report</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; padding: 20px; }}
-                    h1, h2, h3 {{ color: {COLOR_SCHEME["primary"]}; }}
-                    table {{ border-collapse: collapse; width: 100%; margin: 20px 0; }}
-                    th {{ background-color: {COLOR_SCHEME["primary"]}; color: white; padding: 10px; text-align: left; }}
-                    td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-                    tr:nth-child(even) {{ background-color: #f9f9f9; }}
-                    .header {{ display: flex; justify-content: space-between; align-items: center; }}
-                    .logo {{ font-size: 24px; font-weight: bold; color: {COLOR_SCHEME["primary"]}; }}
-                    .date {{ color: #666; }}
-                    .summary {{ margin: 20px 0; padding: 15px; background-color: #f5f8ff; border-radius: 5px; }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div class="logo">ReturnRx Enterprise</div>
-                    <div class="date">Report Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>
-                </div>
-                <h1>Return Optimization Analysis</h1>
-                
-                <div class="summary">
-                    <h2>Portfolio Summary</h2>
-                    <p>Total Scenarios: {len(self.scenarios)}</p>
-                    <p>Total Investment: ${self.scenarios['solution_cost'].sum():,.2f}</p>
-                    <p>Total Annual Savings: ${self.scenarios['annual_savings'].sum():,.2f}</p>
-                    <p>Average ROI: {self.scenarios['roi'].mean():.2f}%</p>
-                    <p>Average Breakeven Time: {self.scenarios['break_even_months'].mean():.2f} months</p>
-                </div>
-                
-                <h2>Scenario Analysis</h2>
-                <table>
-                    <tr>
-                        <th>Scenario</th>
-                        <th>SKU</th>
-                        <th>Solution</th>
-                        <th>Investment</th>
-                        <th>Reduction Rate</th>
-                        <th>ROI</th>
-                        <th>Breakeven</th>
-                        <th>Net Benefit</th>
-                    </tr>
-            """
-            
-            # Add scenario rows
-            for _, row in self.scenarios.iterrows():
-                # Handle each field properly to avoid f-string syntax errors
-                scenario_name = row['scenario_name']
-                sku = row['sku']
-                solution = row['solution']
-                solution_cost = f"${row['solution_cost']:,.2f}"
-                reduction_rate = f"{row['reduction_rate']:.1f}%"
-                
-                # Handle conditional fields separately
-                if pd.notna(row['roi']):
-                    roi_display = f"{row['roi']:.1f}%"
-                else:
-                    roi_display = "N/A"
-                    
-                if pd.notna(row['break_even_months']):
-                    breakeven_display = f"{row['break_even_months']:.1f} months"
-                else:
-                    breakeven_display = "N/A"
-                    
-                net_benefit = f"${row['net_benefit']:,.2f}"
-                
-                # Now add the row with proper values
-                html_content += f"""
-                <tr>
-                    <td>{scenario_name}</td>
-                    <td>{sku}</td>
-                    <td>{solution}</td>
-                    <td>{solution_cost}</td>
-                    <td>{reduction_rate}</td>
-                    <td>{roi_display}</td>
-                    <td>{breakeven_display}</td>
-                    <td>{net_benefit}</td>
-                </tr>
-                """
-            
-            html_content += """
-                </table>
-                
-                <h2>Top Performers by ROI</h2>
-                <table>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Scenario</th>
-                        <th>ROI</th>
-                        <th>Net Benefit</th>
-                        <th>Reduction Rate</th>
-                    </tr>
-            """
-            
-            # Add top performers (sort by ROI)
-            top_performers = self.scenarios.sort_values(by='roi', ascending=False).head(5)
-            for i, (_, row) in enumerate(top_performers.iterrows(), 1):
-                # Handle ROI formatting separately to avoid f-string syntax errors
-                if pd.notna(row['roi']):
-                    roi_display = f"{row['roi']:.1f}%"
-                else:
-                    roi_display = "N/A"
-                    
-                # Handle net benefit formatting
-                net_benefit_display = f"${row['net_benefit']:,.2f}"
-                
-                # Handle reduction rate formatting
-                reduction_display = f"{row['reduction_rate']:.1f}%"
-                
-                # Now build the table row with properly formatted values
-                html_content += f"""
-                <tr>
-                    <td>{i}</td>
-                    <td>{row['scenario_name']}</td>
-                    <td>{roi_display}</td>
-                    <td>{net_benefit_display}</td>
-                    <td>{reduction_display}</td>
-                </tr>
-                """
-            
-            html_content += """
-                </table>
-                
-                <div style="margin-top: 30px; text-align: center; color: #666; font-size: 12px;">
-                    © 2025 ReturnRx Enterprise. All rights reserved.
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Create temporary file for HTML
-            with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as f:
-                f.write(html_content.encode('utf-8'))
-                html_path = f.name
-            
-            # Convert HTML to PDF
-            pdf_path = filename or f"returnrx_report_{datetime.now().strftime('%Y%m%d%H%M')}.pdf"
-            weasyprint.HTML(filename=html_path).write_pdf(pdf_path)
-            
-            # Clean up temp file
-            os.unlink(html_path)
-            
-            return True, pdf_path
-        except Exception as e:
-            return False, f"Error generating PDF: {str(e)}"
 
 # Initialize app
 if 'optimizer' not in st.session_state:
@@ -2375,7 +2214,7 @@ def display_scenario_table(df):
             with col3:
                 # Export options for single scenario
                 export_format = st.selectbox("Export Format", 
-                                      ["PDF", "Excel", "CSV"],
+                                      ["Excel", "CSV"],
                                       key="single_export_format")
             
             with col4:
@@ -2383,68 +2222,7 @@ def display_scenario_table(df):
                     # Create a subset of data with just the selected scenario
                     export_df = filtered_df[filtered_df['uid'] == selected_uid]
                     
-                    if export_format == "PDF":
-                        try:
-                            # Creating a simple PDF for a single scenario
-                            pdf = FPDF()
-                            pdf.add_page()
-                            pdf.set_font("Arial", size=12)
-                            
-                            # Title
-                            pdf.set_font("Arial", 'B', 16)
-                            pdf.cell(200, 10, f"Scenario Report: {selected_scenario}", ln=True, align='C')
-                            pdf.ln(10)
-                            
-                            # Basic info
-                            pdf.set_font("Arial", 'B', 12)
-                            pdf.cell(200, 10, "Basic Information", ln=True)
-                            pdf.set_font("Arial", size=10)
-                            
-                            scenario = optimizer.get_scenario(selected_uid)
-                            pdf.cell(200, 10, f"SKU: {scenario['sku']}", ln=True)
-                            pdf.cell(200, 10, f"Sales Channel: {scenario['sales_channel']}", ln=True)
-                            pdf.cell(200, 10, f"Solution: {scenario['solution']}", ln=True)
-                            pdf.cell(200, 10, f"Return Rate: {scenario['return_rate']:.2f}%", ln=True)
-                            pdf.ln(5)
-                            
-                            # Financial info
-                            pdf.set_font("Arial", 'B', 12)
-                            pdf.cell(200, 10, "Financial Impact", ln=True)
-                            pdf.set_font("Arial", size=10)
-                            
-                            pdf.cell(200, 10, f"Investment: ${scenario['solution_cost']:.2f}", ln=True)
-                            pdf.cell(200, 10, f"Reduction Rate: {scenario['reduction_rate']:.1f}%", ln=True)
-                            if pd.notna(scenario['roi']):
-                                pdf.cell(200, 10, f"ROI: {scenario['roi']:.2f}%", ln=True)
-                            else:
-                                pdf.cell(200, 10, "ROI: N/A", ln=True)
-                                
-                            if pd.notna(scenario['break_even_months']):
-                                pdf.cell(200, 10, f"Breakeven: {scenario['break_even_months']:.1f} months", ln=True)
-                            else:
-                                pdf.cell(200, 10, "Breakeven: N/A", ln=True)
-                                
-                            pdf.cell(200, 10, f"Net Benefit: ${scenario['net_benefit']:.2f}", ln=True)
-                            
-                            # Save PDF
-                            filename = f"{selected_scenario.replace(' ', '_')}_report.pdf"
-                            pdf.output(filename)
-                            
-                            # Display download link
-                            with open(filename, "rb") as f:
-                                pdf_bytes = f.read()
-                            
-                            st.download_button(
-                                label="Download PDF Report",
-                                data=pdf_bytes,
-                                file_name=filename,
-                                mime="application/pdf"
-                            )
-                            
-                        except Exception as e:
-                            st.error(f"Error generating PDF: {str(e)}")
-                    
-                    elif export_format == "Excel":
+                    if export_format == "Excel":
                         try:
                             # Create Excel file
                             excel_buffer = io.BytesIO()
@@ -5216,27 +4994,6 @@ def display_settings():
                 file_name="returnrx_export.csv",
                 mime="text/csv"
             )
-            
-            # Export as PDF report
-            if st.button("Generate PDF Report"):
-                with st.spinner("Generating PDF report..."):
-                    success, pdf_path = optimizer.export_to_pdf()
-                    
-                    if success:
-                        with open(pdf_path, "rb") as f:
-                            pdf_bytes = f.read()
-                        
-                        st.download_button(
-                            "Download PDF Report",
-                            data=pdf_bytes,
-                            file_name=os.path.basename(pdf_path),
-                            mime="application/pdf"
-                        )
-                        
-                        # Clean up the file
-                        os.remove(pdf_path)
-                    else:
-                        st.error(f"Failed to generate PDF: {pdf_path}")
         
         # Import data
         st.markdown("#### Import Data")
