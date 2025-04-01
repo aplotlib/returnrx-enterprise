@@ -5184,9 +5184,42 @@ def main():
     # Route to appropriate content
     route_content()
 
-
 if __name__ == "__main__":
     main()
+
+# ⬇️ Paste the safe variable initialization RIGHT HERE
+# Ensure all calculated variables exist before use (safe defaults)
+avoided_returns = locals().get("avoided_returns", 0.0)
+monthly_net = locals().get("monthly_net", 0.0)
+annual_net = locals().get("annual_net", 0.0)
+new_return_rate = locals().get("new_return_rate", 0.0)
+reduction_rate = locals().get("reduction_rate", 0.0)
+solution_cost = locals().get("solution_cost", 0.0)
+annual_roi = None
+breakeven_months = None
+
+# ROI & breakeven
+if solution_cost > 0 and monthly_net > 0:
+    breakeven_months = solution_cost / monthly_net
+    annual_roi = (annual_net / solution_cost) * 100
+
+# Display preview metrics
+st.markdown("### Impact Preview")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
+    st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
+
+with col2:
+    st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
+    st.metric("Breakeven Time", f"{breakeven_months:.1f} months" if breakeven_months else "N/A")
+
+with col3:
+    st.metric("Annual Net Benefit", f"${annual_net:.2f}")
+    st.metric("Annual ROI", f"{annual_roi:.1f}%" if annual_roi else "N/A")
+
+
 
 # Assumes these values are initialized earlier
 # Just making sure monthly_net and annual_net exist
