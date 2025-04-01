@@ -1,5 +1,5 @@
 """
-ReturnRx Enterprise - Advanced Return Analytics Platform
+ReturnRx - Advanced Return Analytics Platform
 A comprehensive analytics tool for evaluating and optimizing e-commerce return reduction investments.
 
 This application helps businesses analyze return reduction strategies with precise ROI calculations,
@@ -1315,16 +1315,37 @@ class ReturnOptimizer:
             
             # Add scenario rows
             for _, row in self.scenarios.iterrows():
+                # Handle each field properly to avoid f-string syntax errors
+                scenario_name = row['scenario_name']
+                sku = row['sku']
+                solution = row['solution']
+                solution_cost = f"${row['solution_cost']:,.2f}"
+                reduction_rate = f"{row['reduction_rate']:.1f}%"
+                
+                # Handle conditional fields separately
+                if pd.notna(row['roi']):
+                    roi_display = f"{row['roi']:.1f}%"
+                else:
+                    roi_display = "N/A"
+                    
+                if pd.notna(row['break_even_months']):
+                    breakeven_display = f"{row['break_even_months']:.1f} months"
+                else:
+                    breakeven_display = "N/A"
+                    
+                net_benefit = f"${row['net_benefit']:,.2f}"
+                
+                # Now add the row with proper values
                 html_content += f"""
                 <tr>
-                    <td>{row['scenario_name']}</td>
-                    <td>{row['sku']}</td>
-                    <td>{row['solution']}</td>
-                    <td>${row['solution_cost']:,.2f}</td>
-                    <td>{row['reduction_rate']:.1f}%</td>
-                    <td>{row['roi']:.1f}% if not pd.isna(row['roi']) else 'N/A'}</td>
-                    <td>{row['break_even_months']:.1f} months if not pd.isna(row['break_even_months']) else 'N/A'}</td>
-                    <td>${row['net_benefit']:,.2f}</td>
+                    <td>{scenario_name}</td>
+                    <td>{sku}</td>
+                    <td>{solution}</td>
+                    <td>{solution_cost}</td>
+                    <td>{reduction_rate}</td>
+                    <td>{roi_display}</td>
+                    <td>{breakeven_display}</td>
+                    <td>{net_benefit}</td>
                 </tr>
                 """
             
@@ -5061,11 +5082,22 @@ def display_scenario_comparison():
                     # Add data rows
                     pdf.set_font("Arial", size=9)
                     for _, row in comparison_df.iterrows():
+                        # First column: scenario name
                         pdf.cell(col_widths[0], 10, str(row['scenario_name']), border=1)
-                        pdf.cell(col_widths[1], 10, f"${row['solution_cost']:,.2f}", border=1)
-                        pdf.cell(col_widths[2], 10, f"{row['reduction_rate']:.1f}%", border=1)
                         
-                        roi_val = f"{row['roi']:.1f}%" if pd.notna(row['roi']) else "N/A"
+                        # Second column: solution cost
+                        solution_cost_val = f"${row['solution_cost']:,.2f}"
+                        pdf.cell(col_widths[1], 10, solution_cost_val, border=1)
+                        
+                        # Third column: reduction rate
+                        reduction_rate_val = f"{row['reduction_rate']:.1f}%"
+                        pdf.cell(col_widths[2], 10, reduction_rate_val, border=1)
+                        
+                        # Fourth column: ROI
+                        if pd.notna(row['roi']):
+                            roi_val = f"{row['roi']:.1f}%"
+                        else:
+                            roi_val = "N/A"
                         pdf.cell(col_widths[3], 10, roi_val, border=1)
                         
                         be_val = f"{row['break_even_months']:.1f}" if pd.notna(row['break_even_months']) else "N/A"
@@ -5088,7 +5120,7 @@ def display_scenario_comparison():
                     if best_roi_idx is not None:
                         best_roi_scenario = comparison_df.loc[best_roi_idx, 'scenario_name']
                         best_roi = comparison_df.loc[best_roi_idx, 'roi']
-                        pdf.cell(200, 10, f"Best ROI: {best_roi_scenario} ({best_roi:.1f}%)", ln=True)
+                                                        pdf.cell(200, 10, f"Best ROI: {best_roi_scenario} ({best_roi:.1f}%)", ln=True)
                     
                     if best_be_idx is not None:
                         best_be_scenario = comparison_df.loc[best_be_idx, 'scenario_name']
