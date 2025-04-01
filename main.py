@@ -5194,8 +5194,8 @@ else:
     annual_roi = None
             
             # Display preview metrics
-            st.markdown("### Impact Preview")
-            col1, col2, col3 = st.columns(3)
+    st.markdown("### Impact Preview")
+    col1, col2, col3 = st.columns(3)
             
             with col1:
                 st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
