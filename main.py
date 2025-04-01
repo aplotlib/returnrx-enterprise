@@ -5194,6 +5194,35 @@ def main():
 if __name__ == "__main__":
     main()
 
+# ⬇️ Pull wizard data safely before using it
+wizard = st.session_state.get("wizard_data", {})
+
+solution_cost = wizard.get("solution_cost", 0.0)
+additional_cost_per_item = wizard.get("additional_cost_per_item", 0.0)
+reduction_rate = wizard.get("reduction_rate", 0.0)
+risk_rating = wizard.get("risk_rating", "")
+sales_30 = wizard.get("sales_30", 0)
+returns_30 = wizard.get("returns_30", 0)
+avg_sale_price = wizard.get("avg_sale_price", 0.0)
+current_unit_cost = wizard.get("current_unit_cost", 0.0)
+
+# Calculate preview financials if data exists
+if sales_30 > 0 and returns_30 > 0:
+    return_rate = (returns_30 / sales_30) * 100
+    avoided_returns = returns_30 * (reduction_rate / 100)
+    new_return_rate = return_rate - reduction_rate
+    new_unit_cost = current_unit_cost + additional_cost_per_item
+    monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
+    monthly_cost = sales_30 * additional_cost_per_item
+    monthly_net = monthly_savings - monthly_cost
+    annual_net = monthly_net * 12
+else:
+    avoided_returns = 0
+    new_return_rate = 0
+    monthly_net = 0
+    annual_net = 0
+
+
 # ⬇️ Paste the safe variable initialization RIGHT HERE
 # Ensure all calculated variables exist before use (safe defaults)
 avoided_returns = locals().get("avoided_returns", 0.0)
