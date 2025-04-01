@@ -19,6 +19,13 @@ import scipy.stats as stats
 import warnings
 warnings.filterwarnings('ignore')
 
+# Fallback for rerun depending on Streamlit version
+import streamlit as st
+
+if not hasattr(st, "rerun") and hasattr(st, "experimental_rerun"):
+    st.rerun = st.experimental_rerun  # compatibility shim
+
+
 # App configuration
 st.set_page_config(
     page_title="ReturnRx Enterprise | Advanced Return Analytics Platform",
