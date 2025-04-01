@@ -5197,9 +5197,9 @@ else:
     st.markdown("### Impact Preview")
     col1, col2, col3 = st.columns(3)
             
-            with col1:
-                st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
-                st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
+with col1:
+        st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
+        st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
             
             with col2:
                 st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
