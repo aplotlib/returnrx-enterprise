@@ -1628,7 +1628,7 @@ def create_scenario_wizard():
             
             # Go to next step
             st.session_state.wizard_step = 2
-            st.rerun()()
+            st.rerun()
     
     # Step 2: Sales and Returns Data
     elif st.session_state.wizard_step == 2:
@@ -1699,7 +1699,7 @@ def create_scenario_wizard():
         with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 1
-                st.rerun()()
+                st.rerun()
         
         with col2:
             if st.button("Next: Return Solution"):
@@ -1733,7 +1733,7 @@ def create_scenario_wizard():
                 
                 # Go to next step
                 st.session_state.wizard_step = 3
-                st.rerun()()
+                st.rerun()
     
     # Step 3: Return Solution
     elif st.session_state.wizard_step == 3:
@@ -1812,7 +1812,7 @@ def create_scenario_wizard():
         with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 2
-                st.rerun()()
+                st.rerun()
         
         with col2:
             if st.button("Next: Cost & Impact"):
@@ -1831,7 +1831,7 @@ def create_scenario_wizard():
                 
                 # Go to next step
                 st.session_state.wizard_step = 4
-                st.rerun()()
+                st.rerun()
     
     # Step 4: Cost and Impact
     elif st.session_state.wizard_step == 4:
@@ -1952,7 +1952,7 @@ def create_scenario_wizard():
         with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 4
-                st.rerun()()
+                st.rerun()
         
         with col2:
             if st.button("Save Scenario"):
@@ -1995,7 +1995,7 @@ def create_scenario_wizard():
                     
                     # Redirect to dashboard
                     st.session_state.nav_option = "Dashboard"
-                    st.rerun()()
+                    st.rerun()
                 else:
                     st.error(message)
     
@@ -2196,7 +2196,7 @@ def display_scenario_table(df):
                 if st.button("Run Monte Carlo", key="monte_carlo_btn"):
                     st.session_state['monte_carlo_scenario'] = selected_uid
                     st.session_state['nav_option'] = "Monte Carlo"
-                    st.rerun()()
+                    st.rerun()
             
             with col2:
                 if st.button("Compare Scenarios", key="compare_btn"):
@@ -2308,7 +2308,7 @@ def display_scenario_details(uid):
     if st.button("← Return to Dashboard"):
         st.session_state['view_scenario'] = False
         st.session_state['selected_scenario'] = None
-        st.rerun()()
+        st.rerun()
 
 def display_scenario_overview(scenario):
     """Display overview of scenario details"""
@@ -4419,7 +4419,7 @@ def display_scenario_comparison():
                 # If we have at least 2 scenarios, show comparison button
                 if len(compare_list) >= 2:
                     if st.button("Compare Selected Scenarios"):
-                        st.rerun()()
+                        st.rerun()
         else:
             st.warning("No scenarios available. Please add scenarios first.")
             return
@@ -4450,12 +4450,12 @@ def display_scenario_comparison():
         with col1:
             if st.button("Clear Comparison List"):
                 st.session_state['compare_list'] = []
-                st.rerun()()
+                st.rerun()
         
         with col2:
             if st.button("Add More Scenarios"):
                 st.session_state['compare_list'] = []  # Clear to restart
-                st.rerun()()
+                st.rerun()
         
         # Basic comparison table
         st.markdown("### Key Metrics Comparison")
@@ -4946,7 +4946,7 @@ def display_settings():
         if selected_mode != st.session_state.app_mode:
             st.session_state.app_mode = selected_mode
             st.success(f"Switched to {selected_mode} Mode")
-            st.rerun()()
+            st.rerun()
         
         # Theme settings
         st.markdown("#### UI Theme")
@@ -4967,7 +4967,7 @@ def display_settings():
         if selected_theme != st.session_state.color_scheme:
             st.session_state.color_scheme = selected_theme
             st.success(f"Theme updated to {theme_labels[selected_theme]}")
-            st.rerun()()
+            st.rerun()
         
         # Reset data
         st.markdown("#### Data Management")
@@ -4986,7 +4986,7 @@ def display_settings():
                     st.session_state.compare_list = []
                 
                 st.success("All data cleared!")
-                st.rerun()()
+                st.rerun()
     
     # Advanced Settings (only in advanced mode)
     if st.session_state.app_mode == "Advanced":
@@ -5079,292 +5079,6 @@ def display_help():
         
         ### Need More Help?
         
-        Contact support at support@returnrx.com
+        Contact support at alexander.popoff@vivehealth.com
         """)
 
-# Sidebar Navigation
-def display_sidebar():
-    """Display app sidebar with navigation and help"""
-    with st.sidebar:
-        st.image("https://via.placeholder.com/150x60?text=ReturnRx", width=150)
-        
-        # Mode toggle
-        st.markdown(f"""
-        <div class="switch-container">
-            <span class="switch-label">Basic</span>
-            <label class="switch">
-                <input type="checkbox" {"checked" if st.session_state.app_mode == "Advanced" else ""}>
-                <span class="slider"></span>
-            </label>
-            <span class="switch-label">Advanced</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("## Navigation")
-        
-        # Navigation options
-        nav_options = ["Dashboard", "Add New Scenario", "Portfolio Analysis", "What-If Analysis", "Settings"]
-        
-        # Add advanced mode options
-        if st.session_state.app_mode == "Advanced":
-            nav_options.insert(3, "Monte Carlo")
-            nav_options.insert(4, "Compare Scenarios")
-        
-        nav_option = st.radio(
-            "Go to:",
-            nav_options,
-            index=0 if 'nav_option' not in st.session_state else nav_options.index(st.session_state.nav_option)
-        )
-        
-        # Update navigation state
-        if 'nav_option' not in st.session_state or st.session_state.nav_option != nav_option:
-            st.session_state.nav_option = nav_option
-        
-        st.markdown("---")
-        
-        # Scenario Wizard button (only in basic mode)
-        if st.session_state.app_mode == "Basic":
-            if st.button("Scenario Creation Wizard", key="wizard_btn"):
-                st.session_state.wizard_mode = True
-                st.session_state.nav_option = "Add New Scenario"
-                st.rerun()()
-        
-        # Help section
-        display_help()
-        
-        # Footer
-        st.markdown("---")
-        st.caption(f"ReturnRx Enterprise v2.0 | {st.session_state.app_mode} Mode")
-        st.caption("© 2025 ReturnRx Analytics")
-
-# Main content router
-def route_content():
-    """Route to appropriate content based on navigation state"""
-    # Display header
-    display_header()
-    
-    # Load custom CSS
-    load_custom_css()
-    
-    # Route based on navigation option
-    if 'nav_option' not in st.session_state:
-        st.session_state.nav_option = "Dashboard"
-    
-    # Handle view scenario details if selected
-    if 'view_scenario' in st.session_state and st.session_state['view_scenario'] and 'selected_scenario' in st.session_state:
-        display_scenario_details(st.session_state['selected_scenario'])
-    else:
-        # Regular navigation
-        if st.session_state.nav_option == "Dashboard":
-            display_metrics_overview(optimizer.scenarios)
-            display_scenario_table(optimizer.scenarios)
-        
-        elif st.session_state.nav_option == "Add New Scenario":
-            if 'wizard_mode' in st.session_state and st.session_state.wizard_mode:
-                create_scenario_form(wizard_mode=True)
-            else:
-                create_scenario_form()
-        
-        elif st.session_state.nav_option == "Portfolio Analysis":
-            display_portfolio_analysis(optimizer.scenarios)
-        
-        elif st.session_state.nav_option == "What-If Analysis":
-            display_what_if_analysis()
-        
-        elif st.session_state.nav_option == "Monte Carlo":
-            display_monte_carlo_simulation()
-        
-        elif st.session_state.nav_option == "Compare Scenarios":
-            display_scenario_comparison()
-        
-        elif st.session_state.nav_option == "Settings":
-            display_settings()
-
-# Refactored and fully debugged version of the specified Streamlit section
-
-# Entry point for app
-def main():
-    """Entry point for the application."""
-    # Display sidebar
-    display_sidebar()
-
-    # Route to appropriate content
-    route_content()
-
-if __name__ == "__main__":
-    main()
-
-# ⬇️ Pull wizard data safely before using it
-wizard = st.session_state.get("wizard_data", {})
-
-solution_cost = wizard.get("solution_cost", 0.0)
-additional_cost_per_item = wizard.get("additional_cost_per_item", 0.0)
-reduction_rate = wizard.get("reduction_rate", 0.0)
-risk_rating = wizard.get("risk_rating", "")
-sales_30 = wizard.get("sales_30", 0)
-returns_30 = wizard.get("returns_30", 0)
-avg_sale_price = wizard.get("avg_sale_price", 0.0)
-current_unit_cost = wizard.get("current_unit_cost", 0.0)
-
-# Calculate preview financials if data exists
-if sales_30 > 0 and returns_30 > 0:
-    return_rate = (returns_30 / sales_30) * 100
-    avoided_returns = returns_30 * (reduction_rate / 100)
-    new_return_rate = return_rate - reduction_rate
-    new_unit_cost = current_unit_cost + additional_cost_per_item
-    monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
-    monthly_cost = sales_30 * additional_cost_per_item
-    monthly_net = monthly_savings - monthly_cost
-    annual_net = monthly_net * 12
-else:
-    avoided_returns = 0
-    new_return_rate = 0
-    monthly_net = 0
-    annual_net = 0
-
-
-# ⬇️ Paste the safe variable initialization RIGHT HERE
-# Ensure all calculated variables exist before use (safe defaults)
-avoided_returns = locals().get("avoided_returns", 0.0)
-monthly_net = locals().get("monthly_net", 0.0)
-annual_net = locals().get("annual_net", 0.0)
-new_return_rate = locals().get("new_return_rate", 0.0)
-reduction_rate = locals().get("reduction_rate", 0.0)
-solution_cost = locals().get("solution_cost", 0.0)
-annual_roi = None
-breakeven_months = None
-
-# ROI & breakeven
-if solution_cost > 0 and monthly_net > 0:
-    breakeven_months = solution_cost / monthly_net
-    annual_roi = (annual_net / solution_cost) * 100
-
-# Display preview metrics
-st.markdown("### Impact Preview")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
-    st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
-
-with col2:
-    st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
-    st.metric("Breakeven Time", f"{breakeven_months:.1f} months" if breakeven_months else "N/A")
-
-with col3:
-    st.metric("Annual Net Benefit", f"${annual_net:.2f}")
-    st.metric("Annual ROI", f"{annual_roi:.1f}%" if annual_roi else "N/A")
-
-
-
-# Assumes these values are initialized earlier
-# Just making sure monthly_net and annual_net exist
-if 'monthly_net' not in locals():
-    monthly_net = 0
-if 'annual_net' not in locals():
-    annual_net = 0
-if 'solution_cost' not in locals():
-    solution_cost = 0
-
-# Calculate ROI and breakeven
-if solution_cost > 0 and monthly_net > 0:
-    breakeven_months = solution_cost / monthly_net
-    annual_roi = (annual_net / solution_cost) * 100
-else:
-    breakeven_months = None
-    annual_roi = None
-
-# Display preview metrics
-st.markdown("### Impact Preview")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Monthly Avoided Returns", f"{avoided_returns:.1f} units")
-    st.metric("Monthly Net Benefit", f"${monthly_net:.2f}")
-
-with col2:
-    st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
-    if breakeven_months:
-        st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
-    else:
-        st.metric("Breakeven Time", "N/A")
-
-with col3:
-    st.metric("Annual Net Benefit", f"${annual_net:.2f}")
-    if annual_roi:
-        st.metric("Annual ROI", f"{annual_roi:.1f}%")
-    else:
-        st.metric("Annual ROI", "N/A")
-
-# Navigation buttons
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("← Back"):
-        st.session_state.wizard_step = 3
-        st.rerun()()
-
-with col2:
-    if st.button("Next: Review & Save"):
-        if solution_cost <= 0:
-            st.warning("Solution cost is set to zero. Are you sure this is correct?")
-
-        st.session_state.wizard_data.update({
-            'solution_cost': solution_cost,
-            'additional_cost_per_item': additional_cost_per_item,
-            'reduction_rate': reduction_rate,
-            'risk_rating': risk_rating
-        })
-
-        st.session_state.wizard_step = 5
-        st.rerun()()
-
-# Step 5: Review and Save
-if st.session_state.wizard_step == 5:
-    st.subheader("Step 5: Review & Save")
-    st.markdown("### Scenario Summary")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("#### Basic Information")
-        st.markdown(f"**Scenario Name:** {st.session_state.wizard_data.get('scenario_name', '')}")
-        st.markdown(f"**SKU/Product ID:** {st.session_state.wizard_data.get('sku', '')}")
-        st.markdown(f"**Sales Channel:** {st.session_state.wizard_data.get('sales_channel', '')}")
-        st.markdown(f"**Category:** {st.session_state.wizard_data.get('tag', '')}")
-
-        st.markdown("#### Solution Details")
-        st.markdown(f"**Solution:** {st.session_state.wizard_data.get('solution', '')}")
-        st.markdown(f"**Implementation Time:** {st.session_state.wizard_data.get('implementation_time', '')}")
-        st.markdown(f"**Confidence Level:** {st.session_state.wizard_data.get('confidence_level', '')}")
-        st.markdown(f"**Risk Rating:** {st.session_state.wizard_data.get('risk_rating', '')}")
-
-    with col2:
-        st.markdown("#### Financial Data")
-        st.markdown(f"**Monthly Sales:** {st.session_state.wizard_data.get('sales_30', 0)} units")
-        st.markdown(f"**Monthly Returns:** {st.session_state.wizard_data.get('returns_30', 0)} units")
-        st.markdown(f"**Average Sale Price:** ${st.session_state.wizard_data.get('avg_sale_price', 0.0):.2f}")
-        st.markdown(f"**Current Unit Cost:** ${st.session_state.wizard_data.get('current_unit_cost', 0.0):.2f}")
-
-        st.markdown("#### Solution Costs & Impact")
-        st.markdown(f"**Solution Cost:** ${st.session_state.wizard_data.get('solution_cost', 0.0):.2f}")
-        st.markdown(f"**Additional Cost/Item:** ${st.session_state.wizard_data.get('additional_cost_per_item', 0.0):.2f}")
-        st.markdown(f"**Expected Reduction:** {st.session_state.wizard_data.get('reduction_rate', 0)}%")
-
-    # Recalculate financials just in case
-    sales_30 = st.session_state.wizard_data.get('sales_30', 0)
-    returns_30 = st.session_state.wizard_data.get('returns_30', 0)
-    avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
-    current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
-    reduction_rate = st.session_state.wizard_data.get('reduction_rate', 0)
-    solution_cost = st.session_state.wizard_data.get('solution_cost', 0.0)
-    additional_cost_per_item = st.session_state.wizard_data.get('additional_cost_per_item', 0.0)
-
-    if sales_30 > 0 and returns_30 > 0:
-        return_rate = (returns_30 / sales_30) * 100
-        avoided_returns = returns_30 * (reduction_rate / 100)
-        new_unit_cost = current_unit_cost + additional_cost_per_item
-        monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
-        monthly_cost = sales_30 * additional_cost_per_item
-        monthly_net = monthly_savings - monthly_cost
-        annual_net = monthly_net * 12
