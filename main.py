@@ -5189,7 +5189,7 @@ if __name__ == "__main__":
 if solution_cost > 0 and monthly_net > 0:
                 breakeven_months = solution_cost / monthly_net
                 annual_roi = (annual_net / solution_cost) * 100
-            else:
+    else:
                 breakeven_months = None
                 annual_roi = None
             
