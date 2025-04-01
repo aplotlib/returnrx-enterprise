@@ -5203,7 +5203,7 @@ with col1:
             
 with col2:
         st.metric("New Return Rate", f"{new_return_rate:.2f}%", f"-{reduction_rate:.0f}%")
-            if breakeven_months:
+        if breakeven_months:
         st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
             else:
                 st.metric("Breakeven Time", "N/A")
