@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 import streamlit as st
 
 if not hasattr(st, "rerun") and hasattr(st, "experimental_rerun"):
-    st.rerun = st.experimental_rerun  # compatibility shim
+    st.rerun = st.rerun()  # compatibility shim
 
 
 # App configuration
@@ -1628,7 +1628,7 @@ def create_scenario_wizard():
             
             # Go to next step
             st.session_state.wizard_step = 2
-            st.experimental_rerun()
+            st.rerun()()
     
     # Step 2: Sales and Returns Data
     elif st.session_state.wizard_step == 2:
@@ -1699,7 +1699,7 @@ def create_scenario_wizard():
         with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 1
-                st.experimental_rerun()
+                st.rerun()()
         
         with col2:
             if st.button("Next: Return Solution"):
@@ -1733,7 +1733,7 @@ def create_scenario_wizard():
                 
                 # Go to next step
                 st.session_state.wizard_step = 3
-                st.experimental_rerun()
+                st.rerun()()
     
     # Step 3: Return Solution
     elif st.session_state.wizard_step == 3:
@@ -1812,7 +1812,7 @@ def create_scenario_wizard():
         with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 2
-                st.experimental_rerun()
+                st.rerun()()
         
         with col2:
             if st.button("Next: Cost & Impact"):
@@ -1831,7 +1831,7 @@ def create_scenario_wizard():
                 
                 # Go to next step
                 st.session_state.wizard_step = 4
-                st.experimental_rerun()
+                st.rerun()()
     
     # Step 4: Cost and Impact
     elif st.session_state.wizard_step == 4:
@@ -1952,7 +1952,7 @@ def create_scenario_wizard():
         with col1:
             if st.button("← Back"):
                 st.session_state.wizard_step = 4
-                st.experimental_rerun()
+                st.rerun()()
         
         with col2:
             if st.button("Save Scenario"):
@@ -1995,7 +1995,7 @@ def create_scenario_wizard():
                     
                     # Redirect to dashboard
                     st.session_state.nav_option = "Dashboard"
-                    st.experimental_rerun()
+                    st.rerun()()
                 else:
                     st.error(message)
     
@@ -2196,7 +2196,7 @@ def display_scenario_table(df):
                 if st.button("Run Monte Carlo", key="monte_carlo_btn"):
                     st.session_state['monte_carlo_scenario'] = selected_uid
                     st.session_state['nav_option'] = "Monte Carlo"
-                    st.experimental_rerun()
+                    st.rerun()()
             
             with col2:
                 if st.button("Compare Scenarios", key="compare_btn"):
@@ -2308,7 +2308,7 @@ def display_scenario_details(uid):
     if st.button("← Return to Dashboard"):
         st.session_state['view_scenario'] = False
         st.session_state['selected_scenario'] = None
-        st.experimental_rerun()
+        st.rerun()()
 
 def display_scenario_overview(scenario):
     """Display overview of scenario details"""
@@ -4419,7 +4419,7 @@ def display_scenario_comparison():
                 # If we have at least 2 scenarios, show comparison button
                 if len(compare_list) >= 2:
                     if st.button("Compare Selected Scenarios"):
-                        st.experimental_rerun()
+                        st.rerun()()
         else:
             st.warning("No scenarios available. Please add scenarios first.")
             return
@@ -4450,12 +4450,12 @@ def display_scenario_comparison():
         with col1:
             if st.button("Clear Comparison List"):
                 st.session_state['compare_list'] = []
-                st.experimental_rerun()
+                st.rerun()()
         
         with col2:
             if st.button("Add More Scenarios"):
                 st.session_state['compare_list'] = []  # Clear to restart
-                st.experimental_rerun()
+                st.rerun()()
         
         # Basic comparison table
         st.markdown("### Key Metrics Comparison")
@@ -4946,7 +4946,7 @@ def display_settings():
         if selected_mode != st.session_state.app_mode:
             st.session_state.app_mode = selected_mode
             st.success(f"Switched to {selected_mode} Mode")
-            st.experimental_rerun()
+            st.rerun()()
         
         # Theme settings
         st.markdown("#### UI Theme")
@@ -4967,7 +4967,7 @@ def display_settings():
         if selected_theme != st.session_state.color_scheme:
             st.session_state.color_scheme = selected_theme
             st.success(f"Theme updated to {theme_labels[selected_theme]}")
-            st.experimental_rerun()
+            st.rerun()()
         
         # Reset data
         st.markdown("#### Data Management")
@@ -4986,7 +4986,7 @@ def display_settings():
                     st.session_state.compare_list = []
                 
                 st.success("All data cleared!")
-                st.experimental_rerun()
+                st.rerun()()
     
     # Advanced Settings (only in advanced mode)
     if st.session_state.app_mode == "Advanced":
@@ -5127,7 +5127,7 @@ def display_sidebar():
             if st.button("Scenario Creation Wizard", key="wizard_btn"):
                 st.session_state.wizard_mode = True
                 st.session_state.nav_option = "Add New Scenario"
-                st.experimental_rerun()
+                st.rerun()()
         
         # Help section
         display_help()
@@ -5302,7 +5302,7 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("← Back"):
         st.session_state.wizard_step = 3
-        st.experimental_rerun()
+        st.rerun()()
 
 with col2:
     if st.button("Next: Review & Save"):
@@ -5317,7 +5317,7 @@ with col2:
         })
 
         st.session_state.wizard_step = 5
-        st.experimental_rerun()
+        st.rerun()()
 
 # Step 5: Review and Save
 if st.session_state.wizard_step == 5:
