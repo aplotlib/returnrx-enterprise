@@ -4761,7 +4761,7 @@ def display_scenario_comparison():
         
         # Export comparison
         st.markdown("### Export Comparison")
-        export_format = st.selectbox("Export Format", ["Excel", "CSV", "PDF"])
+        export_format = st.selectbox("Export Format", ["Excel", "CSV",])
         
         if st.button("Export Comparison"):
             if export_format == "Excel":
@@ -4821,111 +4821,6 @@ def display_scenario_comparison():
                     file_name="scenario_comparison.csv",
                     mime="text/csv"
                 )
-            
-            elif export_format == "PDF":
-                try:
-                    # Creating a PDF with comparison data
-                    pdf = FPDF()
-                    pdf.add_page()
-                    pdf.set_font("Arial", size=12)
-                    
-                    # Title
-                    pdf.set_font("Arial", 'B', 16)
-                    pdf.cell(200, 10, "Scenario Comparison Report", ln=True, align='C')
-                    pdf.ln(10)
-                    
-                    # Scenarios being compared
-                    pdf.set_font("Arial", 'B', 12)
-                    pdf.cell(200, 10, "Comparing Scenarios:", ln=True)
-                    pdf.set_font("Arial", size=10)
-                    
-                    for name in scenario_names:
-                        pdf.cell(200, 10, f"- {name}", ln=True)
-                    
-                    pdf.ln(5)
-                    
-                    # Key metrics table
-                    pdf.set_font("Arial", 'B', 12)
-                    pdf.cell(200, 10, "Key Metrics Comparison", ln=True)
-                    
-                    # Add table header
-                    pdf.set_font("Arial", 'B', 10)
-                    
-                    # Simplified table for PDF
-                    simple_cols = ['scenario_name', 'solution_cost', 'reduction_rate', 'roi', 'break_even_months', 'net_benefit']
-                    col_widths = [50, 30, 30, 30, 30, 30]
-                    
-                    # Create header
-                    headers = ['Scenario', 'Investment', 'Reduction', 'ROI', 'Breakeven', 'Net Benefit']
-                    for i, header in enumerate(headers):
-                        pdf.cell(col_widths[i], 10, header, border=1)
-                    pdf.ln()
-                    
-                    # Add data rows
-                    pdf.set_font("Arial", size=9)
-                    for _, row in comparison_df.iterrows():
-                        # First column: scenario name
-                        pdf.cell(col_widths[0], 10, str(row['scenario_name']), border=1)
-                        
-                        # Second column: solution cost
-                        solution_cost_val = f"${row['solution_cost']:,.2f}"
-                        pdf.cell(col_widths[1], 10, solution_cost_val, border=1)
-                        
-                        # Third column: reduction rate
-                        reduction_rate_val = f"{row['reduction_rate']:.1f}%"
-                        pdf.cell(col_widths[2], 10, reduction_rate_val, border=1)
-                        
-                        # Fourth column: ROI
-                        if pd.notna(row['roi']):
-                            roi_val = f"{row['roi']:.1f}%"
-                        else:
-                            roi_val = "N/A"
-                        pdf.cell(col_widths[3], 10, roi_val, border=1)
-                        
-                        be_val = f"{row['break_even_months']:.1f}" if pd.notna(row['break_even_months']) else "N/A"
-                        pdf.cell(col_widths[4], 10, be_val, border=1)
-                        
-                        pdf.cell(col_widths[5], 10, f"${row['net_benefit']:,.2f}", border=1)
-                        pdf.ln()
-                    
-                    pdf.ln(10)
-                    
-                    # Add conclusion
-                    pdf.set_font("Arial", 'B', 12)
-                    pdf.cell(200, 10, "Comparison Summary", ln=True)
-                    pdf.set_font("Arial", size=10)
-                    
-                    # Find best ROI and breakeven
-                    best_roi_idx = comparison_df['roi'].idxmax() if not comparison_df['roi'].isna().all() else None
-                    best_be_idx = comparison_df['break_even_months'].idxmin() if not comparison_df['break_even_months'].isna().all() else None
-                    
-                    if best_roi_idx is not None:
-                        best_roi_scenario = comparison_df.loc[best_roi_idx, 'scenario_name']
-                        best_roi = comparison_df.loc[best_roi_idx, 'roi']
-                                                        pdf.cell(200, 10, f"Best ROI: {best_roi_scenario} ({best_roi:.1f}%)", ln=True)
-                    
-                    if best_be_idx is not None:
-                        best_be_scenario = comparison_df.loc[best_be_idx, 'scenario_name']
-                        best_be = comparison_df.loc[best_be_idx, 'break_even_months']
-                        pdf.cell(200, 10, f"Fastest Breakeven: {best_be_scenario} ({best_be:.1f} months)", ln=True)
-                    
-                    # Save PDF
-                    filename = "scenario_comparison.pdf"
-                    pdf.output(filename)
-                    
-                    # Display download link
-                    with open(filename, "rb") as f:
-                        pdf_bytes = f.read()
-                    
-                    st.download_button(
-                        label="Download PDF Comparison",
-                        data=pdf_bytes,
-                        file_name=filename,
-                        mime="application/pdf"
-                    )
-                    
-                except Exception as e:
-                    st.error(f"Error generating PDF: {str(e)}")
     else:
         st.info("Please select at least 2 scenarios to compare.")
 
@@ -5109,13 +5004,6 @@ def display_settings():
         with col2:
             st.markdown("#### Export Settings")
             
-            # PDF Report template selection
-            report_template = st.selectbox("PDF Report Template", 
-                                         ["Standard", "Executive Summary", "Detailed"])
-            
-            if 'report_template' not in st.session_state or st.session_state.report_template != report_template:
-                st.session_state.report_template = report_template
-                st.success(f"PDF report template set to {report_template}")
         
         # Feature toggles
         st.markdown("#### Feature Toggles")
@@ -5168,7 +5056,7 @@ def display_help():
         - Run Monte Carlo simulations to assess risk
         
         **3. Export & Share**
-        - Export data in CSV, Excel, or PDF formats
+        - Export data in CSV, or Excel formats
         - Generate comprehensive reports
         - Share insights with stakeholders
         
