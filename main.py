@@ -1,5 +1,5 @@
 """
-ReturnRx - Advanced Return Analytics Platform
+ReturnRx Enterprise - Advanced Return Analytics Platform
 A comprehensive analytics tool for evaluating and optimizing e-commerce return reduction investments.
 
 This application helps businesses analyze return reduction strategies with precise ROI calculations,
@@ -1366,13 +1366,26 @@ class ReturnOptimizer:
             # Add top performers (sort by ROI)
             top_performers = self.scenarios.sort_values(by='roi', ascending=False).head(5)
             for i, (_, row) in enumerate(top_performers.iterrows(), 1):
+                # Handle ROI formatting separately to avoid f-string syntax errors
+                if pd.notna(row['roi']):
+                    roi_display = f"{row['roi']:.1f}%"
+                else:
+                    roi_display = "N/A"
+                    
+                # Handle net benefit formatting
+                net_benefit_display = f"${row['net_benefit']:,.2f}"
+                
+                # Handle reduction rate formatting
+                reduction_display = f"{row['reduction_rate']:.1f}%"
+                
+                # Now build the table row with properly formatted values
                 html_content += f"""
                 <tr>
                     <td>{i}</td>
                     <td>{row['scenario_name']}</td>
-                    <td>{row['roi']:.1f}% if not pd.isna(row['roi']) else 'N/A'}</td>
-                    <td>${row['net_benefit']:,.2f}</td>
-                    <td>{row['reduction_rate']:.1f}%</td>
+                    <td>{roi_display}</td>
+                    <td>{net_benefit_display}</td>
+                    <td>{reduction_display}</td>
                 </tr>
                 """
             
