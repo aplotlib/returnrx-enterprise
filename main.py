@@ -1,11 +1,3 @@
-"""
-ReturnRx Enterprise - Advanced Return Analytics Platform
-A comprehensive analytics tool for evaluating and optimizing e-commerce return reduction investments.
-
-This application helps businesses analyze return reduction strategies with precise ROI calculations,
-Monte Carlo simulations, scenario planning, and interactive visualizations.
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -24,7 +16,6 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
-from fpdf import FPDF
 import warnings
 warnings.filterwarnings('ignore')
 
