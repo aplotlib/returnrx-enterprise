@@ -1,4 +1,16 @@
-"""
+# Define color scheme for medical device context
+COLOR_SCHEME = {
+    "primary": "#0055a5",    # Medical blue
+    "secondary": "#00a3a3",  # Teal
+    "background": "#f0f4f8",
+    "positive": "#00796b",   # Dark teal
+    "negative": "#c62828",   # Medical red
+    "warning": "#ff8f00",    # Amber
+    "neutral": "#1565c0",    # Darker blue
+    "text_dark": "#263238",
+    "text_light": "#ecf0f1",
+    "regulatory": "#4527a0"  # Purple for regulatory elements
+}"""
 MedDevROI - Medical Device ROI & Risk Analysis Suite
 A comprehensive analytics tool for evaluating medical device investments and risks.
 
@@ -50,6 +62,33 @@ COLOR_SCHEME = {
 # Custom CSS with medical focus
 st.markdown("""
 <style>
+    /* Hide default Streamlit top bar buttons to avoid confusion with our custom nav */
+    .stButton > button {
+        margin-top: -40px;
+        visibility: hidden;
+        height: 0;
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Show only our top navigation buttons */
+    div[data-testid="stHorizontalBlock"] .stButton > button {
+        visibility: visible !important;
+        height: auto !important;
+        padding: 0.5rem 1rem !important;
+        margin: 0.25rem !important;
+        background-color: transparent;
+        color: #0055a5;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+        background-color: rgba(0, 85, 165, 0.1);
+        color: #003c75;
+    }
+    
     /* Main styling */
     body, .stApp {
         background-color: #f0f4f8;
@@ -62,21 +101,6 @@ st.markdown("""
         font-family: 'Roboto', sans-serif;
         font-weight: 500;
         color: #0055a5;
-    }
-    
-    /* Button styling */
-    .stButton>button {
-        background-color: #0055a5;
-        color: white;
-        border-radius: 4px;
-        border: none;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #003c75;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     /* Form styling */
@@ -234,27 +258,21 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
-    /* Custom navigation menu */
-    .nav-link {
-        display: block;
-        padding: 0.75rem 1rem;
-        margin-bottom: 0.5rem;
-        border-radius: 0.25rem;
-        text-decoration: none;
-        transition: all 0.2s;
-        font-weight: 500;
-        color: #f8f9fa;
-        background-color: rgba(255, 255, 255, 0.1);
+    /* Top navigation bar */
+    .topnav {
+        background-color: #0055a5;
+        overflow: hidden;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-    }
-    .nav-link.active {
-        background-color: #00a3a3;
-        color: white;
-    }
-    .nav-link i {
-        margin-right: 0.5rem;
+    
+    /* Hide navigation area */
+    section[data-testid="stHorizontalBlock"]:first-of-type {
+        visibility: hidden;
+        height: 0;
+        padding: 0;
+        margin: 0;
     }
     
     /* Dashboard cards */
@@ -703,27 +721,8 @@ class ReturnOptimizer:
 
 # App functions
 def display_header():
-    """Display app header with modern styling"""
-    # Create a cleaner header with a slight gradient background
-    st.markdown("""
-    <div style="background: linear-gradient(90deg, #0055a5, #006699); 
-                border-radius: 8px; 
-                padding: 1.5rem; 
-                margin-bottom: 2rem;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <h1 style="color: white; margin: 0; font-size: 2rem;">MedDevROI Suite</h1>
-                <p style="color: rgba(255, 255, 255, 0.8); margin: 0.5rem 0 0 0;">
-                    Medical Device ROI & Risk Analysis Platform
-                </p>
-            </div>
-            <div style="text-align: right; color: white;">
-                <p style="margin: 0; font-size: 0.9rem;">Last updated: {}</p>
-            </div>
-        </div>
-    </div>
-    """.format(datetime.now().strftime("%b %d, %Y")), unsafe_allow_html=True)
+    """Header is now handled by the top navigation bar"""
+    pass
 
 def display_metrics_overview(df):
     """Display key metrics overview cards"""
@@ -3222,15 +3221,59 @@ with st.sidebar:
     st.caption("MedDevROI v2.0 | Medical Device ROI & Risk Analysis Suite")
     st.caption("© 2025 MedDevROI Analytics")
 
-# Main content
-display_header()
+# Sidebar content (help only, no navigation)
+with st.sidebar:
+    st.markdown("## Help Resources")
+    
+    # Help section
+    with st.expander("📘 Help & Key Terms"):
+        st.markdown("""
+        ### Key Terms
+        - **Return Rate**: Percentage of devices returned or complained about
+        - **Reduction Rate**: Estimated reduction in returns after improvement
+        - **Break-even**: Time to recover the implementation investment
+        - **ROI**: Return on investment (net benefit / total investment)
+        - **Net Benefit**: Annual savings minus additional costs
+        
+        ### Key Formulas
+        - Return Rate = (Returns / Sales) × 100%
+        - Avoided Returns = Returns × Reduction Rate
+        - Net Benefit = Annual Savings - Annual Additional Costs
+        - Annual Savings = Avoided Returns × Savings Per Item
+        - ROI = (Net Benefit / Total Investment) × 100%
+        - Break-even Time = Total Investment / Monthly Net Benefit
+        """)
+    
+    with st.expander("🏥 Medical Device Classification"):
+        st.markdown("""
+        ### Device Classes
+        - **Class I**: Low risk devices with general controls
+        - **Class II**: Medium risk devices with special controls
+        - **Class III**: High risk devices requiring PMA
+        
+        ### Regulatory Pathways
+        - **510(k)**: Premarket notification for substantial equivalence
+        - **De Novo**: For novel low/moderate risk devices
+        - **PMA**: Premarket approval for high-risk devices
+        - **HDE**: Humanitarian device exemption for rare conditions
+        """)
+        
+    with st.expander("⚖️ Regulatory Impact Levels"):
+        st.markdown("""
+        ### Impact Levels
+        - **No impact**: No regulatory filing required
+        - **Letter to File**: Documentation in design history file
+        - **Special 510(k)**: Modified device notification
+        - **New submission**: New 510(k) or PMA supplement
+        """)
 
-# Handle view scenario details if selected
-if 'view_scenario' in st.session_state and st.session_state['view_scenario'] and 'selected_scenario' in st.session_state:
-    display_scenario_details(st.session_state['selected_scenario'])
+# Main content
+if st.session_state['view_scenario'] if 'view_scenario' in st.session_state else False:
+    if 'selected_scenario' in st.session_state:
+        display_scenario_details(st.session_state['selected_scenario'])
 else:
-    # Regular navigation based on sidebar selection
-    current_page = st.session_state.get('page', 'Dashboard')
+    # Regular navigation based on top bar selection
+    current_page = st.session_state.page
     
     if current_page == "Dashboard":
         display_metrics_overview(optimizer.scenarios)
