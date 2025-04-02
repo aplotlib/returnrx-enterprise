@@ -10,7 +10,8 @@ COLOR_SCHEME = {
     "text_dark": "#263238",
     "text_light": "#ecf0f1",
     "regulatory": "#4527a0"  # Purple for regulatory elements
-}"""
+}
+"""
 MedDevROI - Medical Device ROI & Risk Analysis Suite
 A comprehensive analytics tool for evaluating medical device investments and risks.
 
