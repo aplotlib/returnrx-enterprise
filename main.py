@@ -233,6 +233,55 @@ st.markdown("""
         padding: 1rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+    
+    /* Custom navigation menu */
+    .nav-link {
+        display: block;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-weight: 500;
+        color: #f8f9fa;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    .nav-link.active {
+        background-color: #00a3a3;
+        color: white;
+    }
+    .nav-link i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Dashboard cards */
+    .dashboard-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .dashboard-card-title {
+        font-weight: 600;
+        color: #0055a5;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Card grid layout */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-gap: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -654,22 +703,27 @@ class ReturnOptimizer:
 
 # App functions
 def display_header():
-    """Display app header with logo and navigation"""
-    col1, col2 = st.columns([1, 5])
-    
-    # Logo (placeholder - in a real app, replace with actual logo)
-    with col1:
-        st.markdown("""
-        <div style="text-align: center; padding: 10px">
-            <h1 style="font-size: 32px; margin: 0; color: #0055a5;">🏥</h1>
-            <p style="margin: 0; font-weight: 600; color: #00a3a3;">MedDevROI</p>
+    """Display app header with modern styling"""
+    # Create a cleaner header with a slight gradient background
+    st.markdown("""
+    <div style="background: linear-gradient(90deg, #0055a5, #006699); 
+                border-radius: 8px; 
+                padding: 1.5rem; 
+                margin-bottom: 2rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h1 style="color: white; margin: 0; font-size: 2rem;">MedDevROI Suite</h1>
+                <p style="color: rgba(255, 255, 255, 0.8); margin: 0.5rem 0 0 0;">
+                    Medical Device ROI & Risk Analysis Platform
+                </p>
+            </div>
+            <div style="text-align: right; color: white;">
+                <p style="margin: 0; font-size: 0.9rem;">Last updated: {}</p>
+            </div>
         </div>
-        """, unsafe_allow_html=True)
-    
-    # Title and description
-    with col2:
-        st.title("Medical Device ROI & Risk Analysis Suite")
-        st.caption("Evaluate medical device investments with precision to improve patient outcomes and bottom-line performance.")
+    </div>
+    """.format(datetime.now().strftime("%b %d, %Y")), unsafe_allow_html=True)
 
 def display_metrics_overview(df):
     """Display key metrics overview cards"""
@@ -689,61 +743,92 @@ def display_metrics_overview(df):
     total_adverse_events = df['adverse_events'].sum() if 'adverse_events' in df.columns else 0
     potential_adverse_reduction = df.apply(lambda x: x['adverse_events'] * (x['reduction_rate']/100), axis=1).sum() if 'adverse_events' in df.columns else 0
     
-    # Display metrics in cards
-    st.subheader("Portfolio Overview")
-    col1, col2, col3, col4 = st.columns(4)
+    # Display header
+    st.markdown("""
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">Portfolio Overview</h2>
+        <span style="color: #0055a5;">{} Active Scenarios</span>
+    </div>
+    """.format(total_scenarios), unsafe_allow_html=True)
     
-    with col1:
+    # Create a modern dashboard layout with cards
+    st.markdown('<div class="card-grid" style="grid-template-columns: repeat(4, 1fr);">', unsafe_allow_html=True)
+    
+    # Card 1: ROI
+    st.markdown(f"""
+    <div class="dashboard-card">
+        <h4 class="dashboard-card-title">Portfolio ROI</h4>
+        <div style="text-align: center;">
+            <span style="font-size: 2rem; color: {get_color_scale(portfolio_roi, 0, 300)}; font-weight: 600;">{format_percent(portfolio_roi)}</span>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Overall Return on Investment</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Card 2: Net Benefit
+    st.markdown(f"""
+    <div class="dashboard-card">
+        <h4 class="dashboard-card-title">Net Benefit</h4>
+        <div style="text-align: center;">
+            <span style="font-size: 2rem; color: {get_color_scale(total_net_benefit, 0, total_net_benefit*1.5)}; font-weight: 600;">{format_currency(total_net_benefit)}</span>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Total Annual Benefit</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Card 3: Break-even
+    st.markdown(f"""
+    <div class="dashboard-card">
+        <h4 class="dashboard-card-title">Break-even</h4>
+        <div style="text-align: center;">
+            <span style="font-size: 2rem; color: {get_color_scale(avg_break_even, 0, 12, reverse=True)}; font-weight: 600;">{format_number(avg_break_even)}</span>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Average Months to Recover</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Card 4: Total Investment
+    st.markdown(f"""
+    <div class="dashboard-card">
+        <h4 class="dashboard-card-title">Total Investment</h4>
+        <div style="text-align: center;">
+            <span style="font-size: 2rem; color: #0055a5; font-weight: 600;">{format_currency(total_investment)}</span>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Implementation & Regulatory</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Patient safety metrics
+    if total_adverse_events > 0:
+        st.markdown('<h3 style="margin-top: 1.5rem;">Patient Safety Impact</h3>', unsafe_allow_html=True)
+        
+        st.markdown('<div class="card-grid" style="grid-template-columns: repeat(2, 1fr);">', unsafe_allow_html=True)
+        
+        # Safety Card 1: Total Events
         st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Total Scenarios</p>
-            <p class="metric-value" style="color: {COLOR_SCHEME['primary']};">{total_scenarios}</p>
+        <div class="dashboard-card">
+            <h4 class="dashboard-card-title">Total Adverse Events</h4>
+            <div style="text-align: center;">
+                <span style="font-size: 2rem; color: {COLOR_SCHEME["negative"]}; font-weight: 600;">{total_adverse_events}</span>
+                <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Reported Annual Events</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
+        
+        # Safety Card 2: Potential Reduction
         st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Portfolio ROI</p>
-            <p class="metric-value" style="color: {get_color_scale(portfolio_roi, 0, 300)};">{format_percent(portfolio_roi)}</p>
+        <div class="dashboard-card">
+            <h4 class="dashboard-card-title">Potential Reduction</h4>
+            <div style="text-align: center;">
+                <span style="font-size: 2rem; color: {COLOR_SCHEME["positive"]}; font-weight: 600;">{potential_adverse_reduction:.1f}</span>
+                <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Estimated Event Reduction</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Total Net Benefit</p>
-            <p class="metric-value" style="color: {get_color_scale(total_net_benefit, 0, total_net_benefit*1.5)};">{format_currency(total_net_benefit)}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Avg. Break-even</p>
-            <p class="metric-value" style="color: {get_color_scale(avg_break_even, 0, 12, reverse=True)};">{format_number(avg_break_even)} months</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Add patient safety metrics row
-    st.markdown("##### Patient Safety Impact")
-    safety_col1, safety_col2 = st.columns(2)
-    
-    with safety_col1:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Total Related Adverse Events</p>
-            <p class="metric-value" style="color: {COLOR_SCHEME['negative']};">{total_adverse_events}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with safety_col2:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Potential Reduction in Adverse Events</p>
-            <p class="metric-value" style="color: {COLOR_SCHEME['positive']};">{potential_adverse_reduction:.1f}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def create_scenario_form():
     """Create form for adding a new scenario with medical device context"""
@@ -1421,9 +1506,11 @@ def display_portfolio_analysis(df):
         st.warning("No scenarios with complete ROI data available.")
         return
     
-    # Size is proportional to net benefit
+    # Size is proportional to net benefit - ensure positive values for marker size
     size_max = 50
-    plot_df['bubble_size'] = size_max * (plot_df['net_benefit'] / plot_df['net_benefit'].max())
+    plot_df['bubble_size'] = plot_df['net_benefit'].abs()  # Use absolute value
+    if plot_df['bubble_size'].max() > 0:  # Check to avoid division by zero
+        plot_df['bubble_size'] = size_max * (plot_df['bubble_size'] / plot_df['bubble_size'].max())
     plot_df['bubble_size'] = plot_df['bubble_size'].apply(lambda x: max(10, x))  # Minimum size
     
     # Create the bubble chart
@@ -1431,7 +1518,7 @@ def display_portfolio_analysis(df):
         plot_df,
         x="break_even_months",
         y="roi",
-        size="bubble_size",
+        size="bubble_size",  # Use our calculated size column instead of raw values
         color="device_class" if "device_class" in plot_df.columns else "score",
         hover_name="scenario_name",
         text="scenario_name",
@@ -1518,18 +1605,27 @@ def display_portfolio_analysis(df):
         reg_group['total_cost'] = reg_group['solution_cost'] + reg_group['regulatory_cost']
         reg_group['count'] = reg_group['scenario_name']
         
-        # Create a scatter plot
+        # Fix for negative net_benefit values - use absolute values for size but keep color encoding
+        reg_group['abs_benefit'] = reg_group['net_benefit'].abs()
+        
+        # Add a column to indicate positive/negative
+        reg_group['benefit_sign'] = reg_group['net_benefit'].apply(
+            lambda x: 'Positive' if x >= 0 else 'Negative'
+        )
+        
+        # Create a scatter plot with fixed size issue
         fig_reg = px.scatter(
             reg_group,
             x="total_cost",
             y="roi",
-            size="net_benefit",
+            size="abs_benefit",  # Use absolute value for size
             color="regulatory_impact",
             size_max=60,
-            hover_data=["count"],
+            hover_data=["count", "net_benefit"],
             labels={
                 "total_cost": "Total Investment ($)",
                 "roi": "Average ROI (%)",
+                "abs_benefit": "Impact Magnitude ($)",  # Renamed
                 "net_benefit": "Net Benefit ($)",
                 "count": "Number of Scenarios"
             },
@@ -1540,6 +1636,11 @@ def display_portfolio_analysis(df):
                 "Special 510(k)": "#ff8f00",
                 "New submission": "#c62828"
             }
+        )
+        
+        # Update hover template to show actual net benefit
+        fig_reg.update_traces(
+            hovertemplate="<b>%{hovertext}</b><br>Total Investment: $%{x:,.2f}<br>ROI: %{y:.1f}%<br>Net Benefit: $%{customdata[1]:,.2f}<br>Scenarios: %{customdata[0]}"
         )
         
         st.plotly_chart(fig_reg, use_container_width=True)
@@ -1559,21 +1660,30 @@ def display_portfolio_analysis(df):
         # Calculate return rate
         tag_group['return_rate'] = (tag_group['returns_30'] / tag_group['sales_30']) * 100
         
-        # Create the bar chart
+        # Create the bar chart without problematic color mapping
         fig_tags = px.bar(
             tag_group,
             x="tag",
             y="return_rate",
-            color="net_benefit",
-            color_continuous_scale=px.colors.sequential.Viridis,
+            text=tag_group['return_rate'].apply(lambda x: f"{x:.1f}%"),
             labels={
                 "tag": "Category",
-                "return_rate": "Return Rate (%)",
-                "net_benefit": "Net Benefit ($)"
+                "return_rate": "Return Rate (%)"
             },
-            title="Return Rate by Category with Net Benefit Overlay"
+            title="Return Rate by Category"
         )
         
+        # Customize color based on return rate value manually
+        colors = []
+        for rate in tag_group['return_rate']:
+            if rate > 10:
+                colors.append('#c62828')  # High return rate (red)
+            elif rate > 5:
+                colors.append('#ff8f00')  # Medium return rate (amber)
+            else:
+                colors.append('#00796b')  # Low return rate (green)
+        
+        fig_tags.update_traces(marker_color=colors)
         fig_tags.update_layout(height=400)
         st.plotly_chart(fig_tags, use_container_width=True)
     
@@ -1586,26 +1696,32 @@ def display_portfolio_analysis(df):
         
         # Only show if there are any adverse events
         if df['adverse_events'].sum() > 0:
-            # Create visualization
-            fig_safety = px.bar(
-                df.sort_values('adverse_events_reduction', ascending=False).head(10),
-                x="scenario_name",
-                y="adverse_events_reduction",
-                color="device_class",
-                labels={
-                    "scenario_name": "Improvement Scenario",
-                    "adverse_events_reduction": "Potential Adverse Event Reduction",
-                    "device_class": "Device Class"
-                },
-                title="Patient Safety Impact by Improvement Scenario",
-                color_discrete_map={
-                    "Class I": "#00796b",
-                    "Class II": "#ff8f00",
-                    "Class III": "#c62828"
-                }
-            )
+            # Filter to include only rows with adverse events
+            safety_df = df[df['adverse_events'] > 0].copy()
             
-            st.plotly_chart(fig_safety, use_container_width=True)
+            if not safety_df.empty:
+                # Create visualization with fixed size issues
+                fig_safety = px.bar(
+                    safety_df.sort_values('adverse_events_reduction', ascending=False).head(10),
+                    x="scenario_name",
+                    y="adverse_events_reduction",
+                    color="device_class",
+                    labels={
+                        "scenario_name": "Improvement Scenario",
+                        "adverse_events_reduction": "Potential Adverse Event Reduction",
+                        "device_class": "Device Class"
+                    },
+                    title="Patient Safety Impact by Improvement Scenario",
+                    color_discrete_map={
+                        "Class I": "#00796b",
+                        "Class II": "#ff8f00",
+                        "Class III": "#c62828"
+                    }
+                )
+                
+                st.plotly_chart(fig_safety, use_container_width=True)
+            else:
+                st.info("No scenarios with adverse events data available.")
         else:
             st.info("No adverse events data available for analysis.")
     
@@ -1615,53 +1731,83 @@ def display_portfolio_analysis(df):
     
     with col1:
         # ROI by solution type
-        solution_group = df.groupby('solution').agg({
-            'roi': 'mean',
-            'solution_cost': 'sum',
-            'net_benefit': 'sum'
-        }).reset_index()
-        
-        fig_solution = px.bar(
-            solution_group,
-            x="solution",
-            y="roi",
-            color="net_benefit",
-            color_continuous_scale=px.colors.sequential.Viridis,
-            labels={
-                "solution": "Solution",
-                "roi": "Average ROI (%)",
-                "net_benefit": "Net Benefit ($)"
-            },
-            title="ROI by Solution Type"
-        )
-        
-        fig_solution.update_layout(height=400)
-        st.plotly_chart(fig_solution, use_container_width=True)
+        if not df.empty:
+            solution_group = df.groupby('solution').agg({
+                'roi': 'mean',
+                'solution_cost': 'sum',
+                'net_benefit': 'sum'
+            }).reset_index()
+            
+            # Fix for continuous color scale issues
+            solution_group['roi_value'] = solution_group['roi'].fillna(0)
+            
+            fig_solution = px.bar(
+                solution_group,
+                x="solution",
+                y="roi_value",
+                text=solution_group['roi_value'].apply(lambda x: f"{x:.1f}%" if not pd.isna(x) else "N/A"),
+                labels={
+                    "solution": "Solution",
+                    "roi_value": "Average ROI (%)"
+                },
+                title="ROI by Solution Type"
+            )
+            
+            # Color bars manually based on ROI value
+            colors = []
+            for roi in solution_group['roi_value']:
+                if roi > 200:
+                    colors.append('#00796b')  # High ROI (green)
+                elif roi > 100:
+                    colors.append('#2196f3')  # Medium-high ROI (blue)
+                elif roi > 50:
+                    colors.append('#ff8f00')  # Medium ROI (amber)
+                else:
+                    colors.append('#c62828')  # Low ROI (red)
+            
+            fig_solution.update_traces(marker_color=colors)
+            fig_solution.update_layout(height=400)
+            st.plotly_chart(fig_solution, use_container_width=True)
     
     with col2:
         # ROI by sales channel
-        channel_group = df.groupby('sales_channel').agg({
-            'roi': 'mean',
-            'solution_cost': 'sum',
-            'net_benefit': 'sum'
-        }).reset_index()
-        
-        fig_channel = px.bar(
-            channel_group,
-            x="sales_channel",
-            y="roi",
-            color="net_benefit",
-            color_continuous_scale=px.colors.sequential.Viridis,
-            labels={
-                "sales_channel": "Sales Channel",
-                "roi": "Average ROI (%)",
-                "net_benefit": "Net Benefit ($)"
-            },
-            title="ROI by Sales Channel"
-        )
-        
-        fig_channel.update_layout(height=400)
-        st.plotly_chart(fig_channel, use_container_width=True)
+        if not df.empty:
+            channel_group = df.groupby('sales_channel').agg({
+                'roi': 'mean',
+                'solution_cost': 'sum',
+                'net_benefit': 'sum'
+            }).reset_index()
+            
+            # Fix for continuous color scale issues
+            channel_group['roi_value'] = channel_group['roi'].fillna(0)
+            
+            fig_channel = px.bar(
+                channel_group,
+                x="sales_channel",
+                y="roi_value",
+                text=channel_group['roi_value'].apply(lambda x: f"{x:.1f}%" if not pd.isna(x) else "N/A"),
+                labels={
+                    "sales_channel": "Sales Channel",
+                    "roi_value": "Average ROI (%)"
+                },
+                title="ROI by Sales Channel"
+            )
+            
+            # Color bars manually based on ROI value
+            colors = []
+            for roi in channel_group['roi_value']:
+                if roi > 200:
+                    colors.append('#00796b')  # High ROI (green)
+                elif roi > 100:
+                    colors.append('#2196f3')  # Medium-high ROI (blue)
+                elif roi > 50:
+                    colors.append('#ff8f00')  # Medium ROI (amber)
+                else:
+                    colors.append('#c62828')  # Low ROI (red)
+            
+            fig_channel.update_traces(marker_color=colors)
+            fig_channel.update_layout(height=400)
+            st.plotly_chart(fig_channel, use_container_width=True)
 
 def display_risk_matrix():
     """Display risk matrix for medical device analysis"""
@@ -2521,14 +2667,139 @@ def display_settings():
                 st.success("All data cleared!")
                 st.experimental_rerun()
         
-        # Theme settings
-        st.markdown("#### Theme Preference")
-        theme = st.selectbox("Color Theme", ["Medical Blue (Default)", "Clinical Green", "Regulatory Purple"])
-        st.info("Theme customization will be available in a future update.")
+        # Theme settings with actual implementation
+        st.markdown("#### Theme Customization")
+        
+        # If theme isn't in session state, initialize it with default
+        if 'app_theme' not in st.session_state:
+            st.session_state.app_theme = "Medical Blue"
+        
+        # Show theme selection dropdown
+        selected_theme = st.selectbox(
+            "Color Theme", 
+            ["Medical Blue", "Clinical Green", "Regulatory Purple", "Safety Orange"],
+            index=["Medical Blue", "Clinical Green", "Regulatory Purple", "Safety Orange"].index(st.session_state.app_theme)
+        )
+        
+        # Define theme colors for each option
+        theme_colors = {
+            "Medical Blue": {
+                "primary": "#0055a5",
+                "secondary": "#00a3a3",
+                "background": "#f0f4f8",
+                "positive": "#00796b",
+                "negative": "#c62828",
+                "warning": "#ff8f00",
+                "neutral": "#1565c0",
+                "accent": "#2196f3"
+            },
+            "Clinical Green": {
+                "primary": "#00796b",
+                "secondary": "#26a69a",
+                "background": "#e8f5e9",
+                "positive": "#2e7d32",
+                "negative": "#c62828",
+                "warning": "#ff8f00",
+                "neutral": "#00796b",
+                "accent": "#4caf50"
+            },
+            "Regulatory Purple": {
+                "primary": "#4527a0",
+                "secondary": "#7e57c2",
+                "background": "#f3e5f5",
+                "positive": "#00796b",
+                "negative": "#c62828",
+                "warning": "#ff8f00",
+                "neutral": "#4527a0",
+                "accent": "#9c27b0"
+            },
+            "Safety Orange": {
+                "primary": "#e65100",
+                "secondary": "#ff9800",
+                "background": "#fff3e0",
+                "positive": "#00796b",
+                "negative": "#c62828",
+                "warning": "#ff8f00",
+                "neutral": "#e65100",
+                "accent": "#ff9800"
+            }
+        }
+        
+        # Display theme preview
+        st.markdown("##### Theme Preview")
+        
+        if selected_theme in theme_colors:
+            colors = theme_colors[selected_theme]
+            
+            # Create a preview of the colors
+            st.markdown(f"""
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                <div style="width: 80px; height: 80px; background-color: {colors['primary']}; border-radius: 6px; display: flex; justify-content: center; align-items: center; color: white;">Primary</div>
+                <div style="width: 80px; height: 80px; background-color: {colors['secondary']}; border-radius: 6px; display: flex; justify-content: center; align-items: center; color: white;">Secondary</div>
+                <div style="width: 80px; height: 80px; background-color: {colors['accent']}; border-radius: 6px; display: flex; justify-content: center; align-items: center; color: white;">Accent</div>
+                <div style="width: 80px; height: 80px; background-color: {colors['positive']}; border-radius: 6px; display: flex; justify-content: center; align-items: center; color: white;">Positive</div>
+                <div style="width: 80px; height: 80px; background-color: {colors['negative']}; border-radius: 6px; display: flex; justify-content: center; align-items: center; color: white;">Negative</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Create sample UI elements with the theme colors
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown(f"""
+                <div style="background-color: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <h4 style="color: {colors['primary']};">Sample Header</h4>
+                    <p>This is how text would appear with this theme.</p>
+                    <div style="background-color: {colors['background']}; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                        <p style="margin: 0; color: {colors['neutral']};">Background content example</p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div style="background-color: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button style="background-color: {colors['primary']}; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Primary Button</button>
+                        <button style="background-color: {colors['secondary']}; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Secondary</button>
+                    </div>
+                    <div style="border-left: 4px solid {colors['warning']}; padding-left: 10px; margin-top: 15px;">
+                        <p style="margin: 0; color: {colors['warning']};">Warning notification example</p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+            # Apply button to change the theme
+            if st.button("Apply Theme"):
+                st.session_state.app_theme = selected_theme
+                st.session_state.theme_colors = colors
+                st.success(f"Theme changed to {selected_theme}. Updates will apply to all new elements.")
+                
+                # Apply theme through custom CSS (note: this won't affect existing elements)
+                st.markdown(f"""
+                <style>
+                    /* Apply theme colors */
+                    .stButton>button {{
+                        background-color: {colors['primary']};
+                    }}
+                    .stButton>button:hover {{
+                        background-color: {colors['secondary']};
+                    }}
+                    h1, h2, h3, h4, h5, h6 {{
+                        color: {colors['primary']};
+                    }}
+                    .dashboard-card-title {{
+                        color: {colors['primary']};
+                    }}
+                    .nav-link.active {{
+                        background-color: {colors['secondary']};
+                    }}
+                </style>
+                """, unsafe_allow_html=True)
         
         # Add regulatory documentation link
         st.markdown("#### Regulatory Resources")
-        st.markdown("""
+        st.markdown(f"""
         <div class="regulatory-alert">
             <strong>FDA Resources:</strong><br>
             • <a href="https://www.fda.gov/medical-devices" target="_blank">FDA Medical Devices</a><br>
@@ -2544,7 +2815,7 @@ optimizer = st.session_state.optimizer
 
 # Sidebar Navigation
 with st.sidebar:
-    st.image("https://via.placeholder.com/150x60?text=MedDevROI", width=150)
+    st.markdown("# MedDevROI")
     st.markdown("## Navigation")
     
     # Navigation options
@@ -2617,24 +2888,26 @@ display_header()
 if 'view_scenario' in st.session_state and st.session_state['view_scenario'] and 'selected_scenario' in st.session_state:
     display_scenario_details(st.session_state['selected_scenario'])
 else:
-    # Regular navigation
-    if nav_option == "Dashboard":
+    # Regular navigation based on sidebar selection
+    current_page = st.session_state.get('page', 'Dashboard')
+    
+    if current_page == "Dashboard":
         display_metrics_overview(optimizer.scenarios)
         display_scenario_table(optimizer.scenarios)
     
-    elif nav_option == "Add New Scenario":
+    elif current_page == "Add New Scenario":
         create_scenario_form()
     
-    elif nav_option == "Portfolio Analysis":
+    elif current_page == "Portfolio Analysis":
         display_portfolio_analysis(optimizer.scenarios)
     
-    elif nav_option == "Risk Matrix":
+    elif current_page == "Risk Matrix":
         display_risk_matrix()
     
-    elif nav_option == "What-If Analysis":
+    elif current_page == "What-If Analysis":
         display_what_if_analysis()
     
-    elif nav_option == "Settings":
+    elif current_page == "Settings":
         display_settings()
 
 # Entry point for setup.py
