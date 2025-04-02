@@ -1,4 +1,215 @@
-"""
+# Initialize FMEA data structures if not present
+if 'design_fmea_data' not in st.session_state:
+    st.session_state.design_fmea_data = pd.DataFrame(columns=[
+        'id', 'item', 'function', 'failure_mode', 'effect', 'cause', 
+        'current_controls', 'sev', 'occ', 'det', 'rpn', 'recommended_action',
+        'action_responsibility', 'target_date', 'actions_taken', 
+        'new_sev', 'new_occ', 'new_det', 'new_rpn', 'status', 'date_created',
+        'date_updated', 'design_phase'
+    ])
+
+if 'problem_fmea_data' not in st.session_state:
+    st.session_state.problem_fmea_data = pd.DataFrame(columns=[
+        'id', 'item', 'problem_description', 'failure_mode', 'effect', 'cause', 
+        'current_controls', 'sev', 'occ', 'det', 'rpn', 'recommended_action',
+        'action_responsibility', 'target_date', 'actions_taken', 
+        'new_sev', 'new_occ', 'new_det', 'new_rpn', 'status', 'date_created',
+        'date_updated', 'problem_date'
+    ])
+
+def display_fmea():
+    """Display FMEA (Failure Mode and Effects Analysis) functionality"""
+    st.subheader("Failure Mode and Effects Analysis (FMEA)")
+    
+    # Select FMEA type
+    fmea_type = st.radio(
+        "Select FMEA Type",
+        ["Design FMEA", "Problem/After-action FMEA"],
+        horizontal=True
+    )
+    
+    # Get appropriate dataframe based on selection
+    fmea_df = st.session_state.design_fmea_data if fmea_type == "Design FMEA" else st.session_state.problem_fmea_data
+    
+    # Create tabs for different FMEA operations
+    tabs = st.tabs(["FMEA Table", "Add New Entry", "Edit Entry", "Analytics"])
+    
+    # Tab 1: FMEA Table
+    with tabs[0]:
+        st.subheader(f"{fmea_type} Table")
+        
+        # Filter options
+        if not fmea_df.empty:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if fmea_type == "Design FMEA":
+                    # Design phase filter 
+                    if 'design_phase' in fmea_df.columns:
+                        phase_options = ["All"] + sorted(fmea_df['design_phase'].unique().tolist())
+                        selected_phase = st.selectbox("Filter by Design Phase", phase_options)
+                else:
+                    # Date range filter for problem FMEA
+                    if 'problem_date' in fmea_df.columns:
+                        date_range = st.date_input(
+                            "Filter by Problem Date Range",
+                            value=(
+                                fmea_df['problem_date'].min() if 'problem_date' in fmea_df.columns and not fmea_df.empty else datetime.now() - timedelta(days=30),
+                                fmea_df['problem_date'].max() if 'problem_date' in fmea_df.columns and not fmea_df.empty else datetime.now()
+                            )
+                        )
+            
+            with col2:
+                # Risk level filter
+                risk_options = ["All", "Very High Risk (RPN > 200)", "High Risk (RPN 100-200)", 
+                              "Moderate Risk (RPN 40-100)", "Low Risk (RPN < 40)"]
+                selected_risk = st.selectbox("Filter by Risk Level", risk_options)
+            
+            # Apply filters
+            filtered_df = fmea_df.copy()
+            
+            if fmea_type == "Design FMEA" and selected_phase != "All":
+                filtered_df = filtered_df[filtered_df['design_phase'] == selected_phase]
+            
+            if fmea_type == "Problem/After-action FMEA" and 'problem_date' in filtered_df.columns:
+                if isinstance(date_range, tuple) and len(date_range) == 2:
+                    filtered_df = filtered_df[
+                        (filtered_df['problem_date'] >= date_range[0]) & 
+                        (filtered_df['problem_date'] <= date_range[1])
+                    ]
+            
+            if selected_risk != "All":
+                if selected_risk == "Very High Risk (RPN > 200)":
+                    filtered_df = filtered_df[filtered_df['rpn'] > 200]
+                elif selected_risk == "High Risk (RPN 100-200)":
+                    filtered_df = filtered_df[(filtered_df['rpn'] >= 100) & (filtered_df['rpn'] <= 200)]
+                elif selected_risk == "Moderate Risk (RPN 40-100)":
+                    filtered_df = filtered_df[(filtered_df['rpn'] >= 40) & (filtered_df['rpn'] < 100)]
+                elif selected_risk == "Low Risk (RPN < 40)":
+                    filtered_df = filtered_df[filtered_df['rpn'] < 40]
+            
+            # Format and display table
+            if not filtered_df.empty:
+                # Prepare display dataframe
+                display_cols = ['item', 'failure_mode', 'effect', 'cause', 'sev', 'occ', 'det', 'rpn', 'status']
+                
+                # Add design or problem specific columns
+                if fmea_type == "Design FMEA" and 'design_phase' in filtered_df.columns:
+                    display_cols.insert(1, 'design_phase')
+                elif fmea_type == "Problem/After-action FMEA" and 'problem_date' in filtered_df.columns:
+                    display_cols.insert(1, 'problem_date')
+                
+                if 'recommended_action' in filtered_df.columns:
+                    display_cols.append('recommended_action')
+                
+                display_df = filtered_df[display_cols].copy()
+                
+                # Format RPN with color coding
+                def format_rpn(value):
+                    if value > 200:
+                        return f'<span style="color:#c62828; font-weight:bold;">{value}</span>'
+                    elif value >= 100:
+                        return f'<span style="color:#ff8f00; font-weight:bold;">{value}</span>'
+                    elif value >= 40:
+                        return f'<span style="color:#2196f3; font-weight:bold;">{value}</span>'
+                    else:
+                        return f'<span style="color:#00796b; font-weight:bold;">{value}</span>'
+                
+                # Create formatted column for RPN
+                display_df['formatted_rpn'] = display_df['rpn'].apply(format_rpn)
+                
+                # Format status
+                def format_status(status):
+                    if status == "Completed":
+                        return f'<span style="color:#00796b;">✓ {status}</span>'
+                    elif status == "In Progress":
+                        return f'<span style="color:#2196f3;">↻ {status}</span>'
+                    elif status == "Not Started":
+                        return f'<span style="color:#ff8f00;">⦿ {status}</span>'
+                    else:
+                        return status
+                
+                if 'status' in display_df.columns:
+                    display_df['formatted_status'] = display_df['status'].apply(format_status)
+                
+                # Rename columns for display
+                renamed_df = display_df.rename(columns={
+                    'item': 'Item',
+                    'design_phase': 'Design Phase',
+                    'problem_date': 'Problem Date',
+                    'failure_mode': 'Failure Mode',
+                    'effect': 'Effect',
+                    'cause': 'Cause',
+                    'sev': 'SEV',
+                    'occ': 'OCC',
+                    'det': 'DET',
+                    'rpn': 'RPN',
+                    'formatted_rpn': 'RPN',
+                    'status': 'Status',
+                    'formatted_status': 'Status',
+                    'recommended_action': 'Recommended Action'
+                })
+                
+                # Replace numeric columns with formatted ones
+                final_cols = renamed_df.columns.tolist()
+                if 'RPN' in final_cols:
+                    final_cols[final_cols.index('RPN')] = 'formatted_rpn'
+                if 'Status' in final_cols:
+                    final_cols[final_cols.index('Status')] = 'formatted_status'
+                
+                # Remove original columns that have been formatted
+                final_cols = [col for col in final_cols if col not in ['rpn', 'status']]
+                
+                # Display the table
+                st.markdown("""
+                <style>
+                .risk-high { color: #c62828; font-weight: bold; }
+                .risk-med-high { color: #ff8f00; font-weight: bold; }
+                .risk-med { color: #2196f3; font-weight: bold; }
+                .risk-low { color: #00796b; font-weight: bold; }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                st.dataframe(
+                    renamed_df[final_cols], 
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                # Export buttons
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    # Export filtered data to CSV
+                    csv_data = filtered_df.to_csv(index=False).encode()
+                    st.download_button(
+                        "Export to CSV",
+                        data=csv_data,
+                        file_name=f"{fmea_type.replace('/', '_')}_export.csv",
+                        mime="text/csv"
+                    )
+                    
+                with col2:
+                    # Export to Excel
+                    excel_data = io.BytesIO()
+                    with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
+                        filtered_df.to_excel(writer, index=False, sheet_name=fmea_type.replace('/', '_'))
+                    
+                    st.download_button(
+                        "Export to Excel",
+                        data=excel_data.getvalue(),
+                        file_name=f"{fmea# Define color scheme for medical device context
+COLOR_SCHEME = {
+    "primary": "#0055a5",    # Medical blue
+    "secondary": "#00a3a3",  # Teal
+    "background": "#f0f4f8",
+    "positive": "#00796b",   # Dark teal
+    "negative": "#c62828",   # Medical red
+    "warning": "#ff8f00",    # Amber
+    "neutral": "#1565c0",    # Darker blue
+    "text_dark": "#263238",
+    "text_light": "#ecf0f1",
+    "regulatory": "#4527a0"  # Purple for regulatory elements
+}"""
 MedDevROI - Medical Device ROI & Risk Analysis Suite
 A comprehensive analytics tool for evaluating medical device investments and risks.
 
@@ -3254,6 +3465,53 @@ with st.sidebar:
         - **Special 510(k)**: Modified device notification
         - **New submission**: New 510(k) or PMA supplement
         """)
+        
+    with st.expander("📊 FMEA Scoring Guide"):
+        st.markdown("""
+        ### Severity (SEV)
+        1. **No effect** - No impact on product or patient
+        2. **Very minor** - Slight inconvenience to user
+        3. **Minor** - Minor performance loss
+        4. **Very low** - Product requires adjustment
+        5. **Low** - Partial loss of function
+        6. **Moderate** - Product operable but reduced performance
+        7. **High** - Product operable but comfort/convenience impacted
+        8. **Very high** - Product inoperable but safe
+        9. **Hazardous with warning** - Potential safety impact with warning
+        10. **Hazardous without warning** - Safety impact without warning
+        
+        ### Occurrence (OCC)
+        1. **Remote** - Failure unlikely (<1 in 1,500,000)
+        2. **Very low** - Few failures (1 in 150,000)
+        3. **Low** - Isolated failures (1 in 15,000)
+        4. **Moderately low** - Occasional failures (1 in 2,000)
+        5. **Moderate** - Medium frequency (1 in 400)
+        6. **Moderately high** - Medium-high frequency (1 in 80)
+        7. **High** - High frequency (1 in 20)
+        8. **Very high** - Very high frequency (1 in 8)
+        9. **Extremely high** - Failure almost certain (1 in 3)
+        10. **Inevitable** - Failure virtually certain
+        
+        ### Detection (DET)
+        1. **Almost certain** - Controls will detect (>99.5%)
+        2. **Very high** - Very high detection (99.0%)
+        3. **High** - High detection (98.0%)
+        4. **Moderately high** - Moderately high detection (95.0%)
+        5. **Moderate** - Moderate detection (90.0%)
+        6. **Low** - Low detection (80.0%)
+        7. **Very low** - Very low detection (70.0%)
+        8. **Remote** - Remote detection (50.0%)
+        9. **Very remote** - Very remote detection (≤40.0%)
+        10. **Absolute uncertainty** - No known controls
+        
+        ### Risk Priority Number (RPN)
+        - RPN = SEV × OCC × DET
+        - Risk levels:
+          - **Low risk**: RPN < 40
+          - **Moderate risk**: RPN 40-100
+          - **High risk**: RPN 100-200
+          - **Very high risk**: RPN > 200
+        """)
 
 # Main content
 if st.session_state['view_scenario'] if 'view_scenario' in st.session_state else False:
@@ -3275,9 +3533,15 @@ else:
     
     elif current_page == "Risk Matrix":
         display_risk_matrix()
+        
+    elif current_page == "FMEA":
+        display_fmea()
     
     elif current_page == "What-If Analysis":
         display_what_if_analysis()
+        
+    elif current_page == "Data":
+        display_data_reporting()
     
     elif current_page == "Settings":
         display_settings()
