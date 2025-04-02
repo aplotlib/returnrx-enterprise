@@ -197,7 +197,7 @@ def display_fmea():
                     st.download_button(
                         "Export to Excel",
                         data=excel_data.getvalue(),
-                        file_name=f"{fmea# Define color scheme for medical device context
+                        file_name=f"{fmea# Define color scheme for medical device context,
 COLOR_SCHEME = {
     "primary": "#0055a5",    # Medical blue
     "secondary": "#00a3a3",  # Teal
