@@ -1,17 +1,3 @@
-# Define color scheme for medical device context
-COLOR_SCHEME = {
-    "primary": "#0055a5",    # Medical blue
-    "secondary": "#00a3a3",  # Teal
-    "background": "#f0f4f8",
-    "positive": "#00796b",   # Dark teal
-    "negative": "#c62828",   # Medical red
-    "warning": "#ff8f00",    # Amber
-    "neutral": "#1565c0",    # Darker blue
-    "text_dark": "#263238",
-    "text_light": "#ecf0f1",
-    "regulatory": "#4527a0"  # Purple for regulatory elements
-}
-    
 """
 MedDevROI - Medical Device ROI & Risk Analysis Suite
 A comprehensive analytics tool for evaluating medical device investments and risks.
