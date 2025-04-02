@@ -2157,438 +2157,779 @@ def display_risk_matrix():
         """, unsafe_allow_html=True)
 
 def display_what_if_analysis():
-    """Interactive what-if scenario analysis"""
+    """Interactive what-if scenario analysis with Monte Carlo simulation"""
     st.subheader("What-If Analysis")
+    
+    # Switch between deterministic and Monte Carlo
+    analysis_type = st.radio(
+        "Analysis Type",
+        ["Deterministic Analysis", "Monte Carlo Simulation"],
+        horizontal=True
+    )
     
     # Get base scenario
     if not optimizer.scenarios.empty:
         # Let user select a base scenario
         scenario_names = optimizer.scenarios['scenario_name'].tolist()
-        base_scenario_name = st.selectbox("Select base scenario for what-if analysis", scenario_names)
+        base_scenario_name = st.selectbox("Select base scenario for analysis", scenario_names)
         
         # Get the selected scenario
         base_scenario = optimizer.scenarios[optimizer.scenarios['scenario_name'] == base_scenario_name].iloc[0]
         
-        # Set up what-if parameters
-        st.markdown("### Adjust Parameters")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Sales volume change
-            sales_change = st.slider(
-                "Sales Volume Change (%)", 
-                min_value=-50, 
-                max_value=100, 
-                value=0,
-                help="Adjust projected monthly sales volume. For example, +20% means monthly sales will increase by 20% compared to the base scenario. This affects both revenue and per-unit cost allocation."
-            )
-            
-            # Return rate change
-            return_rate_change = st.slider(
-                "Return Rate Change (%)", 
-                min_value=-50, 
-                max_value=50, 
-                value=0,
-                help="Adjust the projected return rate relative to current rate. For example, if current return rate is 10%, a +20% change means the new return rate would be 12% (10% × 1.2)."
-            )
-            
-            # Solution cost change
-            solution_cost_change = st.slider(
-                "Implementation Cost Change (%)", 
-                min_value=-50, 
-                max_value=100, 
-                value=0,
-                help="Adjust the one-time implementation cost of the solution. For example, -20% means the solution will cost 20% less than the original estimate."
-            )
-            
-            # Regulatory cost change (if applicable)
-            if 'regulatory_cost' in base_scenario and base_scenario['regulatory_cost'] > 0:
-                regulatory_cost_change = st.slider(
-                    "Regulatory Cost Change (%)",
-                    min_value=-50,
-                    max_value=100,
-                    value=0,
-                    help="Adjust the regulatory submission and compliance costs. For example, +30% means the regulatory costs will be 30% higher than the original estimate."
-                )
-            else:
-                regulatory_cost_change = 0
-        
-        with col2:
-            # Reduction effectiveness change
-            reduction_effectiveness = st.slider(
-                "Return Reduction Effectiveness (%)", 
-                min_value=-50, 
-                max_value=50, 
-                value=0,
-                help="Adjust how effective the solution is at reducing returns compared to the initial estimate. For example, if you originally estimated a 30% reduction in returns, a +20% effectiveness change means the actual reduction would be 36% (30% × 1.2)."
-            )
-            
-            # Additional cost change
-            additional_cost_change = st.slider(
-                "Additional Cost per Item Change (%)", 
-                min_value=-50, 
-                max_value=100, 
-                value=0,
-                help="Adjust the ongoing additional cost per unit that results from implementing the solution. For example, if the original additional cost was $1.00 per unit, a +10% change would mean $1.10 per unit."
-            )
-            
-            # Average sale price change
-            price_change = st.slider(
-                "Average Sale Price Change (%)", 
-                min_value=-25, 
-                max_value=25, 
-                value=0,
-                help="Adjust the average selling price of the product. This affects both revenue from sales and the value recovered from avoided returns. For example, a +5% change means products will sell for 5% more than in the base scenario."
-            )
-            
-            # Adverse events (if applicable)
-            if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
-                adverse_events_change = st.slider(
-                    "Adverse Events Change (%)",
-                    min_value=-50,
-                    max_value=100,
-                    value=0,
-                    help="Adjust the projected number of adverse events. For example, -20% means there will be 20% fewer adverse events than originally estimated."
-                )
-            else:
-                adverse_events_change = 0
-        
-        # Calculate new values
-        new_sales_30 = base_scenario['sales_30'] * (1 + sales_change/100)
-        new_return_rate = base_scenario['return_rate'] * (1 + return_rate_change/100)
-        new_returns_30 = (new_sales_30 * new_return_rate / 100)
-        new_solution_cost = base_scenario['solution_cost'] * (1 + solution_cost_change/100)
-        
-        if 'regulatory_cost' in base_scenario:
-            new_regulatory_cost = base_scenario['regulatory_cost'] * (1 + regulatory_cost_change/100)
+        if analysis_type == "Deterministic Analysis":
+            # Deterministic what-if analysis (original functionality)
+            display_deterministic_analysis(base_scenario, base_scenario_name)
         else:
-            new_regulatory_cost = 0
-            
-        new_reduction_rate = base_scenario['reduction_rate'] * (1 + reduction_effectiveness/100)
-        new_additional_cost = base_scenario['additional_cost_per_item'] * (1 + additional_cost_change/100)
-        new_avg_price = base_scenario['avg_sale_price'] * (1 + price_change/100)
-        
-        if 'adverse_events' in base_scenario:
-            new_adverse_events = base_scenario['adverse_events'] * (1 + adverse_events_change/100)
-        else:
-            new_adverse_events = 0
-        
-        # Ensure values are within logical bounds
-        new_reduction_rate = min(100, max(0, new_reduction_rate))
-        new_return_rate = min(100, max(0, new_return_rate))
-        
-        # Create comparison dataframes
-        comparison_data = {
-            "Metric": [
-                "Monthly Sales (units)",
-                "Return Rate (%)",
-                "Monthly Returns (units)",
-                "Implementation Cost ($)",
-                "Return Reduction (%)",
-                "Additional Cost/Item ($)",
-                "Average Sale Price ($)"
-            ],
-            "Original": [
-                base_scenario['sales_30'],
-                base_scenario['return_rate'],
-                base_scenario['returns_30'],
-                base_scenario['solution_cost'],
-                base_scenario['reduction_rate'],
-                base_scenario['additional_cost_per_item'],
-                base_scenario['avg_sale_price']
-            ],
-            "New": [
-                new_sales_30,
-                new_return_rate,
-                new_returns_30,
-                new_solution_cost,
-                new_reduction_rate,
-                new_additional_cost,
-                new_avg_price
-            ]
-        }
-        
-        # Add regulatory costs if applicable
-        if 'regulatory_cost' in base_scenario and base_scenario['regulatory_cost'] > 0:
-            comparison_data["Metric"].append("Regulatory Cost ($)")
-            comparison_data["Original"].append(base_scenario['regulatory_cost'])
-            comparison_data["New"].append(new_regulatory_cost)
-            
-        # Add adverse events if applicable
-        if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
-            comparison_data["Metric"].append("Annual Adverse Events")
-            comparison_data["Original"].append(base_scenario['adverse_events'])
-            comparison_data["New"].append(new_adverse_events)
-            
-        comparison_df = pd.DataFrame(comparison_data)
-        
-        # Calculate financial impact for original scenario
-        original_avoided_returns = base_scenario['returns_30'] * (base_scenario['reduction_rate'] / 100)
-        original_monthly_savings = original_avoided_returns * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
-        original_monthly_cost = base_scenario['sales_30'] * base_scenario['additional_cost_per_item']
-        original_monthly_net = original_monthly_savings - original_monthly_cost
-        original_annual_net = original_monthly_net * 12
-        
-        total_investment = base_scenario['solution_cost']
-        if 'regulatory_cost' in base_scenario:
-            total_investment += base_scenario['regulatory_cost']
-            
-        if total_investment > 0 and original_annual_net > 0:
-            original_roi = (original_annual_net / total_investment) * 100
-            original_breakeven = total_investment / original_monthly_net
-        else:
-            original_roi = None
-            original_breakeven = None
-        
-        # Calculate financial impact for new scenario
-        new_unit_cost = base_scenario['current_unit_cost'] + new_additional_cost
-        new_avoided_returns = new_returns_30 * (new_reduction_rate / 100)
-        new_monthly_savings = new_avoided_returns * (new_avg_price - new_unit_cost)
-        new_monthly_cost = new_sales_30 * new_additional_cost
-        new_monthly_net = new_monthly_savings - new_monthly_cost
-        new_annual_net = new_monthly_net * 12
-        
-        new_total_investment = new_solution_cost + new_regulatory_cost
-        
-        if new_total_investment > 0 and new_annual_net > 0:
-            new_roi = (new_annual_net / new_total_investment) * 100
-            new_breakeven = new_total_investment / new_monthly_net
-        else:
-            new_roi = None
-            new_breakeven = None
-        
-        # Create financial impact comparison
-        financial_data = {
-            "Metric": [
-                "Monthly Savings ($)",
-                "Monthly Additional Costs ($)",
-                "Monthly Net Benefit ($)",
-                "Annual Net Benefit ($)",
-                "Return on Investment (%)",
-                "Break-even (months)"
-            ],
-            "Original": [
-                original_monthly_savings,
-                original_monthly_cost,
-                original_monthly_net,
-                original_annual_net,
-                original_roi,
-                original_breakeven
-            ],
-            "New": [
-                new_monthly_savings,
-                new_monthly_cost,
-                new_monthly_net,
-                new_annual_net,
-                new_roi,
-                new_breakeven
-            ]
-        }
-        
-        # Add adverse events impact if applicable
-        if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
-            original_avoided_adverse = base_scenario['adverse_events'] * (base_scenario['reduction_rate'] / 100)
-            new_avoided_adverse = new_adverse_events * (new_reduction_rate / 100)
-            
-            financial_data["Metric"].append("Avoided Adverse Events")
-            financial_data["Original"].append(original_avoided_adverse)
-            financial_data["New"].append(new_avoided_adverse)
-        
-        financial_df = pd.DataFrame(financial_data)
-        
-        # Display comparison tables
-        st.markdown("### Parameter Comparison")
-        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
-        
-        st.markdown("### Financial Impact Comparison")
-        st.dataframe(financial_df, use_container_width=True, hide_index=True)
-        
-        # Calculate percent changes for visualization
-        if original_annual_net > 0 and new_annual_net > 0:
-            net_benefit_change = ((new_annual_net / original_annual_net) - 1) * 100
-        else:
-            net_benefit_change = 0
-        
-        if original_roi and new_roi:
-            roi_change = ((new_roi / original_roi) - 1) * 100
-        else:
-            roi_change = 0
-        
-        if original_breakeven and new_breakeven:
-            breakeven_change = ((new_breakeven / original_breakeven) - 1) * 100
-        else:
-            breakeven_change = 0
-        
-        # Display impact visualization
-        st.markdown("### Impact Visualization")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                "Annual Net Benefit",
-                f"${new_annual_net:.2f}",
-                f"{net_benefit_change:.1f}%",
-                delta_color="normal" if net_benefit_change >= 0 else "inverse"
-            )
-        
-        with col2:
-            if new_roi:
-                st.metric(
-                    "Return on Investment",
-                    f"{new_roi:.1f}%",
-                    f"{roi_change:.1f}%",
-                    delta_color="normal" if roi_change >= 0 else "inverse"
-                )
-            else:
-                st.metric("Return on Investment", "N/A", delta=None)
-        
-        with col3:
-            if new_breakeven:
-                st.metric(
-                    "Break-even Time",
-                    f"{new_breakeven:.1f} months",
-                    f"{-breakeven_change:.1f}%",  # Negative because shorter is better
-                    delta_color="normal" if breakeven_change <= 0 else "inverse"
-                )
-            else:
-                st.metric("Break-even Time", "N/A", delta=None)
-        
-        # Add patient safety impact if applicable
-        if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
-            st.markdown("##### Patient Safety Impact")
-            st.metric(
-                "Reduction in Adverse Events",
-                f"{new_avoided_adverse:.1f}",
-                f"{((new_avoided_adverse / original_avoided_adverse) - 1) * 100:.1f}%" if original_avoided_adverse > 0 else None,
-                delta_color="normal"
-            )
-        
-        # Waterfall chart for net benefit change factors
-        st.markdown("### Net Benefit Drivers")
-        
-        # Calculate impact of each factor (simplified model)
-        base_avoided_returns = base_scenario['returns_30'] * (base_scenario['reduction_rate'] / 100)
-        base_monthly_savings = base_avoided_returns * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
-        base_monthly_cost = base_scenario['sales_30'] * base_scenario['additional_cost_per_item']
-        base_monthly_net = base_monthly_savings - base_monthly_cost
-        
-        # Calculate individual impacts (simplified)
-        # This is a simplified model - a more accurate model would account for interactions
-        sales_impact = (new_sales_30 - base_scenario['sales_30']) * base_scenario['additional_cost_per_item'] * -1  # Cost increase
-        return_rate_impact = (new_return_rate - base_scenario['return_rate']) / 100 * new_sales_30 * base_scenario['reduction_rate'] / 100 * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
-        reduction_impact = (new_reduction_rate - base_scenario['reduction_rate']) / 100 * new_returns_30 * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
-        additional_cost_impact = (new_additional_cost - base_scenario['additional_cost_per_item']) * new_sales_30 * -1
-        price_impact = (new_avg_price - base_scenario['avg_sale_price']) * new_avoided_returns
-        
-        # Create waterfall chart data
-        waterfall_data = [
-            {"Factor": "Original Monthly Net", "Impact": base_monthly_net, "Type": "Total"},
-            {"Factor": "Sales Volume", "Impact": sales_impact, "Type": "Increase" if sales_impact > 0 else "Decrease"},
-            {"Factor": "Return Rate", "Impact": return_rate_impact, "Type": "Increase" if return_rate_impact > 0 else "Decrease"},
-            {"Factor": "Reduction Rate", "Impact": reduction_impact, "Type": "Increase" if reduction_impact > 0 else "Decrease"},
-            {"Factor": "Additional Cost", "Impact": additional_cost_impact, "Type": "Increase" if additional_cost_impact > 0 else "Decrease"},
-            {"Factor": "Sale Price", "Impact": price_impact, "Type": "Increase" if price_impact > 0 else "Decrease"},
-            {"Factor": "New Monthly Net", "Impact": new_monthly_net, "Type": "Total"}
-        ]
-        
-        waterfall_df = pd.DataFrame(waterfall_data)
-        
-        # Create the waterfall chart
-        fig_waterfall = go.Figure(go.Waterfall(
-            name="Monthly Net Benefit Changes",
-            orientation="v",
-            measure=["absolute"] + ["relative"] * 5 + ["total"],
-            x=waterfall_df["Factor"],
-            y=waterfall_df["Impact"],
-            connector={"line": {"color": "rgb(63, 63, 63)"}},
-            decreasing={"marker": {"color": COLOR_SCHEME["negative"]}},
-            increasing={"marker": {"color": COLOR_SCHEME["positive"]}},
-            totals={"marker": {"color": COLOR_SCHEME["primary"]}}
-        ))
-        
-        fig_waterfall.update_layout(
-            title="Waterfall Chart: Monthly Net Benefit Drivers",
-            showlegend=False,
-            height=500
-        )
-        
-        st.plotly_chart(fig_waterfall, use_container_width=True)
-        
-        # Sensitivity analysis
-        st.markdown("### Sensitivity Analysis")
-        st.caption("This chart shows how ROI changes with different reduction rates and additional costs")
-        
-        # Create data for sensitivity analysis
-        reduction_range = np.linspace(max(0, new_reduction_rate - 20), min(100, new_reduction_rate + 20), 5)
-        cost_range = np.linspace(max(0, new_additional_cost - 1), new_additional_cost + 1, 5)
-        
-        sensitivity_data = []
-        
-        for red in reduction_range:
-            for cost in cost_range:
-                # Calculate ROI for this combination
-                avoided = new_returns_30 * (red / 100)
-                new_cost = base_scenario['current_unit_cost'] + cost
-                savings = avoided * (new_avg_price - new_cost)
-                add_costs = new_sales_30 * cost
-                net = savings - add_costs
-                annual = net * 12
-                
-                if new_total_investment > 0 and annual > 0:
-                    sens_roi = (annual / new_total_investment) * 100
-                else:
-                    sens_roi = 0
-                
-                sensitivity_data.append({
-                    "Reduction Rate": red,
-                    "Additional Cost": cost,
-                    "ROI": sens_roi
-                })
-        
-        sensitivity_df = pd.DataFrame(sensitivity_data)
-        
-        # Create heatmap
-        fig_heatmap = px.density_heatmap(
-            sensitivity_df,
-            x="Reduction Rate",
-            y="Additional Cost",
-            z="ROI",
-            labels={
-                "Reduction Rate": "Return Reduction Rate (%)",
-                "Additional Cost": "Additional Cost per Item ($)",
-                "ROI": "Return on Investment (%)"
-            },
-            title="ROI Sensitivity Analysis"
-        )
-        
-        fig_heatmap.update_layout(height=500)
-        st.plotly_chart(fig_heatmap, use_container_width=True)
-        
-        # Option to save as new scenario
-        if st.button("Save as New Scenario"):
-            # Create a new scenario name
-            new_name = f"{base_scenario_name} (What-If)"
-            
-            # Determine device class and regulatory impact from base scenario
-            device_class = base_scenario.get('device_class', 'Class II')
-            regulatory_impact = base_scenario.get('regulatory_impact', 'No impact')
-            
-            success, message = optimizer.add_scenario(
-                new_name, base_scenario['sku'], new_sales_30, new_avg_price,
-                base_scenario['sales_channel'], new_returns_30, base_scenario['solution'],
-                new_solution_cost, new_additional_cost, base_scenario['current_unit_cost'],
-                new_reduction_rate, new_sales_30 * 12, new_returns_30 * 12, base_scenario['tag'],
-                device_class, regulatory_impact, new_adverse_events, new_regulatory_cost
-            )
-            
-            if success:
-                st.success(f"What-if scenario saved as '{new_name}'!")
-            else:
-                st.error(message)
+            # Monte Carlo simulation
+            display_monte_carlo_simulation(base_scenario, base_scenario_name)
     else:
         st.info("Add scenarios first to use the what-if analysis tool.")
+
+def display_deterministic_analysis(base_scenario, base_scenario_name):
+    """Display deterministic what-if analysis"""
+    # Set up what-if parameters
+    st.markdown("### Adjust Parameters")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Sales volume change
+        sales_change = st.slider(
+            "Sales Volume Change (%)", 
+            min_value=-50, 
+            max_value=100, 
+            value=0,
+            help="Adjust projected monthly sales volume"
+        )
+        
+        # Return rate change
+        return_rate_change = st.slider(
+            "Return Rate Change (%)", 
+            min_value=-50, 
+            max_value=50, 
+            value=0,
+            help="Adjust the projected return rate relative to current rate"
+        )
+        
+        # Solution cost change
+        solution_cost_change = st.slider(
+            "Implementation Cost Change (%)", 
+            min_value=-50, 
+            max_value=100, 
+            value=0,
+            help="Adjust the one-time implementation cost of the solution"
+        )
+        
+        # Regulatory cost change (if applicable)
+        if 'regulatory_cost' in base_scenario and base_scenario['regulatory_cost'] > 0:
+            regulatory_cost_change = st.slider(
+                "Regulatory Cost Change (%)",
+                min_value=-50,
+                max_value=100,
+                value=0,
+                help="Adjust the regulatory submission and compliance costs"
+            )
+        else:
+            regulatory_cost_change = 0
+    
+    with col2:
+        # Reduction effectiveness change
+        reduction_effectiveness = st.slider(
+            "Return Reduction Effectiveness (%)", 
+            min_value=-50, 
+            max_value=50, 
+            value=0,
+            help="Adjust how effective the solution is at reducing returns"
+        )
+        
+        # Additional cost change
+        additional_cost_change = st.slider(
+            "Additional Cost per Item Change (%)", 
+            min_value=-50, 
+            max_value=100, 
+            value=0,
+            help="Adjust the ongoing additional cost per unit"
+        )
+        
+        # Average sale price change
+        price_change = st.slider(
+            "Average Sale Price Change (%)", 
+            min_value=-25, 
+            max_value=25, 
+            value=0,
+            help="Adjust the average selling price of the product"
+        )
+        
+        # Adverse events (if applicable)
+        if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
+            adverse_events_change = st.slider(
+                "Adverse Events Change (%)",
+                min_value=-50,
+                max_value=100,
+                value=0,
+                help="Adjust the projected number of adverse events"
+            )
+        else:
+            adverse_events_change = 0
+    
+    # Calculate new values
+    new_sales_30 = base_scenario['sales_30'] * (1 + sales_change/100)
+    new_return_rate = base_scenario['return_rate'] * (1 + return_rate_change/100)
+    new_returns_30 = (new_sales_30 * new_return_rate / 100)
+    new_solution_cost = base_scenario['solution_cost'] * (1 + solution_cost_change/100)
+    
+    if 'regulatory_cost' in base_scenario:
+        new_regulatory_cost = base_scenario['regulatory_cost'] * (1 + regulatory_cost_change/100)
+    else:
+        new_regulatory_cost = 0
+        
+    new_reduction_rate = base_scenario['reduction_rate'] * (1 + reduction_effectiveness/100)
+    new_additional_cost = base_scenario['additional_cost_per_item'] * (1 + additional_cost_change/100)
+    new_avg_price = base_scenario['avg_sale_price'] * (1 + price_change/100)
+    
+    if 'adverse_events' in base_scenario:
+        new_adverse_events = base_scenario['adverse_events'] * (1 + adverse_events_change/100)
+    else:
+        new_adverse_events = 0
+    
+    # Ensure values are within logical bounds
+    new_reduction_rate = min(100, max(0, new_reduction_rate))
+    new_return_rate = min(100, max(0, new_return_rate))
+    
+    # Create comparison dataframes
+    comparison_data = {
+        "Metric": [
+            "Monthly Sales (units)",
+            "Return Rate (%)",
+            "Monthly Returns (units)",
+            "Implementation Cost ($)",
+            "Return Reduction (%)",
+            "Additional Cost/Item ($)",
+            "Average Sale Price ($)"
+        ],
+        "Original": [
+            base_scenario['sales_30'],
+            base_scenario['return_rate'],
+            base_scenario['returns_30'],
+            base_scenario['solution_cost'],
+            base_scenario['reduction_rate'],
+            base_scenario['additional_cost_per_item'],
+            base_scenario['avg_sale_price']
+        ],
+        "New": [
+            new_sales_30,
+            new_return_rate,
+            new_returns_30,
+            new_solution_cost,
+            new_reduction_rate,
+            new_additional_cost,
+            new_avg_price
+        ]
+    }
+    
+    # Add regulatory costs if applicable
+    if 'regulatory_cost' in base_scenario and base_scenario['regulatory_cost'] > 0:
+        comparison_data["Metric"].append("Regulatory Cost ($)")
+        comparison_data["Original"].append(base_scenario['regulatory_cost'])
+        comparison_data["New"].append(new_regulatory_cost)
+        
+    # Add adverse events if applicable
+    if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
+        comparison_data["Metric"].append("Annual Adverse Events")
+        comparison_data["Original"].append(base_scenario['adverse_events'])
+        comparison_data["New"].append(new_adverse_events)
+        
+    comparison_df = pd.DataFrame(comparison_data)
+    
+    # Calculate financial impact for original scenario
+    original_avoided_returns = base_scenario['returns_30'] * (base_scenario['reduction_rate'] / 100)
+    original_monthly_savings = original_avoided_returns * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
+    original_monthly_cost = base_scenario['sales_30'] * base_scenario['additional_cost_per_item']
+    original_monthly_net = original_monthly_savings - original_monthly_cost
+    original_annual_net = original_monthly_net * 12
+    
+    total_investment = base_scenario['solution_cost']
+    if 'regulatory_cost' in base_scenario:
+        total_investment += base_scenario['regulatory_cost']
+        
+    if total_investment > 0 and original_annual_net > 0:
+        original_roi = (original_annual_net / total_investment) * 100
+        original_breakeven = total_investment / original_monthly_net
+    else:
+        original_roi = None
+        original_breakeven = None
+    
+    # Calculate financial impact for new scenario
+    new_unit_cost = base_scenario['current_unit_cost'] + new_additional_cost
+    new_avoided_returns = new_returns_30 * (new_reduction_rate / 100)
+    new_monthly_savings = new_avoided_returns * (new_avg_price - new_unit_cost)
+    new_monthly_cost = new_sales_30 * new_additional_cost
+    new_monthly_net = new_monthly_savings - new_monthly_cost
+    new_annual_net = new_monthly_net * 12
+    
+    new_total_investment = new_solution_cost + new_regulatory_cost
+    
+    if new_total_investment > 0 and new_annual_net > 0:
+        new_roi = (new_annual_net / new_total_investment) * 100
+        new_breakeven = new_total_investment / new_monthly_net
+    else:
+        new_roi = None
+        new_breakeven = None
+    
+    # Create financial impact comparison
+    financial_data = {
+        "Metric": [
+            "Monthly Savings ($)",
+            "Monthly Additional Costs ($)",
+            "Monthly Net Benefit ($)",
+            "Annual Net Benefit ($)",
+            "Return on Investment (%)",
+            "Break-even (months)"
+        ],
+        "Original": [
+            original_monthly_savings,
+            original_monthly_cost,
+            original_monthly_net,
+            original_annual_net,
+            original_roi,
+            original_breakeven
+        ],
+        "New": [
+            new_monthly_savings,
+            new_monthly_cost,
+            new_monthly_net,
+            new_annual_net,
+            new_roi,
+            new_breakeven
+        ]
+    }
+    
+    # Add adverse events impact if applicable
+    if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
+        original_avoided_adverse = base_scenario['adverse_events'] * (base_scenario['reduction_rate'] / 100)
+        new_avoided_adverse = new_adverse_events * (new_reduction_rate / 100)
+        
+        financial_data["Metric"].append("Avoided Adverse Events")
+        financial_data["Original"].append(original_avoided_adverse)
+        financial_data["New"].append(new_avoided_adverse)
+    
+    financial_df = pd.DataFrame(financial_data)
+    
+    # Display comparison tables
+    st.markdown("### Parameter Comparison")
+    st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+    
+    st.markdown("### Financial Impact Comparison")
+    st.dataframe(financial_df, use_container_width=True, hide_index=True)
+    
+    # Calculate percent changes for visualization
+    if original_annual_net > 0 and new_annual_net > 0:
+        net_benefit_change = ((new_annual_net / original_annual_net) - 1) * 100
+    else:
+        net_benefit_change = 0
+    
+    if original_roi and new_roi:
+        roi_change = ((new_roi / original_roi) - 1) * 100
+    else:
+        roi_change = 0
+    
+    if original_breakeven and new_breakeven:
+        breakeven_change = ((new_breakeven / original_breakeven) - 1) * 100
+    else:
+        breakeven_change = 0
+    
+    # Display impact visualization
+    st.markdown("### Impact Visualization")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            "Annual Net Benefit",
+            f"${new_annual_net:.2f}",
+            f"{net_benefit_change:.1f}%",
+            delta_color="normal" if net_benefit_change >= 0 else "inverse"
+        )
+    
+    with col2:
+        if new_roi:
+            st.metric(
+                "Return on Investment",
+                f"{new_roi:.1f}%",
+                f"{roi_change:.1f}%",
+                delta_color="normal" if roi_change >= 0 else "inverse"
+            )
+        else:
+            st.metric("Return on Investment", "N/A", delta=None)
+    
+    with col3:
+        if new_breakeven:
+            st.metric(
+                "Break-even Time",
+                f"{new_breakeven:.1f} months",
+                f"{-breakeven_change:.1f}%",  # Negative because shorter is better
+                delta_color="normal" if breakeven_change <= 0 else "inverse"
+            )
+        else:
+            st.metric("Break-even Time", "N/A", delta=None)
+    
+    # Add patient safety impact if applicable
+    if 'adverse_events' in base_scenario and base_scenario['adverse_events'] > 0:
+        st.markdown("##### Patient Safety Impact")
+        st.metric(
+            "Reduction in Adverse Events",
+            f"{new_avoided_adverse:.1f}",
+            f"{((new_avoided_adverse / original_avoided_adverse) - 1) * 100:.1f}%" if original_avoided_adverse > 0 else None,
+            delta_color="normal"
+        )
+    
+    # Waterfall chart for net benefit change factors
+    st.markdown("### Net Benefit Drivers")
+    
+    # Calculate impact of each factor (simplified model)
+    base_avoided_returns = base_scenario['returns_30'] * (base_scenario['reduction_rate'] / 100)
+    base_monthly_savings = base_avoided_returns * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
+    base_monthly_cost = base_scenario['sales_30'] * base_scenario['additional_cost_per_item']
+    base_monthly_net = base_monthly_savings - base_monthly_cost
+    
+    # Calculate individual impacts (simplified)
+    # This is a simplified model - a more accurate model would account for interactions
+    sales_impact = (new_sales_30 - base_scenario['sales_30']) * base_scenario['additional_cost_per_item'] * -1  # Cost increase
+    return_rate_impact = (new_return_rate - base_scenario['return_rate']) / 100 * new_sales_30 * base_scenario['reduction_rate'] / 100 * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
+    reduction_impact = (new_reduction_rate - base_scenario['reduction_rate']) / 100 * new_returns_30 * (base_scenario['avg_sale_price'] - base_scenario['new_unit_cost'])
+    additional_cost_impact = (new_additional_cost - base_scenario['additional_cost_per_item']) * new_sales_30 * -1
+    price_impact = (new_avg_price - base_scenario['avg_sale_price']) * new_avoided_returns
+    
+    # Create waterfall chart data
+    waterfall_data = [
+        {"Factor": "Original Monthly Net", "Impact": base_monthly_net, "Type": "Total"},
+        {"Factor": "Sales Volume", "Impact": sales_impact, "Type": "Increase" if sales_impact > 0 else "Decrease"},
+        {"Factor": "Return Rate", "Impact": return_rate_impact, "Type": "Increase" if return_rate_impact > 0 else "Decrease"},
+        {"Factor": "Reduction Rate", "Impact": reduction_impact, "Type": "Increase" if reduction_impact > 0 else "Decrease"},
+        {"Factor": "Additional Cost", "Impact": additional_cost_impact, "Type": "Increase" if additional_cost_impact > 0 else "Decrease"},
+        {"Factor": "Sale Price", "Impact": price_impact, "Type": "Increase" if price_impact > 0 else "Decrease"},
+        {"Factor": "New Monthly Net", "Impact": new_monthly_net, "Type": "Total"}
+    ]
+    
+    waterfall_df = pd.DataFrame(waterfall_data)
+    
+    # Create the waterfall chart
+    fig_waterfall = go.Figure(go.Waterfall(
+        name="Monthly Net Benefit Changes",
+        orientation="v",
+        measure=["absolute"] + ["relative"] * 5 + ["total"],
+        x=waterfall_df["Factor"],
+        y=waterfall_df["Impact"],
+        connector={"line": {"color": "rgb(63, 63, 63)"}},
+        decreasing={"marker": {"color": COLOR_SCHEME["negative"]}},
+        increasing={"marker": {"color": COLOR_SCHEME["positive"]}},
+        totals={"marker": {"color": COLOR_SCHEME["primary"]}}
+    ))
+    
+    fig_waterfall.update_layout(
+        title="Waterfall Chart: Monthly Net Benefit Drivers",
+        showlegend=False,
+        height=500
+    )
+    
+    st.plotly_chart(fig_waterfall, use_container_width=True)
+    
+    # Sensitivity analysis
+    st.markdown("### Sensitivity Analysis")
+    st.caption("This chart shows how ROI changes with different reduction rates and additional costs")
+    
+    # Create data for sensitivity analysis
+    reduction_range = np.linspace(max(0, new_reduction_rate - 20), min(100, new_reduction_rate + 20), 5)
+    cost_range = np.linspace(max(0, new_additional_cost - 1), new_additional_cost + 1, 5)
+    
+    sensitivity_data = []
+    
+    for red in reduction_range:
+        for cost in cost_range:
+            # Calculate ROI for this combination
+            avoided = new_returns_30 * (red / 100)
+            new_cost = base_scenario['current_unit_cost'] + cost
+            savings = avoided * (new_avg_price - new_cost)
+            add_costs = new_sales_30 * cost
+            net = savings - add_costs
+            annual = net * 12
+            
+            if new_total_investment > 0 and annual > 0:
+                sens_roi = (annual / new_total_investment) * 100
+            else:
+                sens_roi = 0
+            
+            sensitivity_data.append({
+                "Reduction Rate": red,
+                "Additional Cost": cost,
+                "ROI": sens_roi
+            })
+    
+    sensitivity_df = pd.DataFrame(sensitivity_data)
+    
+    # Create heatmap
+    fig_heatmap = px.density_heatmap(
+        sensitivity_df,
+        x="Reduction Rate",
+        y="Additional Cost",
+        z="ROI",
+        labels={
+            "Reduction Rate": "Return Reduction Rate (%)",
+            "Additional Cost": "Additional Cost per Item ($)",
+            "ROI": "Return on Investment (%)"
+        },
+        title="ROI Sensitivity Analysis"
+    )
+    
+    fig_heatmap.update_layout(height=500)
+    st.plotly_chart(fig_heatmap, use_container_width=True)
+    
+    # Option to save as new scenario
+    if st.button("Save as New Scenario"):
+        # Create a new scenario name
+        new_name = f"{base_scenario_name} (What-If)"
+        
+        # Determine device class and regulatory impact from base scenario
+        device_class = base_scenario.get('device_class', 'Class II')
+        regulatory_impact = base_scenario.get('regulatory_impact', 'No impact')
+        
+        success, message = optimizer.add_scenario(
+            new_name, base_scenario['sku'], new_sales_30, new_avg_price,
+            base_scenario['sales_channel'], new_returns_30, base_scenario['solution'],
+            new_solution_cost, new_additional_cost, base_scenario['current_unit_cost'],
+            new_reduction_rate, new_sales_30 * 12, new_returns_30 * 12, base_scenario['tag'],
+            device_class, regulatory_impact, new_adverse_events, new_regulatory_cost
+        )
+        
+        if success:
+            st.success(f"What-if scenario saved as '{new_name}'!")
+        else:
+            st.error(message)
+
+def display_monte_carlo_simulation(base_scenario, base_scenario_name):
+    """Display Monte Carlo simulation for what-if analysis"""
+    st.markdown("### Monte Carlo Simulation Settings")
+    st.markdown("""
+    This simulation will run multiple scenarios with random variations based on your parameters
+    to help understand the range of possible outcomes and their probabilities.
+    """)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Number of simulations
+        num_simulations = st.slider("Number of Simulations", 100, 1000, 500, 100)
+        
+        # Sales volume variation
+        sales_min = st.slider("Min Sales Volume Change (%)", -50, 0, -20)
+        sales_max = st.slider("Max Sales Volume Change (%)", 0, 100, 20)
+        sales_most_likely = st.slider("Most Likely Sales Volume Change (%)", 
+                                    min_value=sales_min, 
+                                    max_value=sales_max, 
+                                    value=0)
+    
+    with col2:
+        # Return reduction variation
+        reduction_min = st.slider("Min Reduction Effectiveness (%)", -40, 0, -10)
+        reduction_max = st.slider("Max Reduction Effectiveness (%)", 0, 100, 20)
+        reduction_most_likely = st.slider("Most Likely Reduction Effectiveness (%)", 
+                                        min_value=reduction_min, 
+                                        max_value=reduction_max, 
+                                        value=0)
+        
+        # Cost variation
+        cost_min = st.slider("Min Cost Increase (%)", -30, 0, -10)
+        cost_max = st.slider("Max Cost Increase (%)", 0, 50, 20)
+        cost_most_likely = st.slider("Most Likely Cost Increase (%)", 
+                                   min_value=cost_min, 
+                                   max_value=cost_max, 
+                                   value=0)
+    
+    # Run simulation button
+    if st.button("Run Monte Carlo Simulation"):
+        with st.spinner("Running simulation..."):
+            # Create empty lists to store simulation results
+            roi_results = []
+            breakeven_results = []
+            net_benefit_results = []
+            
+            # Generate random values using triangular distribution
+            np.random.seed(42)  # For reproducibility
+            sales_changes = np.random.triangular(sales_min, sales_most_likely, sales_max, num_simulations)
+            reduction_changes = np.random.triangular(reduction_min, reduction_most_likely, reduction_max, num_simulations)
+            cost_changes = np.random.triangular(cost_min, cost_most_likely, cost_max, num_simulations)
+            
+            # Function to calculate financial metrics for a single simulation
+            def calculate_metrics(sales_change, reduction_change, cost_change):
+                # Calculate new values
+                new_sales_30 = base_scenario['sales_30'] * (1 + sales_change/100)
+                new_return_rate = base_scenario['return_rate']  # Keep constant for simplicity
+                new_returns_30 = (new_sales_30 * new_return_rate / 100)
+                new_solution_cost = base_scenario['solution_cost'] * (1 + cost_change/100)
+                new_reduction_rate = base_scenario['reduction_rate'] * (1 + reduction_change/100)
+                new_additional_cost = base_scenario['additional_cost_per_item'] * (1 + cost_change/100)
+                new_avg_price = base_scenario['avg_sale_price']  # Keep constant for simplicity
+                
+                # Ensure values are within logical bounds
+                new_reduction_rate = min(100, max(0, new_reduction_rate))
+                
+                # Calculate financial impact
+                new_unit_cost = base_scenario['current_unit_cost'] + new_additional_cost
+                new_avoided_returns = new_returns_30 * (new_reduction_rate / 100)
+                new_monthly_savings = new_avoided_returns * (new_avg_price - new_unit_cost)
+                new_monthly_cost = new_sales_30 * new_additional_cost
+                new_monthly_net = new_monthly_savings - new_monthly_cost
+                new_annual_net = new_monthly_net * 12
+                
+                # Calculate ROI and breakeven
+                new_total_investment = new_solution_cost
+                if 'regulatory_cost' in base_scenario:
+                    new_total_investment += base_scenario['regulatory_cost']
+                
+                # Handle cases where investment or net benefit is zero or negative
+                if new_total_investment <= 0 or new_annual_net <= 0:
+                    return None, None, new_annual_net
+                
+                new_roi = (new_annual_net / new_total_investment) * 100
+                new_breakeven = new_total_investment / new_monthly_net
+                
+                return new_roi, new_breakeven, new_annual_net
+            
+            # Run simulations
+            for i in range(num_simulations):
+                roi, breakeven, net_benefit = calculate_metrics(
+                    sales_changes[i], reduction_changes[i], cost_changes[i]
+                )
+                
+                if roi is not None and breakeven is not None:
+                    roi_results.append(roi)
+                    breakeven_results.append(breakeven)
+                net_benefit_results.append(net_benefit)
+            
+            # Analyze results
+            roi_results = np.array(roi_results)
+            breakeven_results = np.array(breakeven_results)
+            net_benefit_results = np.array(net_benefit_results)
+            
+            # Calculate statistics
+            roi_mean = np.mean(roi_results)
+            roi_std = np.std(roi_results)
+            roi_min = np.min(roi_results)
+            roi_max = np.max(roi_results)
+            roi_median = np.median(roi_results)
+            
+            breakeven_mean = np.mean(breakeven_results)
+            breakeven_std = np.std(breakeven_results)
+            breakeven_min = np.min(breakeven_results)
+            breakeven_max = np.max(breakeven_results)
+            breakeven_median = np.median(breakeven_results)
+            
+            net_benefit_mean = np.mean(net_benefit_results)
+            net_benefit_std = np.std(net_benefit_results)
+            net_benefit_min = np.min(net_benefit_results)
+            net_benefit_max = np.max(net_benefit_results)
+            net_benefit_median = np.median(net_benefit_results)
+            
+            # Calculate confidence intervals (90%)
+            roi_ci_low = np.percentile(roi_results, 5)
+            roi_ci_high = np.percentile(roi_results, 95)
+            
+            breakeven_ci_low = np.percentile(breakeven_results, 5)
+            breakeven_ci_high = np.percentile(breakeven_results, 95)
+            
+            net_benefit_ci_low = np.percentile(net_benefit_results, 5)
+            net_benefit_ci_high = np.percentile(net_benefit_results, 95)
+            
+            # Calculate probability of positive ROI
+            prob_positive_roi = np.mean(roi_results > 0) * 100
+            
+            # Calculate probability of breakeven < 12 months
+            prob_quick_breakeven = np.mean(breakeven_results < 12) * 100
+            
+            # Display results
+            st.markdown("### Monte Carlo Simulation Results")
+            st.markdown(f"**Completed {num_simulations} simulations**")
+            
+            # Summary statistics
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric(
+                    "Expected ROI",
+                    f"{roi_mean:.1f}%",
+                    f"±{roi_std:.1f}%"
+                )
+                st.markdown(f"**90% Confidence Interval:** {roi_ci_low:.1f}% to {roi_ci_high:.1f}%")
+                st.markdown(f"**Probability of Positive ROI:** {prob_positive_roi:.1f}%")
+            
+            with col2:
+                st.metric(
+                    "Expected Break-even",
+                    f"{breakeven_mean:.1f} months",
+                    f"±{breakeven_std:.1f} months"
+                )
+                st.markdown(f"**90% Confidence Interval:** {breakeven_ci_low:.1f} to {breakeven_ci_high:.1f} months")
+                st.markdown(f"**Prob. Break-even < 12 months:** {prob_quick_breakeven:.1f}%")
+            
+            with col3:
+                st.metric(
+                    "Expected Annual Net Benefit",
+                    f"${net_benefit_mean:.2f}",
+                    f"±${net_benefit_std:.2f}"
+                )
+                st.markdown(f"**90% Confidence Interval:** ${net_benefit_ci_low:.2f} to ${net_benefit_ci_high:.2f}")
+                st.markdown(f"**Probability of Positive Benefit:** {np.mean(net_benefit_results > 0) * 100:.1f}%")
+            
+            # Create distribution plots
+            st.markdown("### Distribution of Results")
+            
+            # ROI distribution
+            fig_roi = px.histogram(
+                roi_results,
+                nbins=30,
+                labels={"value": "ROI (%)"},
+                title="ROI Distribution",
+                opacity=0.7
+            )
+            
+            # Add vertical lines for statistics
+            fig_roi.add_vline(x=roi_mean, line_dash="solid", line_color="red", annotation_text="Mean")
+            fig_roi.add_vline(x=roi_median, line_dash="dash", line_color="green", annotation_text="Median")
+            fig_roi.add_vline(x=roi_ci_low, line_dash="dot", line_color="blue", annotation_text="5%")
+            fig_roi.add_vline(x=roi_ci_high, line_dash="dot", line_color="blue", annotation_text="95%")
+            
+            st.plotly_chart(fig_roi, use_container_width=True)
+            
+            # Break-even distribution
+            fig_be = px.histogram(
+                breakeven_results,
+                nbins=30,
+                labels={"value": "Break-even Time (months)"},
+                title="Break-even Time Distribution",
+                opacity=0.7
+            )
+            
+            # Add vertical lines for statistics
+            fig_be.add_vline(x=breakeven_mean, line_dash="solid", line_color="red", annotation_text="Mean")
+            fig_be.add_vline(x=breakeven_median, line_dash="dash", line_color="green", annotation_text="Median")
+            fig_be.add_vline(x=breakeven_ci_low, line_dash="dot", line_color="blue", annotation_text="5%")
+            fig_be.add_vline(x=breakeven_ci_high, line_dash="dot", line_color="blue", annotation_text="95%")
+            fig_be.add_vline(x=12, line_dash="dash", line_color="orange", annotation_text="12 Month Target")
+            
+            st.plotly_chart(fig_be, use_container_width=True)
+            
+            # Create scatter plot to show relationship between variables
+            st.markdown("### Parameter Relationships")
+            
+            simulation_data = pd.DataFrame({
+                'Sales Change': sales_changes,
+                'Reduction Change': reduction_changes,
+                'Cost Change': cost_changes,
+                'ROI': roi_results if len(roi_results) == num_simulations else np.full(num_simulations, np.nan),
+                'Break-even': breakeven_results if len(breakeven_results) == num_simulations else np.full(num_simulations, np.nan),
+                'Net Benefit': net_benefit_results
+            })
+            
+            # Check for NaN values
+            valid_data = simulation_data.dropna(subset=['ROI', 'Break-even'])
+            
+            if not valid_data.empty:
+                # Create color scale based on ROI
+                fig_scatter = px.scatter(
+                    valid_data,
+                    x='Reduction Change',
+                    y='Sales Change',
+                    color='ROI',
+                    size='Net Benefit',
+                    hover_data=['Cost Change', 'Break-even'],
+                    labels={
+                        'Reduction Change': 'Reduction Effectiveness Change (%)',
+                        'Sales Change': 'Sales Volume Change (%)',
+                        'ROI': 'Return on Investment (%)',
+                        'Net Benefit': 'Annual Net Benefit ($)',
+                        'Cost Change': 'Cost Change (%)',
+                        'Break-even': 'Break-even (months)'
+                    },
+                    title="Parameter Relationships and Impact on ROI",
+                    color_continuous_scale=px.colors.sequential.Viridis
+                )
+                
+                fig_scatter.update_layout(height=600)
+                st.plotly_chart(fig_scatter, use_container_width=True)
+            
+            # Risk assessment table
+            st.markdown("### Risk Assessment")
+            
+            risk_data = {
+                "Metric": ["ROI < 0%", "Break-even > 24 months", "Net Benefit < $0"],
+                "Probability": [
+                    f"{100 - prob_positive_roi:.1f}%",
+                    f"{np.mean(breakeven_results > 24) * 100:.1f}%",
+                    f"{np.mean(net_benefit_results < 0) * 100:.1f}%"
+                ],
+                "Risk Level": [
+                    "High" if (100 - prob_positive_roi) > 30 else "Medium" if (100 - prob_positive_roi) > 10 else "Low",
+                    "High" if np.mean(breakeven_results > 24) * 100 > 30 else "Medium" if np.mean(breakeven_results > 24) * 100 > 10 else "Low",
+                    "High" if np.mean(net_benefit_results < 0) * 100 > 30 else "Medium" if np.mean(net_benefit_results < 0) * 100 > 10 else "Low"
+                ]
+            }
+            
+            risk_df = pd.DataFrame(risk_data)
+            
+            # Add color coding for risk level
+            risk_df["Risk Color"] = risk_df["Risk Level"].apply(
+                lambda x: "#c62828" if x == "High" else "#ff8f00" if x == "Medium" else "#00796b"
+            )
+            
+            # Display risk table with formatting
+            st.dataframe(
+                risk_df[["Metric", "Probability", "Risk Level"]],
+                column_config={
+                    "Risk Level": st.column_config.Column(
+                        "Risk Level",
+                        help="Risk level based on probability",
+                        width="medium"
+                    )
+                },
+                hide_index=True
+            )
+            
+            # Recommendation based on simulation results
+            st.markdown("### Recommendation")
+            
+            if prob_positive_roi > 80 and prob_quick_breakeven > 70:
+                recommendation = "Strong Proceed"
+                confidence = "High"
+                details = "This investment has a high probability of success with good returns and quick break-even time."
+            elif prob_positive_roi > 60 and prob_quick_breakeven > 50:
+                recommendation = "Proceed with Monitoring"
+                confidence = "Medium"
+                details = "This investment is likely to succeed but should be monitored closely for changes in key parameters."
+            elif prob_positive_roi > 40:
+                recommendation = "Proceed with Caution"
+                confidence = "Low"
+                details = "This investment has potential but carries significant risk. Consider pilot implementation or staging."
+            else:
+                recommendation = "Not Recommended"
+                confidence = "Very Low"
+                details = "This investment carries too much risk of negative returns or excessive payback period."
+            
+            st.markdown(f"""
+            <div style="background-color: {'#e8f5e9' if recommendation == 'Strong Proceed' else '#fff3e0' if recommendation in ['Proceed with Monitoring', 'Proceed with Caution'] else '#ffebee'}; 
+                       padding: 20px; 
+                       border-radius: 8px; 
+                       border-left: 5px solid {'#00796b' if recommendation == 'Strong Proceed' else '#ff8f00' if recommendation in ['Proceed with Monitoring', 'Proceed with Caution'] else '#c62828'};">
+                <h4 style="margin-top: 0;">Recommendation: {recommendation}</h4>
+                <p><strong>Confidence:</strong> {confidence}</p>
+                <p>{details}</p>
+                <p><strong>Key Considerations:</strong></p>
+                <ul>
+                    <li>Expected ROI: {roi_mean:.1f}% (90% CI: {roi_ci_low:.1f}% to {roi_ci_high:.1f}%)</li>
+                    <li>Expected Break-even: {breakeven_mean:.1f} months</li>
+                    <li>Risk of negative ROI: {100 - prob_positive_roi:.1f}%</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
 
 def display_settings():
     """Display app settings and data management options"""
