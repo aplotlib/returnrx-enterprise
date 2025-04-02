@@ -9,7 +9,8 @@ COLOR_SCHEME = {
     "neutral": "#1565c0",    # Darker blue
     "text_dark": "#263238",
     "text_light": "#ecf0f1",
-    "regulatory": "#4527a0"  # Purple for regulatory elements}
+    "regulatory": "#4527a0"  # Purple for regulatory elements
+}
     
 """
 MedDevROI - Medical Device ROI & Risk Analysis Suite
