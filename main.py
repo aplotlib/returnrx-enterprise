@@ -4,13 +4,19 @@ A comprehensive analytics tool for evaluating e-commerce return reduction invest
 
 This application helps businesses analyze and optimize return reduction strategies
 with precise ROI calculations, scenario planning, and interactive visualizations.
+
+Improved version with:
+- Modular code structure
+- Enhanced error handling
+- Optimized calculations
+- Improved UI/UX
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -19,18 +25,13 @@ import json
 import os
 import time
 import base64
-from PIL import Image
-from io import BytesIO
+from typing import Dict, List, Tuple, Optional, Union, Any
+import traceback
 
-# App configuration
-st.set_page_config(
-    page_title="KaizenROI | Smart Return Optimization Suite",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# =============================================================================
+# Constants and Configuration
+# =============================================================================
 
-# Define color scheme
 COLOR_SCHEME = {
     "primary": "#004366",
     "secondary": "#23b2be",
@@ -43,181 +44,95 @@ COLOR_SCHEME = {
     "text_light": "#ecf0f1"
 }
 
-# Custom CSS
-st.markdown("""
-<style>
-    /* Main styling */
-    body, .stApp {
-        background-color: #e6eff3;
-        color: #2c3e50;
-        font-family: 'Poppins', sans-serif;
+EXAMPLE_SCENARIOS = [
+    {
+        "scenario_name": "Premium Packaging",
+        "sku": "APPAREL-123",
+        "sales_30": 750,
+        "avg_sale_price": 89.99,
+        "sales_channel": "Direct to Consumer",
+        "returns_30": 94,
+        "solution": "Premium unboxing experience with clearer sizing guide",
+        "solution_cost": 5000,
+        "additional_cost_per_item": 1.25,
+        "current_unit_cost": 32.50,
+        "reduction_rate": 30,
+        "sales_365": 9125,
+        "returns_365": 1140,
+        "tag": "Packaging"
+    },
+    {
+        "scenario_name": "Size Verification Tool",
+        "sku": "SHOES-456",
+        "sales_30": 420,
+        "avg_sale_price": 129.99,
+        "sales_channel": "Shopify",
+        "returns_30": 71,
+        "solution": "Interactive size verification tool",
+        "solution_cost": 7500,
+        "additional_cost_per_item": 0,
+        "current_unit_cost": 45.75,
+        "reduction_rate": 35,
+        "sales_365": 5100,
+        "returns_365": 860,
+        "tag": "Size/Fit"
+    },
+    {
+        "scenario_name": "Better Product Images",
+        "sku": "HOME-789",
+        "sales_30": 1250,
+        "avg_sale_price": 49.99,
+        "sales_channel": "Amazon",
+        "returns_30": 138,
+        "solution": "360° product views and improved images",
+        "solution_cost": 3200,
+        "additional_cost_per_item": 0,
+        "current_unit_cost": 18.50,
+        "reduction_rate": 25,
+        "sales_365": 15200,
+        "returns_365": 1675,
+        "tag": "Product Description"
     }
-    
-    /* Headers */
-    h1, h2, h3, h4, h5, h6 {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 600;
-        color: #004366;
-    }
-    
-    /* Button styling */
-    .stButton>button {
-        background-color: #23b2be;
-        color: white;
-        border-radius: 5px;
-        border: none;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #004366;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    /* Form styling */
-    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div {
-        border-radius: 5px;
-        border: 1px solid #bdc3c7;
-    }
-    
-    /* Dataframe styling */
-    .stDataFrame thead tr th {
-        background-color: #23b2be;
-        color: white;
-        padding: 8px 12px;
-        font-weight: 500;
-    }
-    .stDataFrame tbody tr:nth-child(even) {
-        background-color: rgba(236, 240, 241, 0.5);
-    }
-    .stDataFrame tbody tr:hover {
-        background-color: rgba(52, 152, 219, 0.1);
-    }
-    
-    /* Cards */
-    .css-card {
-        border-radius: 10px;
-        padding: 1.5rem;
-        background-color: white;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        margin-bottom: 1rem;
-    }
-    
-    /* Metric display */
-    .metric-container {
-        background-color: white;
-        border-radius: 10px;
-        padding: 1rem;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .metric-value {
-        font-size: 1.8rem;
-        font-weight: 600;
-    }
-    .metric-label {
-        font-size: 0.9rem;
-        color: #7f8c8d;
-    }
-    
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 6px 6px 0px 0px;
-        padding: 8px 16px;
-        background-color: #ecf0f1;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: white;
-        border-color: #23b2be;
-        border-bottom: 3px solid #23b2be;
-    }
-    
-    /* Tooltips */
-    .tooltip {
-        position: relative;
-        display: inline-block;
-        cursor: help;
-    }
-    .tooltip .tooltiptext {
-        visibility: hidden;
-        width: 200px;
-        background-color: #2c3e50;
-        color: #fff;
-        text-align: center;
-        border-radius: 6px;
-        padding: 10px;
-        position: absolute;
-        z-index: 1;
-        bottom: 125%;
-        left: 50%;
-        margin-left: -100px;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    .tooltip:hover .tooltiptext {
-        visibility: visible;
-        opacity: 1;
-    }
-    
-    /* Custom components */
-    .info-box {
-        background-color: rgba(52, 152, 219, 0.1);
-        border-left: 5px solid #3498db;
-        padding: 1rem;
-        border-radius: 0 5px 5px 0;
-        margin: 1rem 0;
-    }
-    .warning-box {
-        background-color: rgba(243, 156, 18, 0.1);
-        border-left: 5px solid #f39c12;
-        padding: 1rem;
-        border-radius: 0 5px 5px 0;
-        margin: 1rem 0;
-    }
-    .loading-spinner {
-        text-align: center;
-        margin: 20px 0;
-    }
-    
-    /* Sidebar */
-    .css-1d391kg {
-        background-color: #004366;
-    }
-    .css-1d391kg .sidebar-content {
-        padding: 1rem;
-    }
-    
-    /* Charts */
-    .js-plotly-plot {
-        border-radius: 10px;
-        background-color: white;
-        padding: 1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-</style>
-""", unsafe_allow_html=True)
+]
 
-# Helper functions
-def format_currency(value):
+# Columns for the scenarios DataFrame
+SCENARIO_COLUMNS = [
+    'uid', 'scenario_name', 'sku', 'sales_30', 'avg_sale_price',
+    'sales_channel', 'returns_30', 'return_rate', 'solution', 'solution_cost',
+    'additional_cost_per_item', 'current_unit_cost', 'reduction_rate',
+    'return_cost_30', 'return_cost_annual', 'revenue_impact_30',
+    'revenue_impact_annual', 'new_unit_cost', 'savings_30',
+    'annual_savings', 'break_even_days', 'break_even_months',
+    'roi', 'score', 'timestamp', 'annual_additional_costs', 'net_benefit',
+    'margin_before', 'margin_after', 'margin_after_amortized',
+    'sales_365', 'returns_365', 'avoided_returns_30', 'avoided_returns_365',
+    'monthly_net_benefit', 'tag'
+]
+
+# =============================================================================
+# Utility Functions
+# =============================================================================
+
+def format_currency(value: Optional[float]) -> str:
+    """Format a value as currency."""
     if pd.isna(value) or value is None:
         return "-"
     return f"${value:,.2f}"
 
-def format_percent(value):
+def format_percent(value: Optional[float]) -> str:
+    """Format a value as percentage."""
     if pd.isna(value) or value is None:
         return "-"
     return f"{value:.2f}%"
 
-def format_number(value):
+def format_number(value: Optional[float]) -> str:
+    """Format a value as number with commas."""
     if pd.isna(value) or value is None:
         return "-"
     return f"{value:,.2f}"
 
-def get_icon(value, threshold=0, positive_is_good=True):
+def get_icon(value: Optional[float], threshold: float = 0, positive_is_good: bool = True) -> str:
+    """Get an icon based on value comparison to threshold."""
     if pd.isna(value) or value is None:
         return "❓"
     
@@ -226,8 +141,8 @@ def get_icon(value, threshold=0, positive_is_good=True):
     else:
         return "✅" if value <= threshold else "⚠️"
 
-def calculate_roi_score(roi, breakeven_days, reduction_rate):
-    """Calculate a weighted ROI score with multiple factors"""
+def calculate_roi_score(roi: float, breakeven_days: float, reduction_rate: float) -> Optional[float]:
+    """Calculate a weighted ROI score with multiple factors."""
     if pd.isna(roi) or pd.isna(breakeven_days) or pd.isna(reduction_rate):
         return None
     
@@ -244,8 +159,8 @@ def calculate_roi_score(roi, breakeven_days, reduction_rate):
     weighted_score = (roi_score * 0.5) + (breakeven_score * 0.35) + (reduction_score * 0.15)
     return weighted_score * 100  # Convert to 0-100 scale
 
-def get_color_scale(value, min_val, max_val, reverse=False):
-    """Get color from a green-yellow-red scale based on value"""
+def get_color_scale(value: Optional[float], min_val: float, max_val: float, reverse: bool = False) -> str:
+    """Get color from a green-yellow-red scale based on value."""
     if pd.isna(value) or value is None:
         return "#cccccc"  # Gray for null values
     
@@ -268,141 +183,126 @@ def get_color_scale(value, min_val, max_val, reverse=False):
     
     return color
 
-# Data management
-class ReturnOptimizer:
-    def __init__(self):
-        self.load_data()
-        self.default_examples = [
-            {
-                "scenario_name": "Premium Packaging",
-                "sku": "APPAREL-123",
-                "sales_30": 750,
-                "avg_sale_price": 89.99,
-                "sales_channel": "Direct to Consumer",
-                "returns_30": 94,
-                "solution": "Premium unboxing experience with clearer sizing guide",
-                "solution_cost": 5000,
-                "additional_cost_per_item": 1.25,
-                "current_unit_cost": 32.50,
-                "reduction_rate": 30,
-                "sales_365": 9125,
-                "returns_365": 1140
-            },
-            {
-                "scenario_name": "Size Verification Tool",
-                "sku": "SHOES-456",
-                "sales_30": 420,
-                "avg_sale_price": 129.99,
-                "sales_channel": "Shopify",
-                "returns_30": 71,
-                "solution": "Interactive size verification tool",
-                "solution_cost": 7500,
-                "additional_cost_per_item": 0,
-                "current_unit_cost": 45.75,
-                "reduction_rate": 35,
-                "sales_365": 5100,
-                "returns_365": 860
-            },
-            {
-                "scenario_name": "Better Product Images",
-                "sku": "HOME-789",
-                "sales_30": 1250,
-                "avg_sale_price": 49.99,
-                "sales_channel": "Amazon",
-                "returns_30": 138,
-                "solution": "360° product views and improved images",
-                "solution_cost": 3200,
-                "additional_cost_per_item": 0,
-                "current_unit_cost": 18.50,
-                "reduction_rate": 25,
-                "sales_365": 15200,
-                "returns_365": 1675
-            }
-        ]
+# =============================================================================
+# Data Management Class
+# =============================================================================
 
-    def load_data(self):
-        """Load data from session state or initialize empty dataframe"""
+class ReturnOptimizer:
+    """Class to manage return optimization scenarios and calculations."""
+    
+    def __init__(self) -> None:
+        """Initialize the ReturnOptimizer."""
+        self.load_data()
+    
+    def load_data(self) -> None:
+        """Load data from session state or initialize empty dataframe."""
         if 'scenarios' not in st.session_state:
-            self.scenarios = pd.DataFrame(columns=[
-                'uid', 'scenario_name', 'sku', 'sales_30', 'avg_sale_price',
-                'sales_channel', 'returns_30', 'return_rate', 'solution', 'solution_cost',
-                'additional_cost_per_item', 'current_unit_cost', 'reduction_rate',
-                'return_cost_30', 'return_cost_annual', 'revenue_impact_30',
-                'revenue_impact_annual', 'new_unit_cost', 'savings_30',
-                'annual_savings', 'break_even_days', 'break_even_months',
-                'roi', 'score', 'timestamp', 'annual_additional_costs', 'net_benefit',
-                'margin_before', 'margin_after', 'margin_after_amortized',
-                'sales_365', 'returns_365', 'avoided_returns_30', 'avoided_returns_365',
-                'monthly_net_benefit', 'tag'
-            ])
+            self.scenarios = pd.DataFrame(columns=SCENARIO_COLUMNS)
             st.session_state['scenarios'] = self.scenarios
         else:
             self.scenarios = st.session_state['scenarios']
     
-    def save_data(self):
-        """Save data to session state"""
+    def save_data(self) -> None:
+        """Save data to session state."""
         st.session_state['scenarios'] = self.scenarios
     
-    def download_json(self):
-        """Get scenarios data as JSON string"""
+    def download_json(self) -> str:
+        """Get scenarios data as JSON string."""
         return self.scenarios.to_json(orient='records', date_format='iso')
     
-    def upload_json(self, json_str):
-        """Load scenarios from JSON string"""
+    def upload_json(self, json_str: str) -> bool:
+        """Load scenarios from JSON string."""
         try:
             data = pd.read_json(json_str, orient='records')
             if not data.empty:
                 # Ensure all required columns exist
-                for col in self.scenarios.columns:
+                for col in SCENARIO_COLUMNS:
                     if col not in data.columns:
                         data[col] = None
                 
                 # Remove any extra columns
-                data = data[self.scenarios.columns]
+                data = data[SCENARIO_COLUMNS]
                 
                 self.scenarios = data
                 self.save_data()
                 return True
             return False
-        except Exception as e:
-            st.error(f"Error loading data: {str(e)}")
+        except Exception:
+            st.error(f"Error loading data: {traceback.format_exc()}")
             return False
 
-    def add_scenario(self, scenario_name, sku, sales_30, avg_sale_price, sales_channel,
-                     returns_30, solution, solution_cost, additional_cost_per_item,
-                     current_unit_cost, reduction_rate, sales_365=None, returns_365=None, tag=None):
-        """Add a new scenario with calculations"""
+    def add_scenario(self, 
+                   scenario_name: str, 
+                   sku: str, 
+                   sales_30: float, 
+                   avg_sale_price: float, 
+                   sales_channel: str,
+                   returns_30: float, 
+                   solution: str, 
+                   solution_cost: float, 
+                   additional_cost_per_item: float,
+                   current_unit_cost: float, 
+                   reduction_rate: float, 
+                   sales_365: Optional[float] = None, 
+                   returns_365: Optional[float] = None, 
+                   tag: Optional[str] = None) -> Tuple[bool, str]:
+        """
+        Add a new scenario with calculations.
+        
+        Args:
+            scenario_name: Name of the scenario
+            sku: Product SKU
+            sales_30: 30-day sales in units
+            avg_sale_price: Average sale price per unit
+            sales_channel: Sales channel (e.g., "Amazon")
+            returns_30: 30-day returns in units
+            solution: Description of the solution
+            solution_cost: One-time cost of implementing the solution
+            additional_cost_per_item: Additional per-unit cost after implementation
+            current_unit_cost: Current cost per unit
+            reduction_rate: Expected percentage reduction in returns
+            sales_365: Annual sales in units (optional)
+            returns_365: Annual returns in units (optional)
+            tag: Category tag (optional)
+            
+        Returns:
+            Tuple of (success, message)
+        """
         try:
             # Validate inputs
             if not sku or not scenario_name:
                 return False, "SKU and Scenario Name are required"
             
-            if sales_30 <= 0:
-                return False, "Sales must be greater than zero"
+            if not isinstance(sales_30, (int, float)) or sales_30 <= 0:
+                return False, "Sales must be a positive number"
+            
+            if not isinstance(returns_30, (int, float)) or returns_30 < 0:
+                return False, "Returns must be a non-negative number"
             
             if returns_30 > sales_30:
                 return False, "Returns cannot exceed sales"
             
-            if current_unit_cost <= 0 or avg_sale_price <= 0:
-                return False, "Unit cost and sale price must be greater than zero"
+            if not isinstance(current_unit_cost, (int, float)) or current_unit_cost <= 0:
+                return False, "Unit cost must be a positive number"
+                
+            if not isinstance(avg_sale_price, (int, float)) or avg_sale_price <= 0:
+                return False, "Sale price must be a positive number"
             
             if avg_sale_price <= current_unit_cost:
                 return False, "Sale price must be greater than unit cost"
             
             # Use defaults if not provided
-            if not scenario_name:
-                scenario_name = f"Scenario {len(self.scenarios) + 1}"
-            
-            # Fill in calculations
-            uid = str(uuid.uuid4())[:8]
-            return_rate = (returns_30 / sales_30) * 100 if sales_30 else 0
-            
-            # If 365-day data not provided, extrapolate from 30-day
-            if sales_365 is None or sales_365 <= 0:
+            if sales_365 is None or not isinstance(sales_365, (int, float)) or sales_365 <= 0:
                 sales_365 = sales_30 * 12
             
-            if returns_365 is None or returns_365 <= 0:
+            if returns_365 is None or not isinstance(returns_365, (int, float)) or returns_365 <= 0:
                 returns_365 = returns_30 * 12
+            
+            # Generate a unique ID
+            uid = str(uuid.uuid4())[:8]
+            
+            # Calculate basic metrics
+            return_rate = (returns_30 / sales_30) * 100 if sales_30 > 0 else 0
             
             # Calculate avoided returns
             avoided_returns_30 = returns_30 * (reduction_rate / 100)
@@ -485,24 +385,25 @@ class ReturnOptimizer:
             self.save_data()
             return True, "Scenario added successfully!"
         except Exception as e:
-            return False, f"Error adding scenario: {str(e)}"
+            error_details = traceback.format_exc()
+            return False, f"Error adding scenario: {str(e)}\n{error_details}"
     
-    def get_scenario(self, uid):
-        """Get a scenario by UID"""
+    def get_scenario(self, uid: str) -> Optional[Dict[str, Any]]:
+        """Get a scenario by UID."""
         if uid in self.scenarios['uid'].values:
             return self.scenarios[self.scenarios['uid'] == uid].iloc[0].to_dict()
         return None
     
-    def delete_scenario(self, uid):
-        """Delete a scenario by UID"""
+    def delete_scenario(self, uid: str) -> bool:
+        """Delete a scenario by UID."""
         if uid in self.scenarios['uid'].values:
             self.scenarios = self.scenarios[self.scenarios['uid'] != uid]
             self.save_data()
             return True
         return False
     
-    def update_scenario(self, uid, **kwargs):
-        """Update a scenario and recalculate values"""
+    def update_scenario(self, uid: str, **kwargs) -> Tuple[bool, str]:
+        """Update a scenario and recalculate values."""
         if uid not in self.scenarios['uid'].values:
             return False, "Scenario not found"
         
@@ -530,17 +431,17 @@ class ReturnOptimizer:
         
         return success, message
     
-    def add_example_scenarios(self):
-        """Add example scenarios for demonstration"""
+    def add_example_scenarios(self) -> int:
+        """Add example scenarios for demonstration."""
         added = 0
-        for example in self.default_examples:
+        for example in EXAMPLE_SCENARIOS:
             success, _ = self.add_scenario(**example)
             if success:
                 added += 1
         return added
 
-    def clone_scenario(self, uid, new_name=None):
-        """Clone an existing scenario"""
+    def clone_scenario(self, uid: str, new_name: Optional[str] = None) -> Tuple[bool, str]:
+        """Clone an existing scenario."""
         if uid not in self.scenarios['uid'].values:
             return False, "Scenario not found"
         
@@ -563,14 +464,183 @@ class ReturnOptimizer:
         
         return success, message
 
-# Initialize app
-if 'optimizer' not in st.session_state:
-    st.session_state.optimizer = ReturnOptimizer()
-optimizer = st.session_state.optimizer
+# =============================================================================
+# UI Styling and Setup
+# =============================================================================
 
-# App functions
+def setup_page_config():
+    """Configure the Streamlit page settings."""
+    st.set_page_config(
+        page_title="KaizenROI | Smart Return Optimization Suite",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Apply custom CSS
+    st.markdown("""
+    <style>
+        /* Main styling */
+        body, .stApp {
+            background-color: #e6eff3;
+            color: #2c3e50;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: #004366;
+        }
+        
+        /* Button styling */
+        .stButton>button {
+            background-color: #23b2be;
+            color: white;
+            border-radius: 5px;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .stButton>button:hover {
+            background-color: #004366;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Form styling */
+        .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div {
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+        }
+        
+        /* Dataframe styling */
+        .stDataFrame thead tr th {
+            background-color: #23b2be;
+            color: white;
+            padding: 8px 12px;
+            font-weight: 500;
+        }
+        .stDataFrame tbody tr:nth-child(even) {
+            background-color: rgba(236, 240, 241, 0.5);
+        }
+        .stDataFrame tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        /* Cards */
+        .css-card {
+            border-radius: 10px;
+            padding: 1.5rem;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+        }
+        
+        /* Metric display */
+        .metric-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        .metric-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        /* Tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 6px 6px 0px 0px;
+            padding: 8px 16px;
+            background-color: #ecf0f1;
+        }
+        .stTabs [aria-selected="true"] {
+            background-color: white;
+            border-color: #23b2be;
+            border-bottom: 3px solid #23b2be;
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #2c3e50;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Custom components */
+        .info-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 5px solid #3498db;
+            padding: 1rem;
+            border-radius: 0 5px 5px 0;
+            margin: 1rem 0;
+        }
+        .warning-box {
+            background-color: rgba(243, 156, 18, 0.1);
+            border-left: 5px solid #f39c12;
+            padding: 1rem;
+            border-radius: 0 5px 5px 0;
+            margin: 1rem 0;
+        }
+        .loading-spinner {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        /* Sidebar */
+        .css-1d391kg {
+            background-color: #004366;
+        }
+        .css-1d391kg .sidebar-content {
+            padding: 1rem;
+        }
+        
+        /* Charts */
+        .js-plotly-plot {
+            border-radius: 10px;
+            background-color: white;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+# =============================================================================
+# UI Component Functions
+# =============================================================================
+
 def display_header():
-    """Display app header with logo and navigation"""
+    """Display app header with logo and navigation."""
     col1, col2 = st.columns([1, 5])
     
     # Logo (placeholder - in a real app, replace with actual logo)
@@ -587,16 +657,16 @@ def display_header():
         st.title("Smart Return Optimization Suite")
         st.caption("Evaluate return reduction investments with precision to improve bottom-line performance.")
 
-def display_metrics_overview(df):
-    """Display key metrics overview cards"""
+def display_metrics_overview(df: pd.DataFrame):
+    """Display key metrics overview cards."""
     if df.empty:
         st.info("Add or generate scenarios to see metrics.")
         return
     
     # Calculate aggregate metrics
     total_scenarios = len(df)
-    avg_roi = df['roi'].mean()
-    avg_break_even = df['break_even_months'].mean()
+    avg_roi = df['roi'].mean() if not df['roi'].isnull().all() else 0
+    avg_break_even = df['break_even_months'].mean() if not df['break_even_months'].isnull().all() else 0
     total_net_benefit = df['net_benefit'].sum()
     total_investment = df['solution_cost'].sum()
     portfolio_roi = (total_net_benefit / total_investment * 100) if total_investment > 0 else 0
@@ -637,8 +707,16 @@ def display_metrics_overview(df):
         </div>
         """, unsafe_allow_html=True)
 
-def create_scenario_form():
-    """Create form for adding a new scenario"""
+def create_scenario_form(optimizer: ReturnOptimizer) -> bool:
+    """
+    Create form for adding a new scenario.
+    
+    Args:
+        optimizer: ReturnOptimizer instance
+        
+    Returns:
+        bool: True if scenario was added successfully
+    """
     with st.form(key="scenario_form"):
         st.subheader("Add New Scenario")
         
@@ -733,8 +811,14 @@ def create_scenario_form():
     
     return False
 
-def display_scenario_table(df):
-    """Display scenario table with filtering and sorting"""
+def display_scenario_table(df: pd.DataFrame, optimizer: ReturnOptimizer):
+    """
+    Display scenario table with filtering and sorting.
+    
+    Args:
+        df: DataFrame with scenarios
+        optimizer: ReturnOptimizer instance
+    """
     if df.empty:
         st.info("No scenarios found. Add a new scenario or load example scenarios.")
         return
@@ -784,12 +868,12 @@ def display_scenario_table(df):
     ]].copy()
     
     # Format columns for display
-    display_df['return_rate'] = display_df['return_rate'].apply(lambda x: f"{x:.1f}%")
-    display_df['solution_cost'] = display_df['solution_cost'].apply(lambda x: f"${x:,.2f}")
-    display_df['reduction_rate'] = display_df['reduction_rate'].apply(lambda x: f"{x:.0f}%")
-    display_df['roi'] = display_df['roi'].apply(lambda x: f"{x:.1f}%" if not pd.isna(x) else "N/A")
-    display_df['break_even_months'] = display_df['break_even_months'].apply(lambda x: f"{x:.1f}" if not pd.isna(x) else "N/A")
-    display_df['net_benefit'] = display_df['net_benefit'].apply(lambda x: f"${x:,.2f}")
+    display_df['return_rate'] = display_df['return_rate'].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else "N/A")
+    display_df['solution_cost'] = display_df['solution_cost'].apply(lambda x: f"${x:,.2f}" if pd.notna(x) else "N/A")
+    display_df['reduction_rate'] = display_df['reduction_rate'].apply(lambda x: f"{x:.0f}%" if pd.notna(x) else "N/A")
+    display_df['roi'] = display_df['roi'].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else "N/A")
+    display_df['break_even_months'] = display_df['break_even_months'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
+    display_df['net_benefit'] = display_df['net_benefit'].apply(lambda x: f"${x:,.2f}" if pd.notna(x) else "N/A")
     
     # Add color-coded score column
     def format_score(row):
@@ -844,12 +928,14 @@ def display_scenario_table(df):
             if st.button("View Details", key="view_btn"):
                 st.session_state['selected_scenario'] = selected_uid
                 st.session_state['view_scenario'] = True
+                st.experimental_rerun()
         
         with col3:
             if st.button("Clone", key="clone_btn"):
                 success, message = optimizer.clone_scenario(selected_uid)
                 if success:
                     st.success(f"Scenario cloned successfully!")
+                    st.experimental_rerun()
                 else:
                     st.error(message)
         
@@ -857,11 +943,18 @@ def display_scenario_table(df):
             if st.button("Delete", key="delete_btn"):
                 if optimizer.delete_scenario(selected_uid):
                     st.success(f"Scenario '{selected_scenario}' deleted successfully.")
+                    st.experimental_rerun()
                 else:
                     st.error("Failed to delete scenario.")
 
-def display_scenario_details(uid):
-    """Display detailed view of a scenario"""
+def display_scenario_details(uid: str, optimizer: ReturnOptimizer):
+    """
+    Display detailed view of a scenario.
+    
+    Args:
+        uid: Scenario UID
+        optimizer: ReturnOptimizer instance
+    """
     scenario = optimizer.get_scenario(uid)
     if not scenario:
         st.error("Scenario not found")
@@ -878,14 +971,15 @@ def display_scenario_details(uid):
         st.markdown(f"**Category:** {scenario['tag'] or 'Not categorized'}")
     
     with col2:
-        st.markdown(f"**Monthly Sales:** {scenario['sales_30']} units")
-        st.markdown(f"**Monthly Returns:** {scenario['returns_30']} units")
+        st.markdown(f"**Monthly Sales:** {int(scenario['sales_30']):,} units")
+        st.markdown(f"**Monthly Returns:** {int(scenario['returns_30']):,} units")
         st.markdown(f"**Return Rate:** {scenario['return_rate']:.2f}%")
     
     with col3:
         st.markdown(f"**Average Sale Price:** ${scenario['avg_sale_price']:.2f}")
         st.markdown(f"**Current Unit Cost:** ${scenario['current_unit_cost']:.2f}")
-        st.markdown(f"**Current Margin:** ${scenario['margin_before']:.2f} ({(scenario['margin_before']/scenario['avg_sale_price']*100):.1f}%)")
+        margin_percent = (scenario['margin_before']/scenario['avg_sale_price']*100) if scenario['avg_sale_price'] > 0 else 0
+        st.markdown(f"**Current Margin:** ${scenario['margin_before']:.2f} ({margin_percent:.1f}%)")
     
     # Solution details
     st.markdown("---")
@@ -901,7 +995,8 @@ def display_scenario_details(uid):
     with col5:
         st.markdown(f"**Solution Investment:** ${scenario['solution_cost']:.2f}")
         st.markdown(f"**New Unit Cost:** ${scenario['new_unit_cost']:.2f}")
-        st.markdown(f"**New Margin:** ${scenario['margin_after']:.2f} ({(scenario['margin_after']/scenario['avg_sale_price']*100):.1f}%)")
+        new_margin_percent = (scenario['margin_after']/scenario['avg_sale_price']*100) if scenario['avg_sale_price'] > 0 else 0
+        st.markdown(f"**New Margin:** ${scenario['margin_after']:.2f} ({new_margin_percent:.1f}%)")
     
     # Financial impacts
     st.markdown("---")
@@ -1060,9 +1155,9 @@ def display_scenario_details(uid):
             scenario['margin_after_amortized']
         ],
         "Margin %": [
-            (scenario['margin_before'] / scenario['avg_sale_price']) * 100,
-            (scenario['margin_after'] / scenario['avg_sale_price']) * 100,
-            (scenario['margin_after_amortized'] / scenario['avg_sale_price']) * 100
+            (scenario['margin_before'] / scenario['avg_sale_price']) * 100 if scenario['avg_sale_price'] > 0 else 0,
+            (scenario['margin_after'] / scenario['avg_sale_price']) * 100 if scenario['avg_sale_price'] > 0 else 0,
+            (scenario['margin_after_amortized'] / scenario['avg_sale_price']) * 100 if scenario['avg_sale_price'] > 0 else 0
         ]
     }
     margin_df = pd.DataFrame(margin_data)
@@ -1118,8 +1213,13 @@ def display_scenario_details(uid):
         st.session_state['selected_scenario'] = None
         st.experimental_rerun()
 
-def display_portfolio_analysis(df):
-    """Display portfolio-level analysis and visualizations"""
+def display_portfolio_analysis(df: pd.DataFrame):
+    """
+    Display portfolio-level analysis and visualizations.
+    
+    Args:
+        df: DataFrame with scenarios
+    """
     if df.empty:
         st.info("Add scenarios to see portfolio analysis.")
         return
@@ -1138,8 +1238,11 @@ def display_portfolio_analysis(df):
     
     # Size is proportional to net benefit
     size_max = 50
-    plot_df['bubble_size'] = size_max * (plot_df['net_benefit'] / plot_df['net_benefit'].max())
-    plot_df['bubble_size'] = plot_df['bubble_size'].apply(lambda x: max(10, x))  # Minimum size
+    if len(plot_df) > 0 and plot_df['net_benefit'].max() > 0:
+        plot_df['bubble_size'] = size_max * (plot_df['net_benefit'] / plot_df['net_benefit'].max())
+        plot_df['bubble_size'] = plot_df['bubble_size'].apply(lambda x: max(10, x))  # Minimum size
+    else:
+        plot_df['bubble_size'] = 10  # Default size if no positive net benefit
     
     # Create the bubble chart
     fig_bubble = px.scatter(
@@ -1161,23 +1264,26 @@ def display_portfolio_analysis(df):
     )
     
     # Quadrant lines (12 month breakeven, 100% ROI)
+    max_roi = plot_df['roi'].max() * 1.1 if not plot_df['roi'].empty else 100
+    max_breakeven = plot_df['break_even_months'].max() * 1.1 if not plot_df['break_even_months'].empty else 24
+    
     fig_bubble.add_shape(
         type="line",
         x0=12, y0=0,
-        x1=12, y1=plot_df['roi'].max() * 1.1,
+        x1=12, y1=max_roi,
         line=dict(color="gray", width=1, dash="dash")
     )
     
     fig_bubble.add_shape(
         type="line",
         x0=0, y0=100,
-        x1=plot_df['break_even_months'].max() * 1.1, y1=100,
+        x1=max_breakeven, y1=100,
         line=dict(color="gray", width=1, dash="dash")
     )
     
     # Add quadrant labels
-    avg_x = plot_df['break_even_months'].max() * 0.75
-    avg_y = plot_df['roi'].max() * 0.75
+    avg_x = max_breakeven * 0.75
+    avg_y = max_roi * 0.75
     
     fig_bubble.add_annotation(
         x=6, y=avg_y,
@@ -1251,56 +1357,63 @@ def display_portfolio_analysis(df):
     
     with col1:
         # ROI by solution type
-        solution_group = df.groupby('solution').agg({
-            'roi': 'mean',
-            'solution_cost': 'sum',
-            'net_benefit': 'sum'
-        }).reset_index()
-        
-        fig_solution = px.bar(
-            solution_group,
-            x="solution",
-            y="roi",
-            color="net_benefit",
-            color_continuous_scale=px.colors.sequential.Viridis,
-            labels={
-                "solution": "Solution",
-                "roi": "Average ROI (%)",
-                "net_benefit": "Net Benefit ($)"
-            },
-            title="ROI by Solution Type"
-        )
-        
-        fig_solution.update_layout(height=400)
-        st.plotly_chart(fig_solution, use_container_width=True)
+        if not df.empty and 'solution' in df.columns:
+            solution_group = df.groupby('solution').agg({
+                'roi': 'mean',
+                'solution_cost': 'sum',
+                'net_benefit': 'sum'
+            }).reset_index()
+            
+            fig_solution = px.bar(
+                solution_group,
+                x="solution",
+                y="roi",
+                color="net_benefit",
+                color_continuous_scale=px.colors.sequential.Viridis,
+                labels={
+                    "solution": "Solution",
+                    "roi": "Average ROI (%)",
+                    "net_benefit": "Net Benefit ($)"
+                },
+                title="ROI by Solution Type"
+            )
+            
+            fig_solution.update_layout(height=400)
+            st.plotly_chart(fig_solution, use_container_width=True)
     
     with col2:
         # ROI by sales channel
-        channel_group = df.groupby('sales_channel').agg({
-            'roi': 'mean',
-            'solution_cost': 'sum',
-            'net_benefit': 'sum'
-        }).reset_index()
-        
-        fig_channel = px.bar(
-            channel_group,
-            x="sales_channel",
-            y="roi",
-            color="net_benefit",
-            color_continuous_scale=px.colors.sequential.Viridis,
-            labels={
-                "sales_channel": "Sales Channel",
-                "roi": "Average ROI (%)",
-                "net_benefit": "Net Benefit ($)"
-            },
-            title="ROI by Sales Channel"
-        )
-        
-        fig_channel.update_layout(height=400)
-        st.plotly_chart(fig_channel, use_container_width=True)
+        if not df.empty and 'sales_channel' in df.columns:
+            channel_group = df.groupby('sales_channel').agg({
+                'roi': 'mean',
+                'solution_cost': 'sum',
+                'net_benefit': 'sum'
+            }).reset_index()
+            
+            fig_channel = px.bar(
+                channel_group,
+                x="sales_channel",
+                y="roi",
+                color="net_benefit",
+                color_continuous_scale=px.colors.sequential.Viridis,
+                labels={
+                    "sales_channel": "Sales Channel",
+                    "roi": "Average ROI (%)",
+                    "net_benefit": "Net Benefit ($)"
+                },
+                title="ROI by Sales Channel"
+            )
+            
+            fig_channel.update_layout(height=400)
+            st.plotly_chart(fig_channel, use_container_width=True)
 
-def display_what_if_analysis():
-    """Interactive what-if scenario analysis"""
+def display_what_if_analysis(optimizer: ReturnOptimizer):
+    """
+    Interactive what-if scenario analysis.
+    
+    Args:
+        optimizer: ReturnOptimizer instance
+    """
     st.subheader("What-If Analysis")
     
     # Get base scenario
@@ -1426,12 +1539,11 @@ def display_what_if_analysis():
         original_monthly_net = original_monthly_savings - original_monthly_cost
         original_annual_net = original_monthly_net * 12
         
+        original_roi = None
+        original_breakeven = None
         if base_scenario['solution_cost'] > 0 and original_annual_net > 0:
             original_roi = (original_annual_net / base_scenario['solution_cost']) * 100
             original_breakeven = base_scenario['solution_cost'] / original_monthly_net
-        else:
-            original_roi = None
-            original_breakeven = None
         
         # Calculate financial impact for new scenario
         new_unit_cost = base_scenario['current_unit_cost'] + new_additional_cost
@@ -1441,12 +1553,11 @@ def display_what_if_analysis():
         new_monthly_net = new_monthly_savings - new_monthly_cost
         new_annual_net = new_monthly_net * 12
         
+        new_roi = None
+        new_breakeven = None
         if new_solution_cost > 0 and new_annual_net > 0:
             new_roi = (new_annual_net / new_solution_cost) * 100
             new_breakeven = new_solution_cost / new_monthly_net
-        else:
-            new_roi = None
-            new_breakeven = None
         
         # Create financial impact comparison
         financial_data = {
@@ -1486,20 +1597,17 @@ def display_what_if_analysis():
         st.dataframe(financial_df, use_container_width=True, hide_index=True)
         
         # Calculate percent changes for visualization
+        net_benefit_change = 0
         if original_annual_net > 0 and new_annual_net > 0:
             net_benefit_change = ((new_annual_net / original_annual_net) - 1) * 100
-        else:
-            net_benefit_change = 0
         
+        roi_change = 0
         if original_roi and new_roi:
             roi_change = ((new_roi / original_roi) - 1) * 100
-        else:
-            roi_change = 0
         
+        breakeven_change = 0
         if original_breakeven and new_breakeven:
             breakeven_change = ((new_breakeven / original_breakeven) - 1) * 100
-        else:
-            breakeven_change = 0
         
         # Display impact visualization
         st.markdown("### Impact Visualization")
@@ -1607,10 +1715,9 @@ def display_what_if_analysis():
                 net = savings - add_costs
                 annual = net * 12
                 
+                sens_roi = 0
                 if new_solution_cost > 0 and annual > 0:
                     sens_roi = (annual / new_solution_cost) * 100
-                else:
-                    sens_roi = 0
                 
                 sensitivity_data.append({
                     "Reduction Rate": red,
@@ -1651,13 +1758,19 @@ def display_what_if_analysis():
             
             if success:
                 st.success(f"What-if scenario saved as '{new_name}'!")
+                st.experimental_rerun()
             else:
                 st.error(message)
     else:
         st.info("Add scenarios first to use the what-if analysis tool.")
 
-def display_settings():
-    """Display app settings and data management options"""
+def display_settings(optimizer: ReturnOptimizer):
+    """
+    Display app settings and data management options.
+    
+    Args:
+        optimizer: ReturnOptimizer instance
+    """
     st.subheader("Settings & Data Management")
     
     col1, col2 = st.columns(2)
@@ -1676,16 +1789,19 @@ def display_settings():
             )
             
             # Export as Excel
-            excel_data = io.BytesIO()
-            with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
-                optimizer.scenarios.to_excel(writer, index=False, sheet_name='Scenarios')
-            
-            st.download_button(
-                "Export as Excel Spreadsheet",
-                data=excel_data.getvalue(),
-                file_name="kaizenroi_export.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            try:
+                excel_data = io.BytesIO()
+                with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
+                    optimizer.scenarios.to_excel(writer, index=False, sheet_name='Scenarios')
+                
+                st.download_button(
+                    "Export as Excel Spreadsheet",
+                    data=excel_data.getvalue(),
+                    file_name="kaizenroi_export.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            except Exception as e:
+                st.error(f"Error exporting to Excel: {str(e)}")
             
             # Export as CSV
             csv_data = optimizer.scenarios.to_csv(index=False).encode()
@@ -1701,11 +1817,15 @@ def display_settings():
         uploaded_file = st.file_uploader("Upload scenario data (JSON)", type=["json"])
         
         if uploaded_file is not None:
-            json_str = uploaded_file.read().decode("utf-8")
-            if optimizer.upload_json(json_str):
-                st.success("Data imported successfully!")
-            else:
-                st.error("Failed to import data. Please check the file format.")
+            try:
+                json_str = uploaded_file.read().decode("utf-8")
+                if optimizer.upload_json(json_str):
+                    st.success("Data imported successfully!")
+                    st.experimental_rerun()
+                else:
+                    st.error("Failed to import data. Please check the file format.")
+            except Exception as e:
+                st.error(f"Error importing data: {str(e)}")
     
     with col2:
         st.markdown("### App Settings")
@@ -1715,6 +1835,7 @@ def display_settings():
         if st.button("Add Example Scenarios"):
             count = optimizer.add_example_scenarios()
             st.success(f"Added {count} example scenarios!")
+            st.experimental_rerun()
         
         if st.button("Clear All Data"):
             confirm = st.checkbox("I understand this will delete all scenarios")
@@ -1729,92 +1850,110 @@ def display_settings():
         theme = st.selectbox("Color Theme", ["Blue (Default)", "Green", "Purple", "Orange"])
         st.info("Theme customization will be available in a future update.")
 
-# Sidebar Navigation
-with st.sidebar:
-    st.image("https://via.placeholder.com/150x60?text=KaizenROI", width=150)
-    st.markdown("## Navigation")
-    
-    # Navigation options
-    nav_option = st.radio(
-        "Go to:",
-        ["Dashboard", "Add New Scenario", "Portfolio Analysis", "What-If Analysis", "Settings"],
-        index=0
-    )
-    
-    st.markdown("---")
-    
-    # Help section
-    with st.expander("📘 Help & Formulas"):
-        st.markdown("""
-        ### Key Terms
-        - **Return Rate**: Percentage of products returned
-        - **Return Reduction**: Estimated reduction in returns after solution
-        - **Break-even**: Time to recover the solution investment
-        - **ROI**: Return on investment (net benefit / solution cost)
-        - **Net Benefit**: Annual savings minus additional costs
+def setup_sidebar():
+    """Setup the sidebar navigation."""
+    with st.sidebar:
+        st.image("https://via.placeholder.com/150x60?text=KaizenROI", width=150)
+        st.markdown("## Navigation")
         
-        ### Key Formulas
-        - Return Rate = (Returns / Sales) × 100%
-        - Avoided Returns = Returns × Reduction Rate
-        - Net Benefit = Annual Savings - Annual Additional Costs
-        - Annual Savings = Avoided Returns × Savings Per Item
-        - ROI = (Net Benefit / Solution Cost) × 100%
-        - Break-even Time = Solution Cost / Monthly Net Benefit
-        - Margin After = Price - (Unit Cost + Additional Cost)
-        """)
-    
-    with st.expander("🔎 Understanding ROI Score"):
-        st.markdown("""
-        ### ROI Score Explained
-        The ROI score is a weighted metric that combines:
-        - ROI percentage (50% weight)
-        - Break-even speed (35% weight)
-        - Reduction rate (15% weight)
+        # Navigation options
+        nav_option = st.radio(
+            "Go to:",
+            ["Dashboard", "Add New Scenario", "Portfolio Analysis", "What-If Analysis", "Settings"],
+            index=0
+        )
         
-        Higher scores indicate better investment opportunities with faster returns and higher impact.
+        st.markdown("---")
         
-        ### Score Ranges
-        - **80-100**: Excellent investment
-        - **60-80**: Very good investment
-        - **40-60**: Good investment
-        - **20-40**: Acceptable investment
-        - **0-20**: Marginal investment
-        """)
-    
-    # Footer
-    st.markdown("---")
-    st.caption("KaizenROI v2.0 | Continuous Improvement Suite")
-    st.caption("© 2025 KaizenROI Analytics")
+        # Help section
+        with st.expander("📘 Help & Formulas"):
+            st.markdown("""
+            ### Key Terms
+            - **Return Rate**: Percentage of products returned
+            - **Return Reduction**: Estimated reduction in returns after solution
+            - **Break-even**: Time to recover the solution investment
+            - **ROI**: Return on investment (net benefit / solution cost)
+            - **Net Benefit**: Annual savings minus additional costs
+            
+            ### Key Formulas
+            - Return Rate = (Returns / Sales) × 100%
+            - Avoided Returns = Returns × Reduction Rate
+            - Net Benefit = Annual Savings - Annual Additional Costs
+            - Annual Savings = Avoided Returns × Savings Per Item
+            - ROI = (Net Benefit / Solution Cost) × 100%
+            - Break-even Time = Solution Cost / Monthly Net Benefit
+            - Margin After = Price - (Unit Cost + Additional Cost)
+            """)
+        
+        with st.expander("🔎 Understanding ROI Score"):
+            st.markdown("""
+            ### ROI Score Explained
+            The ROI score is a weighted metric that combines:
+            - ROI percentage (50% weight)
+            - Break-even speed (35% weight)
+            - Reduction rate (15% weight)
+            
+            Higher scores indicate better investment opportunities with faster returns and higher impact.
+            
+            ### Score Ranges
+            - **80-100**: Excellent investment
+            - **60-80**: Very good investment
+            - **40-60**: Good investment
+            - **20-40**: Acceptable investment
+            - **0-20**: Marginal investment
+            """)
+        
+        # Footer
+        st.markdown("---")
+        st.caption("KaizenROI v2.1 | Continuous Improvement Suite")
+        st.caption("© 2025 KaizenROI Analytics")
+        
+        return nav_option
 
-# Main content
-display_header()
+# =============================================================================
+# Main Application
+# =============================================================================
 
-# Handle view scenario details if selected
-if 'view_scenario' in st.session_state and st.session_state['view_scenario'] and 'selected_scenario' in st.session_state:
-    display_scenario_details(st.session_state['selected_scenario'])
-else:
-    # Regular navigation
-    if nav_option == "Dashboard":
-        display_metrics_overview(optimizer.scenarios)
-        display_scenario_table(optimizer.scenarios)
-    
-    elif nav_option == "Add New Scenario":
-        create_scenario_form()
-    
-    elif nav_option == "Portfolio Analysis":
-        display_portfolio_analysis(optimizer.scenarios)
-    
-    elif nav_option == "What-If Analysis":
-        display_what_if_analysis()
-    
-    elif nav_option == "Settings":
-        display_settings()
-
-# Entry point for setup.py
 def main():
-    """Entry point for the application."""
-    # The Streamlit script is already executing, so this function is just a noop when run directly
-    pass
+    """Main application function."""
+    # Set up page config and styling
+    setup_page_config()
+    
+    # Initialize optimizer
+    if 'optimizer' not in st.session_state:
+        st.session_state.optimizer = ReturnOptimizer()
+    optimizer = st.session_state.optimizer
+    
+    # Display header
+    display_header()
+    
+    # Set up sidebar and get navigation option
+    nav_option = setup_sidebar()
+    
+    # Handle view scenario details if selected
+    if 'view_scenario' in st.session_state and st.session_state['view_scenario'] and 'selected_scenario' in st.session_state:
+        display_scenario_details(st.session_state['selected_scenario'], optimizer)
+    else:
+        # Regular navigation
+        if nav_option == "Dashboard":
+            display_metrics_overview(optimizer.scenarios)
+            display_scenario_table(optimizer.scenarios, optimizer)
+        
+        elif nav_option == "Add New Scenario":
+            create_scenario_form(optimizer)
+        
+        elif nav_option == "Portfolio Analysis":
+            display_portfolio_analysis(optimizer.scenarios)
+        
+        elif nav_option == "What-If Analysis":
+            display_what_if_analysis(optimizer)
+        
+        elif nav_option == "Settings":
+            display_settings(optimizer)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
+        st.error(traceback.format_exc())
