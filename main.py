@@ -5041,7 +5041,7 @@ def display_scenario_comparison(optimizer: ReturnOptimizer):
         
         # Export comparison
         st.markdown("### Export Comparison")
-        export_format = st.selectbox("Export Format", ["Excel", "CSV"])
+        export_format = st.selectbox("Export Format", ["Excel", "CSV",])
         
         if st.button("Export Comparison"):
             if export_format == "Excel":
@@ -5260,7 +5260,7 @@ def display_settings(optimizer: ReturnOptimizer):
         if st.button("Clear All Data"):
             confirm = st.checkbox("I understand this will delete all scenarios")
             if confirm:
-                optimizer.scenarios = pd.DataFrame(columns=optimizer.scenarios.columns)
+                optimizer.scenarios = pd.DataFrame(columns=SCENARIO_COLUMNS)
                 optimizer.save_data()
                 
                 # Also clear comparison list
@@ -5292,15 +5292,15 @@ def display_settings(optimizer: ReturnOptimizer):
         
         with col2:
             st.markdown("#### Export Settings")
-            export_decimals = st.slider("Decimal Places in Exports", 
-                                      min_value=0, 
-                                      max_value=4, 
-                                      value=2,
-                                      help="Number of decimal places to include in exported files")
             
-            if 'export_decimals' not in st.session_state or st.session_state.export_decimals != export_decimals:
-                st.session_state.export_decimals = export_decimals
-                st.success(f"Export decimals set to {export_decimals}")
+            # Default export format
+            export_format = st.selectbox("Default Export Format", 
+                                       ["Excel", "CSV", "JSON"],
+                                       index=0)
+            
+            if 'default_export_format' not in st.session_state or st.session_state.default_export_format != export_format:
+                st.session_state.default_export_format = export_format
+                st.success(f"Default export format set to {export_format}")
         
         # Feature toggles
         st.markdown("#### Feature Toggles")
@@ -5330,14 +5330,14 @@ def display_settings(optimizer: ReturnOptimizer):
         return reduction strategies. The application provides advanced analytics, Monte Carlo simulations, 
         scenario comparison, and visualization tools to make data-driven decisions.
         
-        **Version:** 2.0.0  
+        **Version:** 2.1.0  
         **Build Date:** April 2025  
         **License:** Enterprise
         """)
 
 # Display help modal
 def display_help():
-    """Display help information in a sidebar expander."""
+    """Display help information in a Streamlit sidebar expander."""
     with st.sidebar.expander("Help & Documentation", expanded=False):
         st.markdown("""
         ### Quick Start Guide
@@ -5353,7 +5353,7 @@ def display_help():
         - Run Monte Carlo simulations to assess risk
         
         **3. Export & Share**
-        - Export data in CSV, or Excel formats
+        - Export data in CSV, Excel, or JSON formats
         - Generate comprehensive reports
         - Share insights with stakeholders
         
@@ -5373,8 +5373,8 @@ def display_help():
         """)
 
 # Sidebar Navigation
-def display_sidebar():
-    """Display app sidebar with navigation and help."""
+def setup_sidebar():
+    """Setup the sidebar navigation."""
     with st.sidebar:
         st.image("https://via.placeholder.com/150x60?text=ReturnRx", width=150)
         
@@ -5424,17 +5424,16 @@ def display_sidebar():
         
         # Footer
         st.markdown("---")
-        st.caption(f"ReturnRx Enterprise v2.0 | {st.session_state.app_mode} Mode")
+        st.caption(f"ReturnRx Enterprise v2.1 | {st.session_state.app_mode} Mode")
         st.caption("© 2025 ReturnRx Analytics")
+        
+        return nav_option
 
 # Main content router
 def route_content():
     """Route to appropriate content based on navigation state."""
     # Display header
     display_header()
-    
-    # Load custom CSS
-    load_custom_css()
     
     # Route based on navigation option
     if 'nav_option' not in st.session_state:
@@ -5470,14 +5469,24 @@ def route_content():
         elif st.session_state.nav_option == "Settings":
             display_settings(optimizer)
 
-# Entry point for app
-def main():
-    """Entry point for the application."""
-    # Display sidebar
-    display_sidebar()
+# =============================================================================
+# Main Application
+# =============================================================================
 
+def main():
+    """Main application function."""
+    # Set up page and styling
+    load_custom_css()
+    
+    # Set up sidebar and get navigation option
+    setup_sidebar()
+    
     # Route to appropriate content
     route_content()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
+        st.error(traceback.format_exc())
