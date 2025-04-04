@@ -5369,7 +5369,6 @@ def display_help():
 def setup_sidebar():
     """Setup the sidebar navigation."""
     with st.sidebar:
-        st.image("https://via.placeholder.com/150x60?text=Kaizenalytics", width=150)
         
         # Mode toggle
         st.markdown(f"""
