@@ -1,5 +1,5 @@
 """
-ReturnRx Enterprise - Advanced Return Analytics Platform
+Kaizenalytics Enterprise - Advanced Return Analytics Platform
 A comprehensive analytics tool for evaluating e-commerce return reduction investments.
 
 This application helps businesses analyze and optimize return reduction strategies
@@ -34,7 +34,7 @@ if not hasattr(st, "rerun") and hasattr(st, "experimental_rerun"):
 
 # App configuration
 st.set_page_config(
-    page_title="ReturnRx Enterprise | Advanced Return Analytics Platform",
+    page_title="Kaizenalytics | Advanced Return Analytics Platform",
     page_icon="🔄",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -1312,7 +1312,7 @@ def display_header():
         st.markdown(f"""
         <div style="text-align: center; padding: 10px">
             <h1 style="font-size: 32px; margin: 0; color: {COLOR_SCHEME["primary"]};">🔄</h1>
-            <p style="margin: 0; font-weight: 600; color: {COLOR_SCHEME["secondary"]};">ReturnRx</p>
+            <p style="margin: 0; font-weight: 600; color: {COLOR_SCHEME["secondary"]};">Kaizenalytics</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -5124,7 +5124,7 @@ def display_settings(optimizer: ReturnOptimizer):
             st.download_button(
                 "Export All Scenarios (JSON)",
                 data=json_data,
-                file_name="returnrx_scenarios.json",
+                file_name="Kaizenalytics_scenarios.json",
                 mime="application/json"
             )
             
@@ -5154,7 +5154,7 @@ def display_settings(optimizer: ReturnOptimizer):
                 st.download_button(
                     "Export as Excel Spreadsheet",
                     data=excel_data.getvalue(),
-                    file_name="returnrx_export.xlsx",
+                    file_name="Kaizenalytics_export.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             except Exception as e:
@@ -5165,7 +5165,7 @@ def display_settings(optimizer: ReturnOptimizer):
             st.download_button(
                 "Export as CSV",
                 data=csv_data,
-                file_name="returnrx_export.csv",
+                file_name="Kaizenalytics_export.csv",
                 mime="text/csv"
             )
         
@@ -5318,15 +5318,15 @@ def display_settings(optimizer: ReturnOptimizer):
         st.info("Feature toggles are currently fixed to 'enabled' in this version.")
         
         # About section
-        st.markdown("### About ReturnRx Enterprise")
+        st.markdown("### About Kaizenalytics Enterprise")
         st.markdown("""
-        ReturnRx Enterprise is a comprehensive return analytics platform designed to help businesses evaluate and optimize 
+        Kaizenalytics Enterprise is a comprehensive return analytics platform designed to help businesses evaluate and optimize 
         return reduction strategies. The application provides advanced analytics, Monte Carlo simulations, 
         scenario comparison, and visualization tools to make data-driven decisions.
         
         **Version:** 2.0.0  
         **Build Date:** April 2025  
-        **License:** Enterprise
+        **License:** MIT
         """)
 
 # Display help modal
@@ -5363,13 +5363,13 @@ def display_help():
         
         ### Need More Help?
         
-        Contact support at support@returnrx.com
+        Contact support at alexander.popoff@vivehealth.com
         """)
 
 def setup_sidebar():
     """Setup the sidebar navigation."""
     with st.sidebar:
-        st.image("https://via.placeholder.com/150x60?text=ReturnRx", width=150)
+        st.image("https://via.placeholder.com/150x60?text=Kaizenalytics", width=150)
         
         # Mode toggle
         st.markdown(f"""
@@ -5425,8 +5425,8 @@ def setup_sidebar():
         
         # Footer
         st.markdown("---")
-        st.caption(f"ReturnRx Enterprise v2.0 | {st.session_state.app_mode} Mode")
-        st.caption("© 2025 ReturnRx Analytics")
+        st.caption(f"Kaizenalytics Enterprise v2.0 | {st.session_state.app_mode} Mode")
+        st.caption("© 2025 Kaizenalytics Analytics")
         
         return nav_option
 
