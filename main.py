@@ -5129,33 +5129,36 @@ def display_settings(optimizer: ReturnOptimizer):
             )
             
             # Export as Excel
-            excel_data = io.BytesIO()
-            with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
-                optimizer.scenarios.to_excel(writer, index=False, sheet_name='Scenarios')
+            try:
+                excel_data = io.BytesIO()
+                with pd.ExcelWriter(excel_data, engine='xlsxwriter') as writer:
+                    optimizer.scenarios.to_excel(writer, index=False, sheet_name='Scenarios')
+                    
+                    # Add formatting
+                    workbook = writer.book
+                    worksheet = writer.sheets['Scenarios']
+                    
+                    # Add header formatting
+                    header_format = workbook.add_format({
+                        'bold': True,
+                        'bg_color': COLOR_SCHEME['primary'],
+                        'color': 'white',
+                        'border': 1
+                    })
+                    
+                    # Apply formatting to header row
+                    for col_num, value in enumerate(optimizer.scenarios.columns):
+                        worksheet.write(0, col_num, value, header_format)
+                        worksheet.set_column(col_num, col_num, 15)
                 
-                # Add formatting
-                workbook = writer.book
-                worksheet = writer.sheets['Scenarios']
-                
-                # Add header formatting
-                header_format = workbook.add_format({
-                    'bold': True,
-                    'bg_color': COLOR_SCHEME['primary'],
-                    'color': 'white',
-                    'border': 1
-                })
-                
-                # Apply formatting to header row
-                for col_num, value in enumerate(optimizer.scenarios.columns):
-                    worksheet.write(0, col_num, value, header_format)
-                    worksheet.set_column(col_num, col_num, 15)
-            
-            st.download_button(
-                "Export as Excel Spreadsheet",
-                data=excel_data.getvalue(),
-                file_name="returnrx_export.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+                st.download_button(
+                    "Export as Excel Spreadsheet",
+                    data=excel_data.getvalue(),
+                    file_name="returnrx_export.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            except Exception as e:
+                st.error(f"Error exporting to Excel: {str(e)}")
             
             # Export as CSV
             csv_data = optimizer.scenarios.to_csv(index=False).encode()
@@ -5260,7 +5263,7 @@ def display_settings(optimizer: ReturnOptimizer):
         if st.button("Clear All Data"):
             confirm = st.checkbox("I understand this will delete all scenarios")
             if confirm:
-                optimizer.scenarios = pd.DataFrame(columns=SCENARIO_COLUMNS)
+                optimizer.scenarios = pd.DataFrame(columns=optimizer.scenarios.columns)
                 optimizer.save_data()
                 
                 # Also clear comparison list
@@ -5292,15 +5295,6 @@ def display_settings(optimizer: ReturnOptimizer):
         
         with col2:
             st.markdown("#### Export Settings")
-            
-            # Default export format
-            export_format = st.selectbox("Default Export Format", 
-                                       ["Excel", "CSV", "JSON"],
-                                       index=0)
-            
-            if 'default_export_format' not in st.session_state or st.session_state.default_export_format != export_format:
-                st.session_state.default_export_format = export_format
-                st.success(f"Default export format set to {export_format}")
         
         # Feature toggles
         st.markdown("#### Feature Toggles")
@@ -5330,14 +5324,14 @@ def display_settings(optimizer: ReturnOptimizer):
         return reduction strategies. The application provides advanced analytics, Monte Carlo simulations, 
         scenario comparison, and visualization tools to make data-driven decisions.
         
-        **Version:** 2.1.0  
+        **Version:** 2.0.0  
         **Build Date:** April 2025  
         **License:** Enterprise
         """)
 
 # Display help modal
 def display_help():
-    """Display help information in a Streamlit sidebar expander."""
+    """Display help information in a Streamlit expander."""
     with st.sidebar.expander("Help & Documentation", expanded=False):
         st.markdown("""
         ### Quick Start Guide
@@ -5353,7 +5347,7 @@ def display_help():
         - Run Monte Carlo simulations to assess risk
         
         **3. Export & Share**
-        - Export data in CSV, Excel, or JSON formats
+        - Export data in CSV, or Excel formats
         - Generate comprehensive reports
         - Share insights with stakeholders
         
@@ -5372,7 +5366,6 @@ def display_help():
         Contact support at support@returnrx.com
         """)
 
-# Sidebar Navigation
 def setup_sidebar():
     """Setup the sidebar navigation."""
     with st.sidebar:
@@ -5400,10 +5393,18 @@ def setup_sidebar():
             nav_options.insert(3, "Monte Carlo")
             nav_options.insert(4, "Compare Scenarios")
         
+        # Default to Dashboard if nav_option not set
+        default_index = 0
+        if 'nav_option' in st.session_state:
+            try:
+                default_index = nav_options.index(st.session_state.nav_option)
+            except ValueError:
+                default_index = 0
+        
         nav_option = st.radio(
             "Go to:",
             nav_options,
-            index=0 if 'nav_option' not in st.session_state else nav_options.index(st.session_state.nav_option)
+            index=default_index
         )
         
         # Update navigation state
@@ -5424,16 +5425,18 @@ def setup_sidebar():
         
         # Footer
         st.markdown("---")
-        st.caption(f"ReturnRx Enterprise v2.1 | {st.session_state.app_mode} Mode")
+        st.caption(f"ReturnRx Enterprise v2.0 | {st.session_state.app_mode} Mode")
         st.caption("© 2025 ReturnRx Analytics")
         
         return nav_option
 
-# Main content router
 def route_content():
     """Route to appropriate content based on navigation state."""
     # Display header
     display_header()
+    
+    # Load custom CSS
+    load_custom_css()
     
     # Route based on navigation option
     if 'nav_option' not in st.session_state:
@@ -5469,16 +5472,9 @@ def route_content():
         elif st.session_state.nav_option == "Settings":
             display_settings(optimizer)
 
-# =============================================================================
-# Main Application
-# =============================================================================
-
 def main():
     """Main application function."""
-    # Set up page and styling
-    load_custom_css()
-    
-    # Set up sidebar and get navigation option
+    # Display sidebar
     setup_sidebar()
     
     # Route to appropriate content
