@@ -110,7 +110,7 @@ COLOR_SCHEMES = {
         "sidebar_bg": "#4c1d95",
         "hover": "#ddd6fe"
     }
-"dark": {
+   "dark": {
         "primary": "#8B5CF6",      # Purple
         "secondary": "#6366F1",    # Indigo
         "tertiary": "#3B82F6",     # Blue
