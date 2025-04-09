@@ -109,8 +109,8 @@ COLOR_SCHEMES = {
         "card_bg": "#ffffff",
         "sidebar_bg": "#4c1d95",
         "hover": "#ddd6fe"
-    },
-   "dark": {
+    }
+"dark": {
         "primary": "#8B5CF6",      # Purple
         "secondary": "#6366F1",    # Indigo
         "tertiary": "#3B82F6",     # Blue
@@ -3980,7 +3980,6 @@ def display_settings(optimizer: ReturnOptimizer):
             "forest": "Green",
             "sunset": "Orange",
             "royal": "Purple"
-            "dark": "Dark Mode"
         }
         
         selected_theme = st.selectbox("Color Theme", 
