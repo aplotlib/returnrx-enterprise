@@ -3980,6 +3980,7 @@ def display_settings(optimizer: ReturnOptimizer):
             "forest": "Green",
             "sunset": "Orange",
             "royal": "Purple"
+            "dark": "Dark Mode"
         }
         
         selected_theme = st.selectbox("Color Theme", 
