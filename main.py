@@ -442,6 +442,24 @@ def load_custom_css():
             color: {COLOR_SCHEME["text_light"]};
         }}
         
+        /* Fix for sidebar radio buttons and other elements */
+        [data-testid="stSidebar"] [data-testid="stRadio"] label {{
+            color: {COLOR_SCHEME["text_light"]};
+        }}
+        
+        [data-testid="stSidebar"] .stRadio > div > label > div[role="radiogroup"] > label {{
+            color: {COLOR_SCHEME["text_dark"]};
+        }}
+        
+        [data-testid="stSidebar"] button {{
+            color: {COLOR_SCHEME["text_dark"]};
+        }}
+        
+        /* Fix for checkboxes in sidebar */
+        [data-testid="stSidebar"] .stCheckbox label {{
+            color: {COLOR_SCHEME["text_light"]};
+        }}
+        
         /* Mode toggle button */
         .mode-toggle {{
             background-color: {COLOR_SCHEME["secondary"]};
@@ -584,6 +602,16 @@ def load_custom_css():
             font-weight: 500;
         }}
         
+        /* Better visibility for sidebar text and selections */
+        .stSelectbox label, .stMultiSelect label {{
+            color: {COLOR_SCHEME["text_dark"]} !important;
+        }}
+        
+        [data-testid="stSidebar"] .stSelectbox label,
+        [data-testid="stSidebar"] .stMultiSelect label {{
+            color: {COLOR_SCHEME["text_light"]} !important;
+        }}
+        
         /* New feature badge */
         .new-feature {{
             background-color: {COLOR_SCHEME["warning"]};
@@ -724,6 +752,27 @@ def load_custom_css():
             background-color: {COLOR_SCHEME["primary"]};
             transform: scale(1.1);
         }}
+        
+        /* Fix for dropdowns */
+        .stSelectbox div[data-baseweb="select"] div span {{
+            color: {COLOR_SCHEME["text_dark"]};
+        }}
+        
+        /* Fix for multiselect */
+        .stMultiSelect div[data-baseweb="select"] div span {{
+            color: {COLOR_SCHEME["text_dark"]};
+        }}
+        
+        /* Fix for sidebar selectbox */
+        [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] div[class$="-placeholder"] span,
+        [data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] div[class$="-placeholder"] span {{
+            color: {COLOR_SCHEME["text_dark"]};
+        }}
+        
+        /* Better visibility for selectbox values in the sidebar */
+        [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] div[class$="-valueContainer"] div span {{
+            color: {COLOR_SCHEME["text_light"]};
+        }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -863,1342 +912,6 @@ class ReturnOptimizer:
                 self.scenarios = data
                 self.save_data()
                 return True
-            return False
-        except Exception:
-            st.error(f"Error loading data: {traceback.format_exc()}")
-            return False
-    
-    def add_scenario(self, 
-                  scenario_name: str, 
-                  sku: str, 
-                  sales_30: float, 
-                  avg_sale_price: float, 
-                  sales_channel: str,
-                  returns_30: float, 
-                  solution: str, 
-                  solution_cost: float, 
-                  additional_cost_per_item: float,
-                  current_unit_cost: float, 
-                  reduction_rate: float, 
-                  sales_365: Optional[float] = None, 
-                  returns_365: Optional[float] = None, 
-                  tag: Optional[str] = None,
-                  notes: Optional[str] = None,
-                  confidence_level: Optional[str] = None,
-                  risk_rating: Optional[str] = None,
-                  implementation_time: Optional[str] = None,
-                  implementation_effort: Optional[int] = None) -> Tuple[bool, str]:
-        """
-        Add a new scenario with calculations.
-        
-        Args:
-            scenario_name: Name of the scenario
-            sku: Product SKU
-            sales_30: 30-day sales in units
-            avg_sale_price: Average sale price per unit
-            sales_channel: Sales channel (e.g., "Amazon")
-            returns_30: 30-day returns in units
-            solution: Description of the solution
-            solution_cost: One-time cost of implementing the solution
-            additional_cost_per_item: Additional per-unit cost after implementation
-            current_unit_cost: Current cost per unit
-            reduction_rate: Expected percentage reduction in returns
-            sales_365: Annual sales in units (optional)
-            returns_365: Annual returns in units (optional)
-            tag: Category tag (optional)
-            notes: Additional notes (optional)
-            confidence_level: Confidence level in estimates (optional)
-            risk_rating: Risk rating for the solution (optional)
-            implementation_time: Expected implementation time (optional)
-            implementation_effort: Implementation effort score (optional)
-            
-        Returns:
-            Tuple of (success, message)
-        """
-        try:
-            # Validate inputs
-            if not sku or not scenario_name:
-                return False, "SKU and Scenario Name are required"
-            
-            if not isinstance(sales_30, (int, float)) or sales_30 <= 0:
-                return False, "Sales must be a positive number"
-            
-            if not isinstance(returns_30, (int, float)) or returns_30 < 0:
-                return False, "Returns must be a non-negative number"
-            
-            if returns_30 > sales_30:
-                return False, "Returns cannot exceed sales"
-            
-            if not isinstance(current_unit_cost, (int, float)) or current_unit_cost <= 0:
-                return False, "Unit cost must be a positive number"
-                
-            if not isinstance(avg_sale_price, (int, float)) or avg_sale_price <= 0:
-                return False, "Sale price must be a positive number"
-            
-            if avg_sale_price <= current_unit_cost:
-                return False, "Sale price must be greater than unit cost"
-            
-            # Use defaults if not provided
-            if sales_365 is None or not isinstance(sales_365, (int, float)) or sales_365 <= 0:
-                sales_365 = sales_30 * 12
-            
-            if returns_365 is None or not isinstance(returns_365, (int, float)) or returns_365 <= 0:
-                returns_365 = returns_30 * 12
-            
-            # Generate a unique ID
-            uid = str(uuid.uuid4())[:8]
-            
-            # Calculate basic metrics
-            return_rate = safe_divide(returns_30 * 100, sales_30)
-            
-            # Calculate avoided returns
-            avoided_returns_30 = returns_30 * (reduction_rate / 100)
-            avoided_returns_365 = returns_365 * (reduction_rate / 100)
-            
-            # Calculate costs and benefits
-            return_cost_30 = returns_30 * current_unit_cost
-            return_cost_annual = returns_365 * current_unit_cost
-            revenue_impact_30 = returns_30 * avg_sale_price
-            revenue_impact_annual = returns_365 * avg_sale_price
-            new_unit_cost = current_unit_cost + additional_cost_per_item
-
-            # Calculate margins
-            margin_before = avg_sale_price - current_unit_cost
-            margin_after = avg_sale_price - new_unit_cost
-            
-            # Calculate amortized cost per unit
-            amortized_solution_cost = safe_divide(solution_cost, sales_365)
-            margin_after_amortized = margin_after - amortized_solution_cost
-            
-            # Calculate savings and ROI
-            savings_per_avoided_return = avg_sale_price - new_unit_cost
-            savings_30 = avoided_returns_30 * savings_per_avoided_return
-            annual_savings = avoided_returns_365 * savings_per_avoided_return
-            
-            annual_additional_costs = additional_cost_per_item * sales_365
-            net_benefit = annual_savings - annual_additional_costs - solution_cost
-            monthly_net_benefit = safe_divide(annual_savings - annual_additional_costs, 12)
-            
-            # Calculate ROI metrics
-            roi = break_even_days = break_even_months = score = None
-            if solution_cost > 0 and monthly_net_benefit > 0:
-                roi = safe_divide((annual_savings - annual_additional_costs) * 100, solution_cost)  # as percentage
-                break_even_days = safe_divide(solution_cost * 30, monthly_net_benefit)
-                break_even_months = safe_divide(break_even_days, 30)
-                score = calculate_roi_score(roi/100, break_even_days, reduction_rate)
-            
-            # Create new row
-            new_row = {
-                'uid': uid,
-                'scenario_name': scenario_name,
-                'sku': sku,
-                'sales_30': sales_30,
-                'avg_sale_price': avg_sale_price,
-                'sales_channel': sales_channel,
-                'returns_30': returns_30,
-                'return_rate': return_rate,
-                'solution': solution,
-                'solution_cost': solution_cost,
-                'additional_cost_per_item': additional_cost_per_item,
-                'current_unit_cost': current_unit_cost,
-                'reduction_rate': reduction_rate,
-                'return_cost_30': return_cost_30,
-                'return_cost_annual': return_cost_annual,
-                'revenue_impact_30': revenue_impact_30,
-                'revenue_impact_annual': revenue_impact_annual,
-                'new_unit_cost': new_unit_cost,
-                'savings_30': savings_30,
-                'annual_savings': annual_savings,
-                'break_even_days': break_even_days,
-                'break_even_months': break_even_months,
-                'roi': roi,
-                'score': score,
-                'timestamp': datetime.now(),
-                'annual_additional_costs': annual_additional_costs,
-                'net_benefit': net_benefit,
-                'margin_before': margin_before,
-                'margin_after': margin_after,
-                'margin_after_amortized': margin_after_amortized,
-                'sales_365': sales_365,
-                'returns_365': returns_365,
-                'avoided_returns_30': avoided_returns_30,
-                'avoided_returns_365': avoided_returns_365,
-                'monthly_net_benefit': monthly_net_benefit,
-                'tag': tag,
-                'notes': notes,
-                'confidence_level': confidence_level,
-                'risk_rating': risk_rating,
-                'implementation_time': implementation_time,
-                'implementation_effort': implementation_effort
-            }
-
-            # Add to dataframe
-            self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
-            self.save_data()
-            return True, "Scenario added successfully!"
-        except Exception as e:
-            error_details = traceback.format_exc()
-            return False, f"Error adding scenario: {str(e)}\n{error_details}"
-    
-    def get_scenario(self, uid: str) -> Optional[Dict[str, Any]]:
-        """Get a scenario by UID."""
-        if uid in self.scenarios['uid'].values:
-            return self.scenarios[self.scenarios['uid'] == uid].iloc[0].to_dict()
-        return None
-    
-    def delete_scenario(self, uid: str) -> bool:
-        """Delete a scenario by UID."""
-        if uid in self.scenarios['uid'].values:
-            self.scenarios = self.scenarios[self.scenarios['uid'] != uid]
-            self.save_data()
-            return True
-        return False
-    
-    def update_scenario(self, uid: str, **kwargs) -> Tuple[bool, str]:
-        """Update a scenario and recalculate values."""
-        if uid not in self.scenarios['uid'].values:
-            return False, "Scenario not found"
-        
-        # Get current values
-        current = self.get_scenario(uid)
-        if not current:
-            return False, "Failed to retrieve scenario data"
-        
-        # Update with new values
-        for key, value in kwargs.items():
-            if key in current:
-                current[key] = value
-        
-        # Delete current scenario
-        self.delete_scenario(uid)
-        
-        # Add updated scenario
-        success, message = self.add_scenario(
-            current['scenario_name'], current['sku'], current['sales_30'],
-            current['avg_sale_price'], current['sales_channel'], current['returns_30'],
-            current['solution'], current['solution_cost'], current['additional_cost_per_item'],
-            current['current_unit_cost'], current['reduction_rate'],
-            current['sales_365'], current['returns_365'], current['tag'],
-            current['notes'], current['confidence_level'], current['risk_rating'],
-            current['implementation_time'], current['implementation_effort']
-        )
-        
-        return success, message
-    
-    def add_example_scenarios(self) -> int:
-        """Add example scenarios for demonstration."""
-        added = 0
-        for example in self.default_examples:
-            success, _ = self.add_scenario(**example)
-            if success:
-                added += 1
-        return added
-
-    def clone_scenario(self, uid: str, new_name: Optional[str] = None) -> Tuple[bool, str]:
-        """Clone an existing scenario."""
-        if uid not in self.scenarios['uid'].values:
-            return False, "Scenario not found"
-        
-        scenario = self.get_scenario(uid)
-        if not scenario:
-            return False, "Failed to retrieve scenario data"
-        
-        # Create new name if not provided
-        if not new_name:
-            new_name = f"{scenario['scenario_name']} (Clone)"
-        
-        # Clone scenario
-        success, message = self.add_scenario(
-            new_name, scenario['sku'], scenario['sales_30'],
-            scenario['avg_sale_price'], scenario['sales_channel'], scenario['returns_30'],
-            scenario['solution'], scenario['solution_cost'], scenario['additional_cost_per_item'],
-            scenario['current_unit_cost'], scenario['reduction_rate'],
-            scenario['sales_365'], scenario['returns_365'], scenario['tag'],
-            scenario['notes'], scenario['confidence_level'], scenario['risk_rating'],
-            scenario['implementation_time'], scenario['implementation_effort']
-        )
-        
-        return success, message
-        
-    def run_monte_carlo_simulation(self, 
-                                 scenario_uid: str, 
-                                 num_simulations: int = 1000, 
-                                 param_variations: Optional[Dict[str, float]] = None) -> Tuple[Optional[pd.DataFrame], str]:
-        """
-        Run Monte Carlo simulation for a given scenario
-        
-        Args:
-            scenario_uid: UID of the base scenario
-            num_simulations: Number of simulation runs
-            param_variations: Dict with parameters and their variation ranges as percentages
-                e.g. {'reduction_rate': 15, 'additional_cost_per_item': 10}
-                means reduction_rate can vary by ±15%, additional cost by ±10%
-                
-        Returns:
-            Tuple of (results_dataframe, message)
-        """
-        scenario = self.get_scenario(scenario_uid)
-        if not scenario:
-            return None, "Scenario not found"
-        
-        # Set default parameter variations if not provided
-        if not param_variations:
-            param_variations = {
-                'reduction_rate': 20,             # ±20% variation
-                'additional_cost_per_item': 15,   # ±15% variation
-                'solution_cost': 10,              # ±10% variation
-                'sales_30': 5,                    # ±5% variation
-                'returns_30': 10,                 # ±10% variation
-                'avg_sale_price': 5               # ±5% variation
-            }
-        
-        # Initialize results dataframe
-        results = pd.DataFrame(columns=[
-            'simulation_id', 'reduction_rate', 'additional_cost_per_item', 'solution_cost',
-            'sales_30', 'returns_30', 'avg_sale_price', 'roi', 'break_even_months', 
-            'net_benefit', 'annual_savings', 'annual_additional_costs'
-        ])
-        
-        # Run simulations
-        for i in range(num_simulations):
-            try:
-                # Create variations of parameters
-                sim_reduction_rate = max(0, scenario['reduction_rate'] * np.random.uniform(
-                    1 - param_variations['reduction_rate']/100,
-                    1 + param_variations['reduction_rate']/100
-                ))
-                
-                sim_additional_cost = max(0, scenario['additional_cost_per_item'] * np.random.uniform(
-                    1 - param_variations['additional_cost_per_item']/100,
-                    1 + param_variations['additional_cost_per_item']/100
-                ))
-                
-                sim_solution_cost = max(0, scenario['solution_cost'] * np.random.uniform(
-                    1 - param_variations['solution_cost']/100,
-                    1 + param_variations['solution_cost']/100
-                ))
-                
-                sim_sales_30 = max(1, scenario['sales_30'] * np.random.uniform(
-                    1 - param_variations['sales_30']/100,
-                    1 + param_variations['sales_30']/100
-                ))
-                
-                sim_returns_30 = min(sim_sales_30, max(0, scenario['returns_30'] * np.random.uniform(
-                    1 - param_variations['returns_30']/100,
-                    1 + param_variations['returns_30']/100
-                )))
-                
-                sim_avg_sale_price = max(scenario['current_unit_cost'], scenario['avg_sale_price'] * np.random.uniform(
-                    1 - param_variations['avg_sale_price']/100,
-                    1 + param_variations['avg_sale_price']/100
-                ))
-                
-                # Calculate derived metrics
-                sim_sales_365 = sim_sales_30 * 12
-                sim_returns_365 = sim_returns_30 * 12
-                sim_avoided_returns_365 = sim_returns_365 * (sim_reduction_rate / 100)
-                
-                sim_new_unit_cost = scenario['current_unit_cost'] + sim_additional_cost
-                sim_savings_per_avoided_return = sim_avg_sale_price - sim_new_unit_cost
-                
-                sim_annual_savings = sim_avoided_returns_365 * sim_savings_per_avoided_return
-                sim_annual_additional_costs = sim_additional_cost * sim_sales_365
-                sim_monthly_net_benefit = safe_divide(sim_annual_savings - sim_annual_additional_costs, 12)
-                sim_net_benefit = sim_annual_savings - sim_annual_additional_costs - sim_solution_cost
-                
-                # Calculate ROI metrics
-                sim_roi = None
-                sim_break_even_months = None
-                
-                if sim_solution_cost > 0 and sim_monthly_net_benefit > 0:
-                    sim_roi = safe_divide((sim_annual_savings - sim_annual_additional_costs) * 100, sim_solution_cost)
-                    sim_break_even_months = safe_divide(sim_solution_cost, sim_monthly_net_benefit)
-                
-                # Add to results
-                results.loc[i] = [
-                    i, sim_reduction_rate, sim_additional_cost, sim_solution_cost,
-                    sim_sales_30, sim_returns_30, sim_avg_sale_price, sim_roi,
-                    sim_break_even_months, sim_net_benefit, sim_annual_savings, 
-                    sim_annual_additional_costs
-                ]
-            except Exception as e:
-                # Log error and continue with next simulation
-                print(f"Error in simulation {i}: {str(e)}")
-                continue
-        
-        return results, "Simulation completed successfully"
-    
-    def get_aggregate_statistics(self) -> Dict[str, Any]:
-        """Get aggregate statistics across all scenarios."""
-        if self.scenarios.empty:
-            return {
-                'total_scenarios': 0,
-                'total_investment': 0,
-                'total_net_benefit': 0,
-                'avg_roi': 0,
-                'median_roi': 0,
-                'avg_break_even': 0,
-                'total_annual_savings': 0,
-                'total_additional_costs': 0,
-                'avg_reduction_rate': 0,
-                'total_avoided_returns': 0,
-                'portfolio_roi': 0,
-                'best_scenario': None,
-                'worst_scenario': None
-            }
-        
-        stats = {
-            'total_scenarios': len(self.scenarios),
-            'total_investment': self.scenarios['solution_cost'].sum(),
-            'total_net_benefit': self.scenarios['net_benefit'].sum(),
-            'avg_roi': self.scenarios['roi'].mean() if not self.scenarios['roi'].isnull().all() else 0,
-            'median_roi': self.scenarios['roi'].median() if not self.scenarios['roi'].isnull().all() else 0,
-            'avg_break_even': self.scenarios['break_even_months'].mean() if not self.scenarios['break_even_months'].isnull().all() else 0,
-            'total_annual_savings': self.scenarios['annual_savings'].sum(),
-            'total_additional_costs': self.scenarios['annual_additional_costs'].sum(),
-            'avg_reduction_rate': self.scenarios['reduction_rate'].mean(),
-            'total_avoided_returns': self.scenarios['avoided_returns_365'].sum(),
-            'best_scenario': None,
-            'worst_scenario': None
-        }
-        
-        # Find best and worst scenarios by ROI
-        valid_roi_scenarios = self.scenarios[self.scenarios['roi'] > 0].copy()
-        if not valid_roi_scenarios.empty:
-            best_idx = valid_roi_scenarios['roi'].idxmax()
-            stats['best_scenario'] = {
-                'uid': self.scenarios.loc[best_idx, 'uid'],
-                'name': self.scenarios.loc[best_idx, 'scenario_name'],
-                'roi': self.scenarios.loc[best_idx, 'roi']
-            }
-        
-            worst_idx = valid_roi_scenarios['roi'].idxmin()
-            stats['worst_scenario'] = {
-                'uid': self.scenarios.loc[worst_idx, 'uid'],
-                'name': self.scenarios.loc[worst_idx, 'scenario_name'],
-                'roi': self.scenarios.loc[worst_idx, 'roi']
-            }
-        
-        # Portfolio ROI
-        stats['portfolio_roi'] = safe_divide(
-            (stats['total_annual_savings'] - stats['total_additional_costs']) * 100,
-            stats['total_investment']
-        )
-        
-        return stats
-
-# Initialize app
-if 'optimizer' not in st.session_state:
-    st.session_state.optimizer = ReturnOptimizer()
-optimizer = st.session_state.optimizer
-
-# Wizard mode tracking
-if 'wizard_step' not in st.session_state:
-    st.session_state.wizard_step = 1
-    
-if 'wizard_data' not in st.session_state:
-    st.session_state.wizard_data = {}
-
-# =============================================================================
-# UI Component Functions
-# =============================================================================
-
-def display_header():
-    """Display app header with logo and navigation."""
-    col1, col2 = st.columns([1, 5])
-    
-    # Logo (placeholder - in a real app, replace with actual logo)
-    with col1:
-        st.markdown(f"""
-        <div style="text-align: center; padding: 10px">
-            <h1 style="font-size: 32px; margin: 0; color: {COLOR_SCHEME["primary"]};">🔄</h1>
-            <p style="margin: 0; font-weight: 600; color: {COLOR_SCHEME["secondary"]};">Kaizenalytics</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Title and description
-    with col2:
-        st.title("Return Analytics Platform")
-        st.caption("Evaluate return reduction investments to improve profitability and customer experience.")
-
-def display_metrics_overview(df: pd.DataFrame):
-    """Display key metrics overview cards."""
-    if df.empty:
-        st.info("Add or generate scenarios to see metrics.")
-        return
-    
-    # Get aggregate statistics
-    stats = optimizer.get_aggregate_statistics()
-    
-    # Display metrics in cards
-    st.subheader("Portfolio Overview")
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Total Scenarios</p>
-            <p class="metric-value" style="color: {COLOR_SCHEME["primary"]};">{stats['total_scenarios']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Portfolio ROI</p>
-            <p class="metric-value" style="color: {get_color_scale(stats['portfolio_roi'], 0, 300)};">{format_percent(stats['portfolio_roi'])}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Total Net Benefit</p>
-            <p class="metric-value" style="color: {get_color_scale(stats['total_net_benefit'], 0, stats['total_net_benefit']*1.5)};">{format_currency(stats['total_net_benefit'])}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-        <div class="metric-container">
-            <p class="metric-label">Avg. Break-even</p>
-            <p class="metric-value" style="color: {get_color_scale(stats['avg_break_even'], 0, 12, reverse=True)};">{format_number(stats['avg_break_even'])} months</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Second row with more metrics in advanced mode
-    if st.session_state.app_mode == "Advanced":
-        st.markdown("---")
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f"""
-            <div class="metric-container">
-                <p class="metric-label">Total Investment</p>
-                <p class="metric-value" style="color: {COLOR_SCHEME["primary"]};">{format_currency(stats['total_investment'])}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-            <div class="metric-container">
-                <p class="metric-label">Total Annual Savings</p>
-                <p class="metric-value" style="color: {COLOR_SCHEME["positive"]};">{format_currency(stats['total_annual_savings'])}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f"""
-            <div class="metric-container">
-                <p class="metric-label">Avg. Reduction Rate</p>
-                <p class="metric-value" style="color: {COLOR_SCHEME["secondary"]};">{format_percent(stats['avg_reduction_rate'])}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col4:
-            st.markdown(f"""
-            <div class="metric-container">
-                <p class="metric-label">Total Avoided Returns</p>
-                <p class="metric-value" style="color: {COLOR_SCHEME["tertiary"]};">{int(stats['total_avoided_returns'])}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Display best and worst scenarios
-        if stats['best_scenario']:
-            st.markdown("### Top Performing Scenario")
-            st.markdown(f"**{stats['best_scenario']['name']}** with ROI of {format_percent(stats['best_scenario']['roi'])}")
-
-def create_scenario_form(wizard_mode: bool = False) -> bool:
-    """
-    Create form for adding a new scenario.
-    
-    Args:
-        wizard_mode: Whether to use the step-by-step wizard interface
-        
-    Returns:
-        bool: True if scenario was added successfully
-    """
-    if wizard_mode:
-        # Set up wizard interface
-        return create_scenario_wizard()
-    
-    with st.form(key="scenario_form"):
-        st.subheader("Add New Scenario")
-        
-        # Display tips if in advanced mode
-        if st.session_state.app_mode == "Advanced":
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.markdown("""
-                <div class="info-box">
-                    <p><strong>Pro Tip:</strong> For more guided scenario creation, try the <b>Scenario Wizard</b> in the sidebar.</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown("""
-                <div class="success-box">
-                    <p><strong>Best Practice:</strong> Use specific SKU identifiers and detailed solution descriptions for better tracking.</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col3:
-                st.markdown("""
-                <div class="warning-box">
-                    <p><strong>Important:</strong> Be conservative with reduction rate estimates - real-world results are typically 15-30%.</p>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        # Basic Information
-        st.markdown("### Basic Information")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            scenario_name = st.text_input("Scenario Name", 
-                                      help="A memorable name for this return reduction strategy")
-            
-            sku = st.text_input("SKU/Product ID", 
-                             help="Product identifier")
-            
-            sales_channel = st.text_input("Sales Channel", 
-                                       help="Main platform where product is sold (e.g., Amazon, Shopify, Website)")
-            
-        with col2:
-            solution = st.text_input("Proposed Solution", 
-                                  help="Description of the return reduction strategy")
-            
-            tag = st.selectbox("Category Tag", 
-                            ["Packaging", "Product Description", "Size/Fit", "Quality", "Customer Education", "Other"],
-                            help="Category of return reduction strategy")
-            
-            if st.session_state.app_mode == "Advanced":
-                notes = st.text_area("Notes", 
-                                  help="Additional details about the solution")
-            else:
-                notes = None
-        
-        # Sales and Returns Data
-        st.markdown("### Sales & Returns Data")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            sales_30 = st.number_input("30-day Sales (units)", 
-                                    min_value=0, 
-                                    help="Units sold in the last 30 days")
-            
-            returns_30 = st.number_input("30-day Returns (units)", 
-                                      min_value=0, 
-                                      help="Units returned in the last 30 days")
-            
-        with col2:
-            avg_sale_price = st.number_input("Average Sale Price ($)", 
-                                          min_value=0.0, 
-                                          format="%.2f", 
-                                          help="Average selling price per unit")
-            
-            current_unit_cost = st.number_input("Current Unit Cost ($)", 
-                                             min_value=0.0, 
-                                             format="%.2f", 
-                                             help="Cost to produce/acquire each unit")
-            
-        # Calculated return rate
-        if sales_30 > 0 and returns_30 > 0:
-            return_rate = (returns_30 / sales_30) * 100
-            st.info(f"Current Return Rate: {return_rate:.2f}%")
-        
-        # Solution Implementation
-        st.markdown("### Solution Implementation")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            solution_cost = st.number_input("Total Solution Cost ($)", 
-                                         min_value=0.0, 
-                                         format="%.2f", 
-                                         help="One-time investment required for the solution")
-            
-            additional_cost_per_item = st.number_input("Additional Cost per Item ($)", 
-                                                    min_value=0.0, 
-                                                    format="%.2f", 
-                                                    help="Any additional per-unit cost from implementing the solution")
-        
-        with col2:
-            reduction_rate = st.slider("Estimated Return Reduction (%)", 
-                                    min_value=0, 
-                                    max_value=100, 
-                                    value=20, 
-                                    help="Expected percentage reduction in returns after implementing the solution")
-            
-            # Optional annual data
-            annual_data = st.checkbox("Use custom annual data", 
-                                   help="By default, 30-day data is multiplied by 12")
-            
-            if annual_data:
-                sales_365 = st.number_input("365-day Sales (units)", 
-                                         min_value=0, 
-                                         help="Total units sold in a year (defaults to 30-day * 12)")
-                
-                returns_365 = st.number_input("365-day Returns (units)", 
-                                           min_value=0, 
-                                           help="Total units returned in a year (defaults to 30-day * 12)")
-            else:
-                sales_365 = sales_30 * 12
-                returns_365 = returns_30 * 12
-        
-        # Advanced information (only in advanced mode)
-        if st.session_state.app_mode == "Advanced":
-            st.markdown("### Advanced Information")
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                confidence_level = st.selectbox("Confidence Level", 
-                                             ["High", "Medium", "Low"],
-                                             help="Confidence in the return reduction estimate")
-            
-            with col2:
-                risk_rating = st.selectbox("Risk Rating",
-                                        ["Low", "Medium", "High"],
-                                        help="Level of risk associated with implementing this solution")
-            
-            with col3:
-                implementation_time = st.selectbox("Implementation Time",
-                                                ["0-1 month", "1-3 months", "3-6 months", "6+ months"],
-                                                help="Estimated time to implement the solution")
-                
-            implementation_effort = st.slider("Implementation Effort (1-10)", 
-                                           min_value=1, 
-                                           max_value=10, 
-                                           value=5,
-                                           help="Relative effort required to implement (1=Easy, 10=Very Difficult)")
-        else:
-            confidence_level = None
-            risk_rating = None
-            implementation_time = None
-            implementation_effort = None
-        
-        # Calculate and preview stats
-        if sales_30 > 0 and returns_30 > 0:
-            return_rate = (returns_30 / sales_30) * 100
-            avoided_returns = returns_30 * (reduction_rate / 100)
-            
-            st.markdown("### Preview Calculations")
-            preview_col1, preview_col2, preview_col3 = st.columns(3)
-            
-            with preview_col1:
-                st.metric("Current Return Rate", f"{return_rate:.2f}%")
-                st.metric("Monthly Returns Value", f"${returns_30 * avg_sale_price:,.2f}")
-            
-            with preview_col2:
-                st.metric("Avoided Returns (Monthly)", f"{avoided_returns:.1f} units")
-                st.metric("New Return Rate", f"{return_rate * (1 - reduction_rate/100):.2f}%")
-            
-            with preview_col3:
-                # Simple ROI calculation for preview
-                monthly_cost = additional_cost_per_item * sales_30
-                monthly_savings = avoided_returns * (avg_sale_price - (current_unit_cost + additional_cost_per_item))
-                monthly_net = monthly_savings - monthly_cost
-                
-                if solution_cost > 0 and monthly_net > 0:
-                    breakeven_months = solution_cost / monthly_net
-                    st.metric("Estimated Breakeven", f"{breakeven_months:.1f} months")
-                    st.metric("Est. Annual ROI", f"{(monthly_net * 12 / solution_cost) * 100:.1f}%")
-                else:
-                    st.metric("Estimated Breakeven", "N/A")
-                    st.metric("Est. Annual ROI", "N/A")
-        
-        # Submit button
-        submitted = st.form_submit_button("Save Scenario")
-        
-        if submitted:
-            success, message = optimizer.add_scenario(
-                scenario_name, sku, sales_30, avg_sale_price, sales_channel,
-                returns_30, solution, solution_cost, additional_cost_per_item,
-                current_unit_cost, reduction_rate, sales_365, returns_365, tag,
-                notes, confidence_level, risk_rating, implementation_time, implementation_effort
-            )
-            
-            if success:
-                st.success(message)
-                return True
-            else:
-                st.error(message)
-                return False
-    
-    return False
-
-def create_scenario_wizard() -> bool:
-    """
-    Create a step-by-step wizard for adding a scenario.
-    
-    Returns:
-        bool: True if wizard was completed successfully
-    """
-    # Initialize wizard_data if needed
-    if 'wizard_data' not in st.session_state:
-        st.session_state.wizard_data = {}
-    
-    # Display progress tracker
-    st.markdown("### Scenario Creation Wizard")
-    steps = ["Product Info", "Sales Data", "Return Solution", "Cost & Impact", "Review"]
-    
-    st.markdown("""
-    <div class="progress-container">
-    """, unsafe_allow_html=True)
-    
-    for i, step in enumerate(steps, 1):
-        if i < st.session_state.wizard_step:
-            status = "completed"
-        elif i == st.session_state.wizard_step:
-            status = "active"
-        else:
-            status = ""
-        
-        st.markdown(f"""
-        <div class="progress-step {status}">{i}
-            <div class="progress-label">{step}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    </div>
-    <br>
-    """, unsafe_allow_html=True)
-    
-    # Step 1: Product Information
-    if st.session_state.wizard_step == 1:
-        st.subheader("Step 1: Product Information")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            scenario_name = st.text_input("Scenario Name", 
-                value=st.session_state.wizard_data.get('scenario_name', ''),
-                help="A memorable name for this return reduction strategy")
-            
-            sku = st.text_input("SKU/Product ID", 
-                value=st.session_state.wizard_data.get('sku', ''),
-                help="Product identifier")
-        
-        with col2:
-            sales_channel = st.text_input("Sales Channel", 
-                value=st.session_state.wizard_data.get('sales_channel', ''),
-                help="Main platform where product is sold (e.g., Amazon, Shopify, Website)")
-            
-            tag = st.selectbox("Category Tag", 
-                ["Packaging", "Product Description", "Size/Fit", "Quality", "Customer Education", "Other"],
-                index=["Packaging", "Product Description", "Size/Fit", "Quality", "Customer Education", "Other"].index(
-                    st.session_state.wizard_data.get('tag', 'Packaging')),
-                help="Category of return reduction strategy")
-        
-        notes = st.text_area("Product Notes (Optional)", 
-            value=st.session_state.wizard_data.get('notes', ''),
-            help="Additional context about the product")
-        
-        # Save data
-        if st.button("Next: Sales Data"):
-            # Validate inputs
-            if not scenario_name:
-                st.error("Please enter a Scenario Name")
-                return False
-            
-            if not sku:
-                st.error("Please enter a SKU/Product ID")
-                return False
-            
-            # Save to session state
-            st.session_state.wizard_data.update({
-                'scenario_name': scenario_name,
-                'sku': sku,
-                'sales_channel': sales_channel,
-                'tag': tag,
-                'notes': notes
-            })
-            
-            # Go to next step
-            st.session_state.wizard_step = 2
-            st.rerun()
-    
-    # Step 2: Sales and Returns Data
-    elif st.session_state.wizard_step == 2:
-        st.subheader("Step 2: Sales & Returns Data")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            sales_30 = st.number_input("30-day Sales (units)", 
-                value=int(st.session_state.wizard_data.get('sales_30', 0)),
-                min_value=0, 
-                help="Units sold in the last 30 days")
-            
-            avg_sale_price = st.number_input("Average Sale Price ($)", 
-                value=float(st.session_state.wizard_data.get('avg_sale_price', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Average selling price per unit")
-        
-        with col2:
-            returns_30 = st.number_input("30-day Returns (units)", 
-                value=int(st.session_state.wizard_data.get('returns_30', 0)),
-                min_value=0, 
-                help="Units returned in the last 30 days")
-            
-            current_unit_cost = st.number_input("Current Unit Cost ($)", 
-                value=float(st.session_state.wizard_data.get('current_unit_cost', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Cost to produce/acquire each unit")
-        
-        # Calculate return rate
-        if sales_30 > 0 and returns_30 > 0:
-            return_rate = (returns_30 / sales_30) * 100
-            st.info(f"Current Return Rate: {return_rate:.2f}%")
-            
-            # Industry benchmark comparison
-            if return_rate > 30:
-                st.warning("Your return rate is higher than the industry average (20-30%). This presents a significant opportunity for improvement.")
-            elif return_rate > 15:
-                st.info("Your return rate is within typical industry averages (15-30%).")
-            else:
-                st.success("Your return rate is below industry average. Well done!")
-        
-        # Annual data option
-        annual_data = st.checkbox("Use custom annual data", 
-            value=st.session_state.wizard_data.get('use_custom_annual', False),
-            help="By default, 30-day data is multiplied by 12")
-        
-        if annual_data:
-            col1, col2 = st.columns(2)
-            with col1:
-                sales_365 = st.number_input("365-day Sales (units)", 
-                    value=int(st.session_state.wizard_data.get('sales_365', sales_30 * 12)),
-                    min_value=0, 
-                    help="Total units sold in a year")
-            
-            with col2:
-                returns_365 = st.number_input("365-day Returns (units)", 
-                    value=int(st.session_state.wizard_data.get('returns_365', returns_30 * 12)),
-                    min_value=0, 
-                    help="Total units returned in a year")
-        else:
-            sales_365 = sales_30 * 12
-            returns_365 = returns_30 * 12
-        
-        # Navigation buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("← Back"):
-                st.session_state.wizard_step = 1
-                st.rerun()
-        
-        with col2:
-            if st.button("Next: Return Solution"):
-                # Validate inputs
-                if sales_30 <= 0:
-                    st.error("Please enter a value greater than 0 for 30-day Sales")
-                    return False
-                
-                if returns_30 > sales_30:
-                    st.error("Returns cannot exceed sales")
-                    return False
-                
-                if current_unit_cost <= 0 or avg_sale_price <= 0:
-                    st.error("Unit cost and sale price must be greater than zero")
-                    return False
-                
-                if avg_sale_price <= current_unit_cost:
-                    st.error("Sale price must be greater than unit cost")
-                    return False
-                
-                # Save to session state
-                st.session_state.wizard_data.update({
-                    'sales_30': sales_30,
-                    'returns_30': returns_30,
-                    'avg_sale_price': avg_sale_price,
-                    'current_unit_cost': current_unit_cost,
-                    'use_custom_annual': annual_data,
-                    'sales_365': sales_365,
-                    'returns_365': returns_365
-                })
-                
-                # Go to next step
-                st.session_state.wizard_step = 3
-                st.rerun()
-    
-    # Step 3: Return Solution
-    elif st.session_state.wizard_step == 3:
-        st.subheader("Step 3: Return Solution")
-        
-        solution = st.text_area("Proposed Solution", 
-            value=st.session_state.wizard_data.get('solution', ''),
-            help="Detailed description of the return reduction strategy")
-        
-        # Solution recommendations based on tag
-        tag = st.session_state.wizard_data.get('tag', '')
-        if tag:
-            st.markdown(f"### Recommended Solutions for {tag}")
-            
-            if tag == "Packaging":
-                st.markdown("""
-                * **Premium protective packaging** with cushioned inserts
-                * **Right-sized boxes** to prevent movement during shipping
-                * **Clear unboxing instructions** to prevent damage during opening
-                * **Sustainable packaging** with clear recycling instructions
-                """)
-            elif tag == "Product Description":
-                st.markdown("""
-                * **Enhanced product detail pages** with comprehensive specifications
-                * **360° product photography** showing all angles and features
-                * **Size comparison charts** with common reference objects
-                * **Video demonstrations** of product use and features
-                """)
-            elif tag == "Size/Fit":
-                st.markdown("""
-                * **Interactive size finder tools** with body measurements
-                * **Augmented reality try-on** technology
-                * **Consistent sizing across product lines**
-                * **Detailed measurement guides** with visual instructions
-                """)
-            elif tag == "Quality":
-                st.markdown("""
-                * **Enhanced quality control** processes during manufacturing
-                * **Pre-shipping inspection** procedures
-                * **Material upgrades** for common failure points
-                * **Durability testing** protocols for high-stress components
-                """)
-            elif tag == "Customer Education":
-                st.markdown("""
-                * **Improved product manuals** with clear setup instructions
-                * **Video tutorials** for complex products
-                * **FAQ expansion** addressing common issues
-                * **Post-purchase email sequence** with usage tips
-                """)
-        
-        # Additional solution details
-        st.markdown("### Solution Details")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            confidence_level = st.selectbox("Confidence Level", 
-                ["High", "Medium", "Low"],
-                index=["High", "Medium", "Low"].index(
-                    st.session_state.wizard_data.get('confidence_level', 'Medium')),
-                help="How confident are you in this solution's effectiveness?")
-        
-        with col2:
-            implementation_time = st.selectbox("Implementation Time",
-                ["0-1 month", "1-3 months", "3-6 months", "6+ months"],
-                index=["0-1 month", "1-3 months", "3-6 months", "6+ months"].index(
-                    st.session_state.wizard_data.get('implementation_time', '1-3 months')),
-                help="How long will it take to implement this solution?")
-        
-        implementation_effort = st.slider("Implementation Effort (1-10)", 
-            min_value=1, max_value=10, 
-            value=int(st.session_state.wizard_data.get('implementation_effort', 5)),
-            help="How difficult will this solution be to implement? (1=Easy, 10=Very Difficult)")
-        
-        # Navigation buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("← Back"):
-                st.session_state.wizard_step = 2
-                st.rerun()
-        
-        with col2:
-            if st.button("Next: Cost & Impact"):
-                # Validate inputs
-                if not solution:
-                    st.error("Please describe your proposed solution")
-                    return False
-                
-                # Save to session state
-                st.session_state.wizard_data.update({
-                    'solution': solution,
-                    'confidence_level': confidence_level,
-                    'implementation_time': implementation_time,
-                    'implementation_effort': implementation_effort
-                })
-                
-                # Go to next step
-                st.session_state.wizard_step = 4
-                st.rerun()
-    
-    # Step 4: Cost and Impact
-    elif st.session_state.wizard_step == 4:
-        st.subheader("Step 4: Cost & Impact")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            solution_cost = st.number_input("Total Solution Cost ($)", 
-                value=float(st.session_state.wizard_data.get('solution_cost', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="One-time investment required for implementation")
-        
-        with col2:
-            additional_cost_per_item = st.number_input("Additional Cost per Item ($)", 
-                value=float(st.session_state.wizard_data.get('additional_cost_per_item', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Any ongoing per-unit cost increase from the solution")
-        
-        # Return reduction estimate
-        st.markdown("### Impact Estimate")
-        
-        # Get data for context
-        tag = st.session_state.wizard_data.get('tag', '')
-        confidence = st.session_state.wizard_data.get('confidence_level', 'Medium')
-        
-        # Suggested reduction range based on tag and confidence
-        suggested_min = 15
-        suggested_max = 30
-        
-        if tag == "Size/Fit":
-            suggested_min = 20
-            suggested_max = 40
-        elif tag == "Product Description":
-            suggested_min = 15
-            suggested_max = 35
-        elif tag == "Quality":
-            suggested_min = 25
-            suggested_max = 45
-        
-        if confidence == "Low":
-            suggested_min = max(10, suggested_min - 5)
-            suggested_max = suggested_max - 5
-        elif confidence == "High":
-            suggested_min = suggested_min + 5
-            suggested_max = min(60, suggested_max + 5)
-        
-        st.info(f"Based on your solution category and confidence level, similar initiatives typically achieve a {suggested_min}%-{suggested_max}% reduction in returns.")
-        
-        reduction_rate = st.slider("Estimated Return Reduction (%)", 
-            min_value=0, max_value=100, 
-            value=int(st.session_state.wizard_data.get('reduction_rate', (suggested_min + suggested_max) // 2)),
-            help="Expected percentage reduction in returns after implementing the solution")
-        
-        risk_rating = st.selectbox("Risk Rating",
-            ["Low", "Medium", "High"],
-            index=["Low", "Medium", "High"].index(
-                st.session_state.wizard_data.get('risk_rating', 'Medium')),
-            help="Level of risk associated with this solution")
-        
-        # Calculate preview metrics
-        sales_30 = st.session_state.wizard_data.get('sales_30', 0)
-        returns_30 = st.session_state.wizard_data.get('returns_30', 0)
-        avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
-        current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
-        
-        # Safe calculations with proper error handling
-        try:
-            if sales_30 > 0 and returns_30 > 0:
-                return_rate = (returns_30 / sales_30) * 100
-                avoided_returns = returns_30 * (reduction_rate / 100)
-                new_return_rate = return_rate * (1 - reduction_rate/100)
-                
-                # ROI calculations
-                new_unit_cost = current_unit_cost + additional_cost_per_item
-                monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
-                monthly_cost = sales_30 * additional_cost_per_item
-                monthly_net = monthly_savings - monthly_cost
-                annual_net = monthly_net * 12
-                
-                if solution_cost > 0 and monthly_net > 0:
-                    breakeven_months = solution_cost / monthly_net
-                    annual_roi = (annual_net / solution_cost) * 100
-                else:
-                    breakeven_months = None
-                    annual_roi = None
-                
-                # Display financial impact
-                st.markdown("### Financial Impact")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown(f"**Monthly Net Benefit:** ${monthly_net:.2f}")
-                    st.markdown(f"**Annual Net Benefit:** ${annual_net:.2f}")
-                    
-                    if breakeven_months:
-                        st.markdown(f"**Breakeven Time:** {breakeven_months:.1f} months")
-                    else:
-                        st.markdown("**Breakeven Time:** N/A")
-                
-                with col2:
-                    if annual_roi:
-                        st.markdown(f"**Return on Investment:** {annual_roi:.1f}%")
-                    else:
-                        st.markdown("**Return on Investment:** N/A")
-                    
-                    st.markdown(f"**Avoided Returns (Monthly):** {avoided_returns:.1f} units")
-                    st.markdown(f"**New Return Rate:** {new_return_rate:.2f}%")
-        except Exception as e:
-            st.error(f"Error in calculations: {str(e)}")
-        
-        # Allow final edits
-        st.markdown("### Final Adjustments (Optional)")
-        st.caption("Make any final adjustments before proceeding to review")
-        
-        final_scenario_name = st.text_input("Final Scenario Name", 
-                                    value=st.session_state.wizard_data.get('scenario_name', ''))
-        
-        # Navigation buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("← Back"):
-                st.session_state.wizard_step = 3
-                st.rerun()
-        
-        with col2:
-            if st.button("Next: Review"):
-                # Update name if changed
-                if final_scenario_name:
-                    st.session_state.wizard_data['scenario_name'] = final_scenario_name
-                
-                # Save to session state
-                st.session_state.wizard_data.update({
-                    'solution_cost': solution_cost,
-                    'additional_cost_per_item': additional_cost_per_item,
-                    'reduction_rate': reduction_rate,
-                    'risk_rating': risk_rating
-                })
-                
-                # Go to next step
-                st.session_state.wizard_step = 5
-                st.rerun()
-    
-    # Step 5: Review and Save
-    elif st.session_state.wizard_step == 5:
-        st.subheader("Step 5: Review & Save")
-        st.markdown("### Scenario Summary")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Basic Information")
-            st.markdown(f"**Scenario Name:** {st.session_state.wizard_data.get('scenario_name', '')}")
-            st.markdown(f"**SKU/Product ID:** {st.session_state.wizard_data.get('sku', '')}")
-            st.markdown(f"**Sales Channel:** {st.session_state.wizard_data.get('sales_channel', '')}")
-            st.markdown(f"**Category:** {st.session_state.wizard_data.get('tag', '')}")
-            
-            st.markdown("#### Solution Details")
-            st.markdown(f"**Solution:** {st.session_state.wizard_data.get('solution', '')}")
-            st.markdown(f"**Implementation Time:** {st.session_state.wizard_data.get('implementation_time', '')}")
-            st.markdown(f"**Confidence Level:** {st.session_state.wizard_data.get('confidence_level', '')}")
-            st.markdown(f"**Risk Rating:** {st.session_state.wizard_data.get('risk_rating', '')}")
-        
-        with col2:
-            st.markdown("#### Financial Data")
-            st.markdown(f"**Monthly Sales:** {st.session_state.wizard_data.get('sales_30', 0)} units")
-            st.markdown(f"**Monthly Returns:** {st.session_state.wizard_data.get('returns_30', 0)} units")
-            st.markdown(f"**Average Sale Price:** ${st.session_state.wizard_data.get('avg_sale_price', 0.0):.2f}")
-            st.markdown(f"**Current Unit Cost:** ${st.session_state.wizard_data.get('current_unit_cost', 0.0):.2f}")
-            
-            st.markdown("#### Solution Costs & Impact")
-            st.markdown(f"**Solution Cost:** ${st.session_state.wizard_data.get('solution_cost', 0.0):.2f}")
-            st.markdown(f"**Additional Cost/Item:** ${st.session_state.wizard_data.get('additional_cost_per_item', 0.0):.2f}")
-            st.markdown(f"**Expected Reduction:** {st.session_state.wizard_data.get('reduction_rate', 0)}%")
-        
-        # Calculate key metrics for summary
-        try:
-            sales_30 = st.session_state.wizard_data.get('sales_30', 0)
-            returns_30 = st.session_state.wizard_data.get('returns_30', 0)
-            avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
-            current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
-            reduction_rate = st.session_state.wizard_data.get('reduction_rate', 0.0)
-            solution_cost = st.session_state.wizard_data.get('solution_cost', 0.0)
-            additional_cost_per_item = st.session_state.wizard_data.get('additional_cost_per_item', 0.0)
-            
-            if sales_30 > 0 and returns_30 > 0:
-                return_rate = (returns_30 / sales_30) * 100
-                avoided_returns = returns_30 * (reduction_rate / 100)
-                new_unit_cost = current_unit_cost + additional_cost_per_item
-                monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
-                monthly_cost = sales_30 * additional_cost_per_item
-                monthly_net = monthly_savings - monthly_cost
-                annual_net = monthly_net * 12
-                
-                # Calculate ROI and breakeven if applicable
-                if solution_cost > 0 and monthly_net > 0:
-                    breakeven_months = solution_cost / monthly_net
-                    annual_roi = (annual_net / solution_cost) * 100
-                else:
-                    breakeven_months = None
-                    annual_roi = None
-                
-                # Display key metrics
-                st.markdown("### Key Metrics")
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Return Rate Reduction", 
-                            f"{reduction_rate}%", 
-                            delta=f"{return_rate - (return_rate * (1 - reduction_rate/100)):.1f}%")
-                
-                with col2:
-                    if breakeven_months:
-                        st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
-                    else:
-                        st.metric("Breakeven Time", "N/A")
-                
-                with col3:
-                    if annual_roi:
-                        st.metric("Annual ROI", f"{annual_roi:.1f}%")
-                    else:
-                        st.metric("Annual ROI", "N/A")
-            
-        except Exception as e:
-            st.error(f"Error calculating metrics: {str(e)}")
-        
-        # Navigation and save buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("← Back to Edit"):
-                st.session_state.wizard_step = 4
-                st.rerun()
-        
-        with col2:
-            if st.button("Save Scenario"):
-                # Extract all data from wizard
-                try:
-                    scenario_data = {
-                        'scenario_name': st.session_state.wizard_data.get('scenario_name', ''),
-                        'sku': st.session_state.wizard_data.get('sku', ''),
-                        'sales_30': st.session_state.wizard_data.get('sales_30', 0),
-                        'avg_sale_price': st.session_state.wizard_data.get('avg_sale_price', 0.0),
-                        'sales_channel': st.session_state.wizard_data.get('sales_channel', ''),
-                        'returns_30': st.session_state.wizard_data.get('returns_30', 0),
-                        'solution': st.session_state.wizard_data.get('solution', ''),
-                        'solution_cost': st.session_state.wizard_data.get('solution_cost', 0.0),
-                        'additional_cost_per_item': st.session_state.wizard_data.get('additional_cost_per_item', 0.0),
-                        'current_unit_cost': st.session_state.wizard_data.get('current_unit_cost', 0.0),
-                        'reduction_rate': st.session_state.wizard_data.get('reduction_rate', 0),
-                        'sales_365': st.session_state.wizard_data.get('sales_365', 0),
-                        'returns_365': st.session_state.wizard_data.get('returns_365', 0),
-                        'tag': st.session_state.wizard_data.get('tag', ''),
-                        'notes': st.session_state.wizard_data.get('notes', ''),
-                        'confidence_level': st.session_state.wizard_data.get('confidence_level', None),
-                        'risk_rating': st.session_state.wizard_data.get('risk_rating', None),
-                        'implementation_time': st.session_state.wizard_data.get('implementation_time', None),
-                        'implementation_effort': st.session_state.wizard_data.get('implementation_effort', None)
-                    }
-                    
-                    # Add the scenario
-                    success, message = optimizer.add_scenario(**scenario_data)
-                    
-                    if success:
-                        st.success("Scenario saved successfully!")
-                        
-                        # Reset wizard
-                        st.session_state.wizard_step = 1
-                        st.session_state.wizard_data = {}
-                        
-                        # Redirect to dashboard
-                        st.session_state.nav_option = "Dashboard"
-                        st.rerun()
-                    else:
-                        st.error(message)
-                
-                except Exception as e:
-                    st.error(f"Error saving scenario: {str(e)}")
-    
-    return True
 
 def display_scenario_table(df: pd.DataFrame, optimizer: ReturnOptimizer):
     """
@@ -2371,117 +1084,119 @@ def display_scenario_table(df: pd.DataFrame, optimizer: ReturnOptimizer):
         
         with col1:
             selected_scenario = st.selectbox("Select scenario for actions:", 
-                                         filtered_df['scenario_name'].tolist())
+                                         filtered_df['scenario_name'].tolist(),
+                                         key="scenario_select")
         
-        selected_uid = filtered_df[filtered_df['scenario_name'] == selected_scenario]['uid'].iloc[0]
-        
-        with col2:
-            if st.button("View Details", key="view_btn"):
-                st.session_state['selected_scenario'] = selected_uid
-                st.session_state['view_scenario'] = True
-                st.rerun()
-        
-        with col3:
-            if st.button("Clone", key="clone_btn"):
-                success, message = optimizer.clone_scenario(selected_uid)
-                if success:
-                    st.success(f"Scenario cloned successfully!")
-                    st.rerun()
-                else:
-                    st.error(message)
-        
-        with col4:
-            if st.button("Delete", key="delete_btn"):
-                if optimizer.delete_scenario(selected_uid):
-                    st.success(f"Scenario '{selected_scenario}' deleted successfully.")
-                    st.rerun()
-                else:
-                    st.error("Failed to delete scenario.")
-        
-        # Additional actions in advanced mode
-        if st.session_state.app_mode == "Advanced":
-            st.markdown("---")
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                if st.button("Run Monte Carlo", key="monte_carlo_btn"):
-                    st.session_state['monte_carlo_scenario'] = selected_uid
-                    st.session_state['nav_option'] = "Monte Carlo"
-                    st.rerun()
+        if selected_scenario:
+            selected_uid = filtered_df[filtered_df['scenario_name'] == selected_scenario]['uid'].iloc[0]
             
             with col2:
-                if st.button("Compare Scenarios", key="compare_btn"):
-                    if 'compare_list' not in st.session_state:
-                        st.session_state['compare_list'] = []
-                    
-                    if selected_uid not in st.session_state['compare_list']:
-                        st.session_state['compare_list'].append(selected_uid)
-                    
-                    st.success(f"Added '{selected_scenario}' to comparison list")
-                    st.session_state['nav_option'] = "Compare Scenarios"
+                if st.button("View Details", key="view_btn", use_container_width=True):
+                    st.session_state['selected_scenario'] = selected_uid
+                    st.session_state['view_scenario'] = True
                     st.rerun()
             
             with col3:
-                # Export options for single scenario
-                export_format = st.selectbox("Export Format", 
-                                      ["Excel", "CSV"],
-                                      key="single_export_format")
+                if st.button("Clone", key="clone_btn", use_container_width=True):
+                    success, message = optimizer.clone_scenario(selected_uid)
+                    if success:
+                        st.success(f"Scenario cloned successfully!")
+                        st.rerun()
+                    else:
+                        st.error(message)
             
             with col4:
-                if st.button("Export", key="export_btn"):
-                    # Create a subset of data with just the selected scenario
-                    export_df = filtered_df[filtered_df['uid'] == selected_uid]
-                    
-                    if export_format == "Excel":
-                        try:
-                            # Create Excel file
-                            excel_buffer = io.BytesIO()
-                            with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-                                export_df.to_excel(writer, index=False, sheet_name='Scenario Details')
+                if st.button("Delete", key="delete_btn", use_container_width=True):
+                    if optimizer.delete_scenario(selected_uid):
+                        st.success(f"Scenario '{selected_scenario}' deleted successfully.")
+                        st.rerun()
+                    else:
+                        st.error("Failed to delete scenario.")
+            
+            # Additional actions in advanced mode
+            if st.session_state.app_mode == "Advanced":
+                st.markdown("---")
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    if st.button("Run Monte Carlo", key="monte_carlo_btn", use_container_width=True):
+                        st.session_state['monte_carlo_scenario'] = selected_uid
+                        st.session_state['nav_option'] = "Monte Carlo"
+                        st.rerun()
+                
+                with col2:
+                    if st.button("Compare Scenarios", key="compare_btn", use_container_width=True):
+                        if 'compare_list' not in st.session_state:
+                            st.session_state['compare_list'] = []
+                        
+                        if selected_uid not in st.session_state['compare_list']:
+                            st.session_state['compare_list'].append(selected_uid)
+                        
+                        st.success(f"Added '{selected_scenario}' to comparison list")
+                        st.session_state['nav_option'] = "Compare Scenarios"
+                        st.rerun()
+                
+                with col3:
+                    # Export options for single scenario
+                    export_format = st.selectbox("Export Format", 
+                                          ["Excel", "CSV"],
+                                          key="single_export_format")
+                
+                with col4:
+                    if st.button("Export", key="export_btn", use_container_width=True):
+                        # Create a subset of data with just the selected scenario
+                        export_df = filtered_df[filtered_df['uid'] == selected_uid]
+                        
+                        if export_format == "Excel":
+                            try:
+                                # Create Excel file
+                                excel_buffer = io.BytesIO()
+                                with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                                    export_df.to_excel(writer, index=False, sheet_name='Scenario Details')
+                                    
+                                    # Get the workbook and worksheet objects
+                                    workbook = writer.book
+                                    worksheet = writer.sheets['Scenario Details']
+                                    
+                                    # Add some formatting
+                                    header_format = workbook.add_format({
+                                        'bold': True,
+                                        'bg_color': COLOR_SCHEME['primary'],
+                                        'color': 'white',
+                                        'border': 1
+                                    })
+                                    
+                                    # Apply formatting to header row
+                                    for col_num, value in enumerate(export_df.columns.values):
+                                        worksheet.write(0, col_num, value, header_format)
+                                        worksheet.set_column(col_num, col_num, 15)
                                 
-                                # Get the workbook and worksheet objects
-                                workbook = writer.book
-                                worksheet = writer.sheets['Scenario Details']
+                                # Create download button
+                                st.download_button(
+                                    label="Download Excel Report",
+                                    data=excel_buffer.getvalue(),
+                                    file_name=f"{selected_scenario.replace(' ', '_')}_report.xlsx",
+                                    mime="application/vnd.ms-excel"
+                                )
                                 
-                                # Add some formatting
-                                header_format = workbook.add_format({
-                                    'bold': True,
-                                    'bg_color': COLOR_SCHEME['primary'],
-                                    'color': 'white',
-                                    'border': 1
-                                })
+                            except Exception as e:
+                                st.error(f"Error generating Excel file: {str(e)}")
+                        
+                        elif export_format == "CSV":
+                            try:
+                                # Create CSV
+                                csv_data = export_df.to_csv(index=False).encode('utf-8')
                                 
-                                # Apply formatting to header row
-                                for col_num, value in enumerate(export_df.columns.values):
-                                    worksheet.write(0, col_num, value, header_format)
-                                    worksheet.set_column(col_num, col_num, 15)
-                            
-                            # Create download button
-                            st.download_button(
-                                label="Download Excel Report",
-                                data=excel_buffer.getvalue(),
-                                file_name=f"{selected_scenario.replace(' ', '_')}_report.xlsx",
-                                mime="application/vnd.ms-excel"
-                            )
-                            
-                        except Exception as e:
-                            st.error(f"Error generating Excel file: {str(e)}")
-                    
-                    elif export_format == "CSV":
-                        try:
-                            # Create CSV
-                            csv_data = export_df.to_csv(index=False).encode('utf-8')
-                            
-                            # Create download button
-                            st.download_button(
-                                label="Download CSV Report",
-                                data=csv_data,
-                                file_name=f"{selected_scenario.replace(' ', '_')}_report.csv",
-                                mime="text/csv"
-                            )
-                            
-                        except Exception as e:
-                            st.error(f"Error generating CSV file: {str(e)}")
+                                # Create download button
+                                st.download_button(
+                                    label="Download CSV Report",
+                                    data=csv_data,
+                                    file_name=f"{selected_scenario.replace(' ', '_')}_report.csv",
+                                    mime="text/csv"
+                                )
+                                
+                            except Exception as e:
+                                st.error(f"Error generating CSV file: {str(e)}")
 
 def display_scenario_details(uid: str, optimizer: ReturnOptimizer):
     """
@@ -2523,7 +1238,7 @@ def display_scenario_details(uid: str, optimizer: ReturnOptimizer):
         display_scenario_financials(scenario)
     
     # Return to dashboard button
-    if st.button("← Return to Dashboard"):
+    if st.button("← Return to Dashboard", use_container_width=True):
         st.session_state['view_scenario'] = False
         st.session_state['selected_scenario'] = None
         st.rerun()
@@ -4112,7 +2827,7 @@ def display_what_if_analysis(optimizer: ReturnOptimizer):
                 new_scenario_name = st.text_input("New Scenario Name", f"{base_scenario_name} (What-If)")
             
             with col2:
-                if st.button("Save as New Scenario"):
+                if st.button("Save as New Scenario", use_container_width=True):
                     # Create a new scenario name
                     if not new_scenario_name:
                         new_scenario_name = f"{base_scenario_name} (What-If)"
@@ -4154,7 +2869,7 @@ def display_monte_carlo_simulation(optimizer: ReturnOptimizer):
         
         if not scenario:
             st.error("Selected scenario not found. Please select another scenario.")
-            if st.button("Return to Dashboard"):
+            if st.button("Return to Dashboard", use_container_width=True):
                 st.session_state.pop('monte_carlo_scenario', None)
                 st.session_state['nav_option'] = "Dashboard"
                 st.rerun()
@@ -4229,7 +2944,7 @@ def display_monte_carlo_simulation(optimizer: ReturnOptimizer):
         }
         
         # Run simulation button
-        if st.button("Run Monte Carlo Simulation"):
+        if st.button("Run Monte Carlo Simulation", key="run_mc_btn", use_container_width=True):
             with st.spinner(f"Running {num_simulations} simulations..."):
                 # Show progress bar
                 progress_bar = st.progress(0)
@@ -4543,7 +3258,7 @@ def display_monte_carlo_simulation(optimizer: ReturnOptimizer):
                 st.markdown("### Save as New Scenario")
                 new_name = st.text_input("New Scenario Name", f"{scenario['scenario_name']} (Monte Carlo)")
                 
-                if st.button("Save Mean Values as New Scenario"):
+                if st.button("Save Mean Values as New Scenario", use_container_width=True):
                     # Calculate mean values from simulation
                     mean_reduction_rate = results['reduction_rate'].mean()
                     mean_additional_cost = results['additional_cost_per_item'].mean()
@@ -4588,7 +3303,7 @@ def display_monte_carlo_simulation(optimizer: ReturnOptimizer):
         st.info("Please select a scenario for Monte Carlo simulation from the Dashboard.")
         
         # Display sample results for demonstration
-        if st.button("Show Demo Simulation"):
+        if st.button("Show Demo Simulation", use_container_width=True):
             st.markdown("### Sample Simulation Results")
             
             # Create sample data
@@ -4691,7 +3406,7 @@ def display_scenario_comparison(optimizer: ReturnOptimizer):
                 
                 # If we have at least 2 scenarios, show comparison button
                 if len(compare_list) >= 2:
-                    if st.button("Compare Selected Scenarios"):
+                    if st.button("Compare Selected Scenarios", use_container_width=True):
                         st.rerun()
         else:
             st.warning("No scenarios available. Please add scenarios first.")
@@ -4721,12 +3436,12 @@ def display_scenario_comparison(optimizer: ReturnOptimizer):
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("Clear Comparison List"):
+            if st.button("Clear Comparison List", use_container_width=True):
                 st.session_state['compare_list'] = []
                 st.rerun()
         
         with col2:
-            if st.button("Add More Scenarios"):
+            if st.button("Add More Scenarios", use_container_width=True):
                 st.session_state['compare_list'] = []  # Clear to restart
                 st.rerun()
         
@@ -5041,9 +3756,9 @@ def display_scenario_comparison(optimizer: ReturnOptimizer):
         
         # Export comparison
         st.markdown("### Export Comparison")
-        export_format = st.selectbox("Export Format", ["Excel", "CSV",])
+        export_format = st.selectbox("Export Format", ["Excel", "CSV"])
         
-        if st.button("Export Comparison"):
+        if st.button("Export Comparison", use_container_width=True):
             if export_format == "Excel":
                 # Create Excel file with multiple sheets
                 excel_buffer = io.BytesIO()
@@ -5125,7 +3840,8 @@ def display_settings(optimizer: ReturnOptimizer):
                 "Export All Scenarios (JSON)",
                 data=json_data,
                 file_name="Kaizenalytics_scenarios.json",
-                mime="application/json"
+                mime="application/json",
+                use_container_width=True
             )
             
             # Export as Excel
@@ -5155,18 +3871,20 @@ def display_settings(optimizer: ReturnOptimizer):
                     "Export as Excel Spreadsheet",
                     data=excel_data.getvalue(),
                     file_name="Kaizenalytics_export.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
                 )
             except Exception as e:
                 st.error(f"Error exporting to Excel: {str(e)}")
             
             # Export as CSV
-            csv_data = optimizer.scenarios.to_csv(index=False).encode()
+            csv_data = optimizer.scenarios.to_csv(index=False).encode('utf-8')
             st.download_button(
                 "Export as CSV",
                 data=csv_data,
                 file_name="Kaizenalytics_export.csv",
-                mime="text/csv"
+                mime="text/csv",
+                use_container_width=True
             )
         
         # Import data
@@ -5220,11 +3938,18 @@ def display_settings(optimizer: ReturnOptimizer):
         # Basic/Advanced Mode Toggle
         st.markdown("#### Application Mode")
         
-        # Create mode toggle
+        # Create mode toggle with better UI
         mode_options = ["Basic", "Advanced"]
-        selected_mode = st.radio("Select Mode", mode_options, 
-                                horizontal=True,
-                                index=mode_options.index(st.session_state.app_mode))
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.markdown("Mode:")
+        with col2:
+            selected_mode = st.radio(
+                "Select Mode", 
+                mode_options, 
+                horizontal=True,
+                label_visibility="collapsed",
+                index=mode_options.index(st.session_state.app_mode))
         
         # Update mode if changed
         if selected_mode != st.session_state.app_mode:
@@ -5255,13 +3980,13 @@ def display_settings(optimizer: ReturnOptimizer):
         
         # Reset data
         st.markdown("#### Data Management")
-        if st.button("Add Example Scenarios"):
+        if st.button("Add Example Scenarios", use_container_width=True):
             count = optimizer.add_example_scenarios()
             st.success(f"Added {count} example scenarios!")
             st.rerun()
         
-        if st.button("Clear All Data"):
-            confirm = st.checkbox("I understand this will delete all scenarios")
+        if st.button("Clear All Data", use_container_width=True):
+            confirm = st.checkbox("I understand this will delete all scenarios", key="confirm_clear")
             if confirm:
                 optimizer.scenarios = pd.DataFrame(columns=optimizer.scenarios.columns)
                 optimizer.save_data()
@@ -5414,7 +4139,7 @@ def setup_sidebar():
         
         # Scenario Wizard button (only in basic mode)
         if st.session_state.app_mode == "Basic":
-            if st.button("Scenario Creation Wizard", key="wizard_btn"):
+            if st.button("Scenario Creation Wizard", key="wizard_btn", use_container_width=True):
                 st.session_state.wizard_mode = True
                 st.session_state.nav_option = "Add New Scenario"
                 st.rerun()
@@ -5485,3 +4210,1339 @@ if __name__ == "__main__":
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
         st.error(traceback.format_exc())
+            return False
+        except Exception:
+            st.error(f"Error loading data: {traceback.format_exc()}")
+            return False
+    
+    def add_scenario(self, 
+                  scenario_name: str, 
+                  sku: str, 
+                  sales_30: float, 
+                  avg_sale_price: float, 
+                  sales_channel: str,
+                  returns_30: float, 
+                  solution: str, 
+                  solution_cost: float, 
+                  additional_cost_per_item: float,
+                  current_unit_cost: float, 
+                  reduction_rate: float, 
+                  sales_365: Optional[float] = None, 
+                  returns_365: Optional[float] = None, 
+                  tag: Optional[str] = None,
+                  notes: Optional[str] = None,
+                  confidence_level: Optional[str] = None,
+                  risk_rating: Optional[str] = None,
+                  implementation_time: Optional[str] = None,
+                  implementation_effort: Optional[int] = None) -> Tuple[bool, str]:
+        """
+        Add a new scenario with calculations.
+        
+        Args:
+            scenario_name: Name of the scenario
+            sku: Product SKU
+            sales_30: 30-day sales in units
+            avg_sale_price: Average sale price per unit
+            sales_channel: Sales channel (e.g., "Amazon")
+            returns_30: 30-day returns in units
+            solution: Description of the solution
+            solution_cost: One-time cost of implementing the solution
+            additional_cost_per_item: Additional per-unit cost after implementation
+            current_unit_cost: Current cost per unit
+            reduction_rate: Expected percentage reduction in returns
+            sales_365: Annual sales in units (optional)
+            returns_365: Annual returns in units (optional)
+            tag: Category tag (optional)
+            notes: Additional notes (optional)
+            confidence_level: Confidence level in estimates (optional)
+            risk_rating: Risk rating for the solution (optional)
+            implementation_time: Expected implementation time (optional)
+            implementation_effort: Implementation effort score (optional)
+            
+        Returns:
+            Tuple of (success, message)
+        """
+        try:
+            # Validate inputs
+            if not sku or not scenario_name:
+                return False, "SKU and Scenario Name are required"
+            
+            if not isinstance(sales_30, (int, float)) or sales_30 <= 0:
+                return False, "Sales must be a positive number"
+            
+            if not isinstance(returns_30, (int, float)) or returns_30 < 0:
+                return False, "Returns must be a non-negative number"
+            
+            if returns_30 > sales_30:
+                return False, "Returns cannot exceed sales"
+            
+            if not isinstance(current_unit_cost, (int, float)) or current_unit_cost <= 0:
+                return False, "Unit cost must be a positive number"
+                
+            if not isinstance(avg_sale_price, (int, float)) or avg_sale_price <= 0:
+                return False, "Sale price must be a positive number"
+            
+            if avg_sale_price <= current_unit_cost:
+                return False, "Sale price must be greater than unit cost"
+            
+            # Use defaults if not provided
+            if sales_365 is None or not isinstance(sales_365, (int, float)) or sales_365 <= 0:
+                sales_365 = sales_30 * 12
+            
+            if returns_365 is None or not isinstance(returns_365, (int, float)) or returns_365 <= 0:
+                returns_365 = returns_30 * 12
+            
+            # Generate a unique ID
+            uid = str(uuid.uuid4())[:8]
+            
+            # Calculate basic metrics
+            return_rate = safe_divide(returns_30 * 100, sales_30)
+            
+            # Calculate avoided returns
+            avoided_returns_30 = returns_30 * (reduction_rate / 100)
+            avoided_returns_365 = returns_365 * (reduction_rate / 100)
+            
+            # Calculate costs and benefits
+            return_cost_30 = returns_30 * current_unit_cost
+            return_cost_annual = returns_365 * current_unit_cost
+            revenue_impact_30 = returns_30 * avg_sale_price
+            revenue_impact_annual = returns_365 * avg_sale_price
+            new_unit_cost = current_unit_cost + additional_cost_per_item
+
+            # Calculate margins
+            margin_before = avg_sale_price - current_unit_cost
+            margin_after = avg_sale_price - new_unit_cost
+            
+            # Calculate amortized cost per unit
+            amortized_solution_cost = safe_divide(solution_cost, sales_365)
+            margin_after_amortized = margin_after - amortized_solution_cost
+            
+            # Calculate savings and ROI
+            savings_per_avoided_return = avg_sale_price - new_unit_cost
+            savings_30 = avoided_returns_30 * savings_per_avoided_return
+            annual_savings = avoided_returns_365 * savings_per_avoided_return
+            
+            annual_additional_costs = additional_cost_per_item * sales_365
+            net_benefit = annual_savings - annual_additional_costs - solution_cost
+            monthly_net_benefit = safe_divide(annual_savings - annual_additional_costs, 12)
+            
+            # Calculate ROI metrics
+            roi = break_even_days = break_even_months = score = None
+            if solution_cost > 0 and monthly_net_benefit > 0:
+                roi = safe_divide((annual_savings - annual_additional_costs) * 100, solution_cost)  # as percentage
+                break_even_days = safe_divide(solution_cost * 30, monthly_net_benefit)
+                break_even_months = safe_divide(break_even_days, 30)
+                score = calculate_roi_score(roi/100, break_even_days, reduction_rate)
+            
+            # Create new row
+            new_row = {
+                'uid': uid,
+                'scenario_name': scenario_name,
+                'sku': sku,
+                'sales_30': sales_30,
+                'avg_sale_price': avg_sale_price,
+                'sales_channel': sales_channel,
+                'returns_30': returns_30,
+                'return_rate': return_rate,
+                'solution': solution,
+                'solution_cost': solution_cost,
+                'additional_cost_per_item': additional_cost_per_item,
+                'current_unit_cost': current_unit_cost,
+                'reduction_rate': reduction_rate,
+                'return_cost_30': return_cost_30,
+                'return_cost_annual': return_cost_annual,
+                'revenue_impact_30': revenue_impact_30,
+                'revenue_impact_annual': revenue_impact_annual,
+                'new_unit_cost': new_unit_cost,
+                'savings_30': savings_30,
+                'annual_savings': annual_savings,
+                'break_even_days': break_even_days,
+                'break_even_months': break_even_months,
+                'roi': roi,
+                'score': score,
+                'timestamp': datetime.now(),
+                'annual_additional_costs': annual_additional_costs,
+                'net_benefit': net_benefit,
+                'margin_before': margin_before,
+                'margin_after': margin_after,
+                'margin_after_amortized': margin_after_amortized,
+                'sales_365': sales_365,
+                'returns_365': returns_365,
+                'avoided_returns_30': avoided_returns_30,
+                'avoided_returns_365': avoided_returns_365,
+                'monthly_net_benefit': monthly_net_benefit,
+                'tag': tag,
+                'notes': notes,
+                'confidence_level': confidence_level,
+                'risk_rating': risk_rating,
+                'implementation_time': implementation_time,
+                'implementation_effort': implementation_effort
+            }
+
+            # Add to dataframe
+            self.scenarios = pd.concat([self.scenarios, pd.DataFrame([new_row])], ignore_index=True)
+            self.save_data()
+            return True, "Scenario added successfully!"
+        except Exception as e:
+            error_details = traceback.format_exc()
+            return False, f"Error adding scenario: {str(e)}\n{error_details}"
+    
+    def get_scenario(self, uid: str) -> Optional[Dict[str, Any]]:
+        """Get a scenario by UID."""
+        if uid in self.scenarios['uid'].values:
+            return self.scenarios[self.scenarios['uid'] == uid].iloc[0].to_dict()
+        return None
+    
+    def delete_scenario(self, uid: str) -> bool:
+        """Delete a scenario by UID."""
+        if uid in self.scenarios['uid'].values:
+            self.scenarios = self.scenarios[self.scenarios['uid'] != uid]
+            self.save_data()
+            return True
+        return False
+    
+    def update_scenario(self, uid: str, **kwargs) -> Tuple[bool, str]:
+        """Update a scenario and recalculate values."""
+        if uid not in self.scenarios['uid'].values:
+            return False, "Scenario not found"
+        
+        # Get current values
+        current = self.get_scenario(uid)
+        if not current:
+            return False, "Failed to retrieve scenario data"
+        
+        # Update with new values
+        for key, value in kwargs.items():
+            if key in current:
+                current[key] = value
+        
+        # Delete current scenario
+        self.delete_scenario(uid)
+        
+        # Add updated scenario
+        success, message = self.add_scenario(
+            current['scenario_name'], current['sku'], current['sales_30'],
+            current['avg_sale_price'], current['sales_channel'], current['returns_30'],
+            current['solution'], current['solution_cost'], current['additional_cost_per_item'],
+            current['current_unit_cost'], current['reduction_rate'],
+            current['sales_365'], current['returns_365'], current['tag'],
+            current['notes'], current['confidence_level'], current['risk_rating'],
+            current['implementation_time'], current['implementation_effort']
+        )
+        
+        return success, message
+    
+    def add_example_scenarios(self) -> int:
+        """Add example scenarios for demonstration."""
+        added = 0
+        for example in self.default_examples:
+            success, _ = self.add_scenario(**example)
+            if success:
+                added += 1
+        return added
+
+    def clone_scenario(self, uid: str, new_name: Optional[str] = None) -> Tuple[bool, str]:
+        """Clone an existing scenario."""
+        if uid not in self.scenarios['uid'].values:
+            return False, "Scenario not found"
+        
+        scenario = self.get_scenario(uid)
+        if not scenario:
+            return False, "Failed to retrieve scenario data"
+        
+        # Create new name if not provided
+        if not new_name:
+            new_name = f"{scenario['scenario_name']} (Clone)"
+        
+        # Clone scenario
+        success, message = self.add_scenario(
+            new_name, scenario['sku'], scenario['sales_30'],
+            scenario['avg_sale_price'], scenario['sales_channel'], scenario['returns_30'],
+            scenario['solution'], scenario['solution_cost'], scenario['additional_cost_per_item'],
+            scenario['current_unit_cost'], scenario['reduction_rate'],
+            scenario['sales_365'], scenario['returns_365'], scenario['tag'],
+            scenario['notes'], scenario['confidence_level'], scenario['risk_rating'],
+            scenario['implementation_time'], scenario['implementation_effort']
+        )
+        
+        return success, message
+        
+    def run_monte_carlo_simulation(self, 
+                                 scenario_uid: str, 
+                                 num_simulations: int = 1000, 
+                                 param_variations: Optional[Dict[str, float]] = None) -> Tuple[Optional[pd.DataFrame], str]:
+        """
+        Run Monte Carlo simulation for a given scenario
+        
+        Args:
+            scenario_uid: UID of the base scenario
+            num_simulations: Number of simulation runs
+            param_variations: Dict with parameters and their variation ranges as percentages
+                e.g. {'reduction_rate': 15, 'additional_cost_per_item': 10}
+                means reduction_rate can vary by ±15%, additional cost by ±10%
+                
+        Returns:
+            Tuple of (results_dataframe, message)
+        """
+        scenario = self.get_scenario(scenario_uid)
+        if not scenario:
+            return None, "Scenario not found"
+        
+        # Set default parameter variations if not provided
+        if not param_variations:
+            param_variations = {
+                'reduction_rate': 20,             # ±20% variation
+                'additional_cost_per_item': 15,   # ±15% variation
+                'solution_cost': 10,              # ±10% variation
+                'sales_30': 5,                    # ±5% variation
+                'returns_30': 10,                 # ±10% variation
+                'avg_sale_price': 5               # ±5% variation
+            }
+        
+        # Initialize results dataframe
+        results = pd.DataFrame(columns=[
+            'simulation_id', 'reduction_rate', 'additional_cost_per_item', 'solution_cost',
+            'sales_30', 'returns_30', 'avg_sale_price', 'roi', 'break_even_months', 
+            'net_benefit', 'annual_savings', 'annual_additional_costs'
+        ])
+        
+        # Run simulations
+        for i in range(num_simulations):
+            try:
+                # Create variations of parameters
+                sim_reduction_rate = max(0, scenario['reduction_rate'] * np.random.uniform(
+                    1 - param_variations['reduction_rate']/100,
+                    1 + param_variations['reduction_rate']/100
+                ))
+                
+                sim_additional_cost = max(0, scenario['additional_cost_per_item'] * np.random.uniform(
+                    1 - param_variations['additional_cost_per_item']/100,
+                    1 + param_variations['additional_cost_per_item']/100
+                ))
+                
+                sim_solution_cost = max(0, scenario['solution_cost'] * np.random.uniform(
+                    1 - param_variations['solution_cost']/100,
+                    1 + param_variations['solution_cost']/100
+                ))
+                
+                sim_sales_30 = max(1, scenario['sales_30'] * np.random.uniform(
+                    1 - param_variations['sales_30']/100,
+                    1 + param_variations['sales_30']/100
+                ))
+                
+                sim_returns_30 = min(sim_sales_30, max(0, scenario['returns_30'] * np.random.uniform(
+                    1 - param_variations['returns_30']/100,
+                    1 + param_variations['returns_30']/100
+                )))
+                
+                sim_avg_sale_price = max(scenario['current_unit_cost'], scenario['avg_sale_price'] * np.random.uniform(
+                    1 - param_variations['avg_sale_price']/100,
+                    1 + param_variations['avg_sale_price']/100
+                ))
+                
+                # Calculate derived metrics
+                sim_sales_365 = sim_sales_30 * 12
+                sim_returns_365 = sim_returns_30 * 12
+                sim_avoided_returns_365 = sim_returns_365 * (sim_reduction_rate / 100)
+                
+                sim_new_unit_cost = scenario['current_unit_cost'] + sim_additional_cost
+                sim_savings_per_avoided_return = sim_avg_sale_price - sim_new_unit_cost
+                
+                sim_annual_savings = sim_avoided_returns_365 * sim_savings_per_avoided_return
+                sim_annual_additional_costs = sim_additional_cost * sim_sales_365
+                sim_monthly_net_benefit = safe_divide(sim_annual_savings - sim_annual_additional_costs, 12)
+                sim_net_benefit = sim_annual_savings - sim_annual_additional_costs - sim_solution_cost
+                
+                # Calculate ROI metrics
+                sim_roi = None
+                sim_break_even_months = None
+                
+                if sim_solution_cost > 0 and sim_monthly_net_benefit > 0:
+                    sim_roi = safe_divide((sim_annual_savings - sim_annual_additional_costs) * 100, sim_solution_cost)
+                    sim_break_even_months = safe_divide(sim_solution_cost, sim_monthly_net_benefit)
+                
+                # Add to results
+                results.loc[i] = [
+                    i, sim_reduction_rate, sim_additional_cost, sim_solution_cost,
+                    sim_sales_30, sim_returns_30, sim_avg_sale_price, sim_roi,
+                    sim_break_even_months, sim_net_benefit, sim_annual_savings, 
+                    sim_annual_additional_costs
+                ]
+            except Exception as e:
+                # Log error and continue with next simulation
+                print(f"Error in simulation {i}: {str(e)}")
+                continue
+        
+        return results, "Simulation completed successfully"
+    
+    def get_aggregate_statistics(self) -> Dict[str, Any]:
+        """Get aggregate statistics across all scenarios."""
+        if self.scenarios.empty:
+            return {
+                'total_scenarios': 0,
+                'total_investment': 0,
+                'total_net_benefit': 0,
+                'avg_roi': 0,
+                'median_roi': 0,
+                'avg_break_even': 0,
+                'total_annual_savings': 0,
+                'total_additional_costs': 0,
+                'avg_reduction_rate': 0,
+                'total_avoided_returns': 0,
+                'portfolio_roi': 0,
+                'best_scenario': None,
+                'worst_scenario': None
+            }
+        
+        stats = {
+            'total_scenarios': len(self.scenarios),
+            'total_investment': self.scenarios['solution_cost'].sum(),
+            'total_net_benefit': self.scenarios['net_benefit'].sum(),
+            'avg_roi': self.scenarios['roi'].mean() if not self.scenarios['roi'].isnull().all() else 0,
+            'median_roi': self.scenarios['roi'].median() if not self.scenarios['roi'].isnull().all() else 0,
+            'avg_break_even': self.scenarios['break_even_months'].mean() if not self.scenarios['break_even_months'].isnull().all() else 0,
+            'total_annual_savings': self.scenarios['annual_savings'].sum(),
+            'total_additional_costs': self.scenarios['annual_additional_costs'].sum(),
+            'avg_reduction_rate': self.scenarios['reduction_rate'].mean(),
+            'total_avoided_returns': self.scenarios['avoided_returns_365'].sum(),
+            'best_scenario': None,
+            'worst_scenario': None
+        }
+        
+        # Find best and worst scenarios by ROI
+        valid_roi_scenarios = self.scenarios[self.scenarios['roi'] > 0].copy()
+        if not valid_roi_scenarios.empty:
+            best_idx = valid_roi_scenarios['roi'].idxmax()
+            stats['best_scenario'] = {
+                'uid': self.scenarios.loc[best_idx, 'uid'],
+                'name': self.scenarios.loc[best_idx, 'scenario_name'],
+                'roi': self.scenarios.loc[best_idx, 'roi']
+            }
+        
+            worst_idx = valid_roi_scenarios['roi'].idxmin()
+            stats['worst_scenario'] = {
+                'uid': self.scenarios.loc[worst_idx, 'uid'],
+                'name': self.scenarios.loc[worst_idx, 'scenario_name'],
+                'roi': self.scenarios.loc[worst_idx, 'roi']
+            }
+        
+        # Portfolio ROI
+        stats['portfolio_roi'] = safe_divide(
+            (stats['total_annual_savings'] - stats['total_additional_costs']) * 100,
+            stats['total_investment']
+        )
+        
+        return stats
+
+# Initialize app
+if 'optimizer' not in st.session_state:
+    st.session_state.optimizer = ReturnOptimizer()
+optimizer = st.session_state.optimizer
+
+# Wizard mode tracking
+if 'wizard_step' not in st.session_state:
+    st.session_state.wizard_step = 1
+    
+if 'wizard_data' not in st.session_state:
+    st.session_state.wizard_data = {}
+
+# =============================================================================
+# UI Component Functions
+# =============================================================================
+
+def display_header():
+    """Display app header with logo and navigation."""
+    col1, col2 = st.columns([1, 5])
+    
+    # Logo (placeholder - in a real app, replace with actual logo)
+    with col1:
+        st.markdown(f"""
+        <div style="text-align: center; padding: 10px">
+            <h1 style="font-size: 32px; margin: 0; color: {COLOR_SCHEME["primary"]};">🔄</h1>
+            <p style="margin: 0; font-weight: 600; color: {COLOR_SCHEME["secondary"]};">Kaizenalytics</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Title and description
+    with col2:
+        st.title("Return Analytics Platform")
+        st.caption("Evaluate return reduction investments to improve profitability and customer experience.")
+
+def display_metrics_overview(df: pd.DataFrame):
+    """Display key metrics overview cards."""
+    if df.empty:
+        st.info("Add or generate scenarios to see metrics.")
+        return
+    
+    # Get aggregate statistics
+    stats = optimizer.get_aggregate_statistics()
+    
+    # Display metrics in cards
+    st.subheader("Portfolio Overview")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(f"""
+        <div class="metric-container">
+            <p class="metric-label">Total Scenarios</p>
+            <p class="metric-value" style="color: {COLOR_SCHEME["primary"]};">{stats['total_scenarios']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="metric-container">
+            <p class="metric-label">Portfolio ROI</p>
+            <p class="metric-value" style="color: {get_color_scale(stats['portfolio_roi'], 0, 300)};">{format_percent(stats['portfolio_roi'])}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="metric-container">
+            <p class="metric-label">Total Net Benefit</p>
+            <p class="metric-value" style="color: {get_color_scale(stats['total_net_benefit'], 0, stats['total_net_benefit']*1.5)};">{format_currency(stats['total_net_benefit'])}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+        <div class="metric-container">
+            <p class="metric-label">Avg. Break-even</p>
+            <p class="metric-value" style="color: {get_color_scale(stats['avg_break_even'], 0, 12, reverse=True)};">{format_number(stats['avg_break_even'])} months</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Second row with more metrics in advanced mode
+    if st.session_state.app_mode == "Advanced":
+        st.markdown("---")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"""
+            <div class="metric-container">
+                <p class="metric-label">Total Investment</p>
+                <p class="metric-value" style="color: {COLOR_SCHEME["primary"]};">{format_currency(stats['total_investment'])}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div class="metric-container">
+                <p class="metric-label">Total Annual Savings</p>
+                <p class="metric-value" style="color: {COLOR_SCHEME["positive"]};">{format_currency(stats['total_annual_savings'])}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div class="metric-container">
+                <p class="metric-label">Avg. Reduction Rate</p>
+                <p class="metric-value" style="color: {COLOR_SCHEME["secondary"]};">{format_percent(stats['avg_reduction_rate'])}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div class="metric-container">
+                <p class="metric-label">Total Avoided Returns</p>
+                <p class="metric-value" style="color: {COLOR_SCHEME["tertiary"]};">{int(stats['total_avoided_returns'])}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Display best and worst scenarios
+        if stats['best_scenario']:
+            st.markdown("### Top Performing Scenario")
+            st.markdown(f"**{stats['best_scenario']['name']}** with ROI of {format_percent(stats['best_scenario']['roi'])}")
+
+def create_scenario_form(wizard_mode: bool = False) -> bool:
+    """
+    Create form for adding a new scenario.
+    
+    Args:
+        wizard_mode: Whether to use the step-by-step wizard interface
+        
+    Returns:
+        bool: True if scenario was added successfully
+    """
+    if wizard_mode:
+        # Set up wizard interface
+        return create_scenario_wizard()
+    
+    with st.form(key="scenario_form"):
+        st.subheader("Add New Scenario")
+        
+        # Display tips if in advanced mode
+        if st.session_state.app_mode == "Advanced":
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("""
+                <div class="info-box">
+                    <p><strong>Pro Tip:</strong> For more guided scenario creation, try the <b>Scenario Wizard</b> in the sidebar.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("""
+                <div class="success-box">
+                    <p><strong>Best Practice:</strong> Use specific SKU identifiers and detailed solution descriptions for better tracking.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown("""
+                <div class="warning-box">
+                    <p><strong>Important:</strong> Be conservative with reduction rate estimates - real-world results are typically 15-30%.</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Basic Information
+        st.markdown("### Basic Information")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            scenario_name = st.text_input("Scenario Name", 
+                                      help="A memorable name for this return reduction strategy")
+            
+            sku = st.text_input("SKU/Product ID", 
+                             help="Product identifier")
+            
+            sales_channel = st.text_input("Sales Channel", 
+                                       help="Main platform where product is sold (e.g., Amazon, Shopify, Website)")
+            
+        with col2:
+            solution = st.text_input("Proposed Solution", 
+                                  help="Description of the return reduction strategy")
+            
+            tag = st.selectbox("Category Tag", 
+                            ["Packaging", "Product Description", "Size/Fit", "Quality", "Customer Education", "Other"],
+                            help="Category of return reduction strategy")
+            
+            if st.session_state.app_mode == "Advanced":
+                notes = st.text_area("Notes", 
+                                  help="Additional details about the solution")
+            else:
+                notes = None
+        
+        # Sales and Returns Data
+        st.markdown("### Sales & Returns Data")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            sales_30 = st.number_input("30-day Sales (units)", 
+                                    min_value=0, 
+                                    help="Units sold in the last 30 days")
+            
+            returns_30 = st.number_input("30-day Returns (units)", 
+                                      min_value=0, 
+                                      help="Units returned in the last 30 days")
+            
+        with col2:
+            avg_sale_price = st.number_input("Average Sale Price ($)", 
+                                          min_value=0.0, 
+                                          format="%.2f", 
+                                          help="Average selling price per unit")
+            
+            current_unit_cost = st.number_input("Current Unit Cost ($)", 
+                                             min_value=0.0, 
+                                             format="%.2f", 
+                                             help="Cost to produce/acquire each unit")
+            
+        # Calculated return rate
+        if sales_30 > 0 and returns_30 > 0:
+            return_rate = (returns_30 / sales_30) * 100
+            st.info(f"Current Return Rate: {return_rate:.2f}%")
+        
+        # Solution Implementation
+        st.markdown("### Solution Implementation")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            solution_cost = st.number_input("Total Solution Cost ($)", 
+                                         min_value=0.0, 
+                                         format="%.2f", 
+                                         help="One-time investment required for the solution")
+            
+            additional_cost_per_item = st.number_input("Additional Cost per Item ($)", 
+                                                    min_value=0.0, 
+                                                    format="%.2f", 
+                                                    help="Any additional per-unit cost from implementing the solution")
+        
+        with col2:
+            reduction_rate = st.slider("Estimated Return Reduction (%)", 
+                                    min_value=0, 
+                                    max_value=100, 
+                                    value=20, 
+                                    help="Expected percentage reduction in returns after implementing the solution")
+            
+            # Optional annual data
+            annual_data = st.checkbox("Use custom annual data", 
+                                   help="By default, 30-day data is multiplied by 12")
+            
+            if annual_data:
+                sales_365 = st.number_input("365-day Sales (units)", 
+                                         min_value=0, 
+                                         help="Total units sold in a year (defaults to 30-day * 12)")
+                
+                returns_365 = st.number_input("365-day Returns (units)", 
+                                           min_value=0, 
+                                           help="Total units returned in a year (defaults to 30-day * 12)")
+            else:
+                sales_365 = sales_30 * 12
+                returns_365 = returns_30 * 12
+        
+        # Advanced information (only in advanced mode)
+        if st.session_state.app_mode == "Advanced":
+            st.markdown("### Advanced Information")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                confidence_level = st.selectbox("Confidence Level", 
+                                             ["High", "Medium", "Low"],
+                                             help="Confidence in the return reduction estimate")
+            
+            with col2:
+                risk_rating = st.selectbox("Risk Rating",
+                                        ["Low", "Medium", "High"],
+                                        help="Level of risk associated with implementing this solution")
+            
+            with col3:
+                implementation_time = st.selectbox("Implementation Time",
+                                                ["0-1 month", "1-3 months", "3-6 months", "6+ months"],
+                                                help="Estimated time to implement the solution")
+                
+            implementation_effort = st.slider("Implementation Effort (1-10)", 
+                                           min_value=1, 
+                                           max_value=10, 
+                                           value=5,
+                                           help="Relative effort required to implement (1=Easy, 10=Very Difficult)")
+        else:
+            confidence_level = None
+            risk_rating = None
+            implementation_time = None
+            implementation_effort = None
+        
+        # Calculate and preview stats
+        if sales_30 > 0 and returns_30 > 0:
+            return_rate = (returns_30 / sales_30) * 100
+            avoided_returns = returns_30 * (reduction_rate / 100)
+            
+            st.markdown("### Preview Calculations")
+            preview_col1, preview_col2, preview_col3 = st.columns(3)
+            
+            with preview_col1:
+                st.metric("Current Return Rate", f"{return_rate:.2f}%")
+                st.metric("Monthly Returns Value", f"${returns_30 * avg_sale_price:,.2f}")
+            
+            with preview_col2:
+                st.metric("Avoided Returns (Monthly)", f"{avoided_returns:.1f} units")
+                st.metric("New Return Rate", f"{return_rate * (1 - reduction_rate/100):.2f}%")
+            
+            with preview_col3:
+                # Simple ROI calculation for preview
+                monthly_cost = additional_cost_per_item * sales_30
+                monthly_savings = avoided_returns * (avg_sale_price - (current_unit_cost + additional_cost_per_item))
+                monthly_net = monthly_savings - monthly_cost
+                
+                if solution_cost > 0 and monthly_net > 0:
+                    breakeven_months = solution_cost / monthly_net
+                    annual_roi = (annual_net / solution_cost) * 100
+                else:
+                    breakeven_months = None
+                    annual_roi = None
+                
+                # Display key metrics
+                st.markdown("### Key Metrics")
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Return Rate Reduction", 
+                            f"{reduction_rate}%", 
+                            delta=f"{return_rate - (return_rate * (1 - reduction_rate/100)):.1f}%")
+                
+                with col2:
+                    if breakeven_months:
+                        st.metric("Breakeven Time", f"{breakeven_months:.1f} months")
+                    else:
+                        st.metric("Breakeven Time", "N/A")
+                
+                with col3:
+                    if annual_roi:
+                        st.metric("Annual ROI", f"{annual_roi:.1f}%")
+                    else:
+                        st.metric("Annual ROI", "N/A")
+            
+        except Exception as e:
+            st.error(f"Error calculating metrics: {str(e)}")
+        
+        # Navigation and save buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back to Edit"):
+                st.session_state.wizard_step = 4
+                st.rerun()
+        
+        with col2:
+            if st.button("Save Scenario"):
+                # Extract all data from wizard
+                try:
+                    scenario_data = {
+                        'scenario_name': st.session_state.wizard_data.get('scenario_name', ''),
+                        'sku': st.session_state.wizard_data.get('sku', ''),
+                        'sales_30': st.session_state.wizard_data.get('sales_30', 0),
+                        'avg_sale_price': st.session_state.wizard_data.get('avg_sale_price', 0.0),
+                        'sales_channel': st.session_state.wizard_data.get('sales_channel', ''),
+                        'returns_30': st.session_state.wizard_data.get('returns_30', 0),
+                        'solution': st.session_state.wizard_data.get('solution', ''),
+                        'solution_cost': st.session_state.wizard_data.get('solution_cost', 0.0),
+                        'additional_cost_per_item': st.session_state.wizard_data.get('additional_cost_per_item', 0.0),
+                        'current_unit_cost': st.session_state.wizard_data.get('current_unit_cost', 0.0),
+                        'reduction_rate': st.session_state.wizard_data.get('reduction_rate', 0),
+                        'sales_365': st.session_state.wizard_data.get('sales_365', 0),
+                        'returns_365': st.session_state.wizard_data.get('returns_365', 0),
+                        'tag': st.session_state.wizard_data.get('tag', ''),
+                        'notes': st.session_state.wizard_data.get('notes', ''),
+                        'confidence_level': st.session_state.wizard_data.get('confidence_level', None),
+                        'risk_rating': st.session_state.wizard_data.get('risk_rating', None),
+                        'implementation_time': st.session_state.wizard_data.get('implementation_time', None),
+                        'implementation_effort': st.session_state.wizard_data.get('implementation_effort', None)
+                    }
+                    
+                    # Add the scenario
+                    success, message = optimizer.add_scenario(**scenario_data)
+                    
+                    if success:
+                        st.success("Scenario saved successfully!")
+                        
+                        # Reset wizard
+                        st.session_state.wizard_step = 1
+                        st.session_state.wizard_data = {}
+                        
+                        # Redirect to dashboard
+                        st.session_state.nav_option = "Dashboard"
+                        st.rerun()
+                    else:
+                        st.error(message)
+                
+                except Exception as e:
+                    st.error(f"Error saving scenario: {str(e)}")
+    
+    return True_cost / monthly_net
+                    st.metric("Estimated Breakeven", f"{breakeven_months:.1f} months")
+                    st.metric("Est. Annual ROI", f"{(monthly_net * 12 / solution_cost) * 100:.1f}%")
+                else:
+                    st.metric("Estimated Breakeven", "N/A")
+                    st.metric("Est. Annual ROI", "N/A")
+        
+        # Submit button
+        submitted = st.form_submit_button("Save Scenario")
+        
+        if submitted:
+            success, message = optimizer.add_scenario(
+                scenario_name, sku, sales_30, avg_sale_price, sales_channel,
+                returns_30, solution, solution_cost, additional_cost_per_item,
+                current_unit_cost, reduction_rate, sales_365, returns_365, tag,
+                notes, confidence_level, risk_rating, implementation_time, implementation_effort
+            )
+            
+            if success:
+                st.success(message)
+                return True
+            else:
+                st.error(message)
+                return False
+    
+    return False
+
+def create_scenario_wizard() -> bool:
+    """
+    Create a step-by-step wizard for adding a scenario.
+    
+    Returns:
+        bool: True if wizard was completed successfully
+    """
+    # Initialize wizard_data if needed
+    if 'wizard_data' not in st.session_state:
+        st.session_state.wizard_data = {}
+    
+    # Display progress tracker
+    st.markdown("### Scenario Creation Wizard")
+    steps = ["Product Info", "Sales Data", "Return Solution", "Cost & Impact", "Review"]
+    
+    st.markdown("""
+    <div class="progress-container">
+    """, unsafe_allow_html=True)
+    
+    for i, step in enumerate(steps, 1):
+        if i < st.session_state.wizard_step:
+            status = "completed"
+        elif i == st.session_state.wizard_step:
+            status = "active"
+        else:
+            status = ""
+        
+        st.markdown(f"""
+        <div class="progress-step {status}">{i}
+            <div class="progress-label">{step}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    </div>
+    <br>
+    """, unsafe_allow_html=True)
+    
+    # Step 1: Product Information
+    if st.session_state.wizard_step == 1:
+        st.subheader("Step 1: Product Information")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            scenario_name = st.text_input("Scenario Name", 
+                value=st.session_state.wizard_data.get('scenario_name', ''),
+                help="A memorable name for this return reduction strategy")
+            
+            sku = st.text_input("SKU/Product ID", 
+                value=st.session_state.wizard_data.get('sku', ''),
+                help="Product identifier")
+        
+        with col2:
+            sales_channel = st.text_input("Sales Channel", 
+                value=st.session_state.wizard_data.get('sales_channel', ''),
+                help="Main platform where product is sold (e.g., Amazon, Shopify, Website)")
+            
+            tag = st.selectbox("Category Tag", 
+                ["Packaging", "Product Description", "Size/Fit", "Quality", "Customer Education", "Other"],
+                index=["Packaging", "Product Description", "Size/Fit", "Quality", "Customer Education", "Other"].index(
+                    st.session_state.wizard_data.get('tag', 'Packaging')),
+                help="Category of return reduction strategy")
+        
+        notes = st.text_area("Product Notes (Optional)", 
+            value=st.session_state.wizard_data.get('notes', ''),
+            help="Additional context about the product")
+        
+        # Save data
+        if st.button("Next: Sales Data"):
+            # Validate inputs
+            if not scenario_name:
+                st.error("Please enter a Scenario Name")
+                return False
+            
+            if not sku:
+                st.error("Please enter a SKU/Product ID")
+                return False
+            
+            # Save to session state
+            st.session_state.wizard_data.update({
+                'scenario_name': scenario_name,
+                'sku': sku,
+                'sales_channel': sales_channel,
+                'tag': tag,
+                'notes': notes
+            })
+            
+            # Go to next step
+            st.session_state.wizard_step = 2
+            st.rerun()
+    
+    # Step 2: Sales and Returns Data
+    elif st.session_state.wizard_step == 2:
+        st.subheader("Step 2: Sales & Returns Data")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            sales_30 = st.number_input("30-day Sales (units)", 
+                value=int(st.session_state.wizard_data.get('sales_30', 0)),
+                min_value=0, 
+                help="Units sold in the last 30 days")
+            
+            avg_sale_price = st.number_input("Average Sale Price ($)", 
+                value=float(st.session_state.wizard_data.get('avg_sale_price', 0.0)),
+                min_value=0.0, 
+                format="%.2f", 
+                help="Average selling price per unit")
+        
+        with col2:
+            returns_30 = st.number_input("30-day Returns (units)", 
+                value=int(st.session_state.wizard_data.get('returns_30', 0)),
+                min_value=0, 
+                help="Units returned in the last 30 days")
+            
+            current_unit_cost = st.number_input("Current Unit Cost ($)", 
+                value=float(st.session_state.wizard_data.get('current_unit_cost', 0.0)),
+                min_value=0.0, 
+                format="%.2f", 
+                help="Cost to produce/acquire each unit")
+        
+        # Calculate return rate
+        if sales_30 > 0 and returns_30 > 0:
+            return_rate = (returns_30 / sales_30) * 100
+            st.info(f"Current Return Rate: {return_rate:.2f}%")
+            
+            # Industry benchmark comparison
+            if return_rate > 30:
+                st.warning("Your return rate is higher than the industry average (20-30%). This presents a significant opportunity for improvement.")
+            elif return_rate > 15:
+                st.info("Your return rate is within typical industry averages (15-30%).")
+            else:
+                st.success("Your return rate is below industry average. Well done!")
+        
+        # Annual data option
+        annual_data = st.checkbox("Use custom annual data", 
+            value=st.session_state.wizard_data.get('use_custom_annual', False),
+            help="By default, 30-day data is multiplied by 12")
+        
+        if annual_data:
+            col1, col2 = st.columns(2)
+            with col1:
+                sales_365 = st.number_input("365-day Sales (units)", 
+                    value=int(st.session_state.wizard_data.get('sales_365', sales_30 * 12)),
+                    min_value=0, 
+                    help="Total units sold in a year")
+            
+            with col2:
+                returns_365 = st.number_input("365-day Returns (units)", 
+                    value=int(st.session_state.wizard_data.get('returns_365', returns_30 * 12)),
+                    min_value=0, 
+                    help="Total units returned in a year")
+        else:
+            sales_365 = sales_30 * 12
+            returns_365 = returns_30 * 12
+        
+        # Navigation buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back"):
+                st.session_state.wizard_step = 1
+                st.rerun()
+        
+        with col2:
+            if st.button("Next: Return Solution"):
+                # Validate inputs
+                if sales_30 <= 0:
+                    st.error("Please enter a value greater than 0 for 30-day Sales")
+                    return False
+                
+                if returns_30 > sales_30:
+                    st.error("Returns cannot exceed sales")
+                    return False
+                
+                if current_unit_cost <= 0 or avg_sale_price <= 0:
+                    st.error("Unit cost and sale price must be greater than zero")
+                    return False
+                
+                if avg_sale_price <= current_unit_cost:
+                    st.error("Sale price must be greater than unit cost")
+                    return False
+                
+                # Save to session state
+                st.session_state.wizard_data.update({
+                    'sales_30': sales_30,
+                    'returns_30': returns_30,
+                    'avg_sale_price': avg_sale_price,
+                    'current_unit_cost': current_unit_cost,
+                    'use_custom_annual': annual_data,
+                    'sales_365': sales_365,
+                    'returns_365': returns_365
+                })
+                
+                # Go to next step
+                st.session_state.wizard_step = 3
+                st.rerun()
+    
+    # Step 3: Return Solution
+    elif st.session_state.wizard_step == 3:
+        st.subheader("Step 3: Return Solution")
+        
+        solution = st.text_area("Proposed Solution", 
+            value=st.session_state.wizard_data.get('solution', ''),
+            help="Detailed description of the return reduction strategy")
+        
+        # Solution recommendations based on tag
+        tag = st.session_state.wizard_data.get('tag', '')
+        if tag:
+            st.markdown(f"### Recommended Solutions for {tag}")
+            
+            if tag == "Packaging":
+                st.markdown("""
+                * **Premium protective packaging** with cushioned inserts
+                * **Right-sized boxes** to prevent movement during shipping
+                * **Clear unboxing instructions** to prevent damage during opening
+                * **Sustainable packaging** with clear recycling instructions
+                """)
+            elif tag == "Product Description":
+                st.markdown("""
+                * **Enhanced product detail pages** with comprehensive specifications
+                * **360° product photography** showing all angles and features
+                * **Size comparison charts** with common reference objects
+                * **Video demonstrations** of product use and features
+                """)
+            elif tag == "Size/Fit":
+                st.markdown("""
+                * **Interactive size finder tools** with body measurements
+                * **Augmented reality try-on** technology
+                * **Consistent sizing across product lines**
+                * **Detailed measurement guides** with visual instructions
+                """)
+            elif tag == "Quality":
+                st.markdown("""
+                * **Enhanced quality control** processes during manufacturing
+                * **Pre-shipping inspection** procedures
+                * **Material upgrades** for common failure points
+                * **Durability testing** protocols for high-stress components
+                """)
+            elif tag == "Customer Education":
+                st.markdown("""
+                * **Improved product manuals** with clear setup instructions
+                * **Video tutorials** for complex products
+                * **FAQ expansion** addressing common issues
+                * **Post-purchase email sequence** with usage tips
+                """)
+        
+        # Additional solution details
+        st.markdown("### Solution Details")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            confidence_level = st.selectbox("Confidence Level", 
+                ["High", "Medium", "Low"],
+                index=["High", "Medium", "Low"].index(
+                    st.session_state.wizard_data.get('confidence_level', 'Medium')),
+                help="How confident are you in this solution's effectiveness?")
+        
+        with col2:
+            implementation_time = st.selectbox("Implementation Time",
+                ["0-1 month", "1-3 months", "3-6 months", "6+ months"],
+                index=["0-1 month", "1-3 months", "3-6 months", "6+ months"].index(
+                    st.session_state.wizard_data.get('implementation_time', '1-3 months')),
+                help="How long will it take to implement this solution?")
+        
+        implementation_effort = st.slider("Implementation Effort (1-10)", 
+            min_value=1, max_value=10, 
+            value=int(st.session_state.wizard_data.get('implementation_effort', 5)),
+            help="How difficult will this solution be to implement? (1=Easy, 10=Very Difficult)")
+        
+        # Navigation buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back"):
+                st.session_state.wizard_step = 2
+                st.rerun()
+        
+        with col2:
+            if st.button("Next: Cost & Impact"):
+                # Validate inputs
+                if not solution:
+                    st.error("Please describe your proposed solution")
+                    return False
+                
+                # Save to session state
+                st.session_state.wizard_data.update({
+                    'solution': solution,
+                    'confidence_level': confidence_level,
+                    'implementation_time': implementation_time,
+                    'implementation_effort': implementation_effort
+                })
+                
+                # Go to next step
+                st.session_state.wizard_step = 4
+                st.rerun()
+    
+    # Step 4: Cost and Impact
+    elif st.session_state.wizard_step == 4:
+        st.subheader("Step 4: Cost & Impact")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            solution_cost = st.number_input("Total Solution Cost ($)", 
+                value=float(st.session_state.wizard_data.get('solution_cost', 0.0)),
+                min_value=0.0, 
+                format="%.2f", 
+                help="One-time investment required for implementation")
+        
+        with col2:
+            additional_cost_per_item = st.number_input("Additional Cost per Item ($)", 
+                value=float(st.session_state.wizard_data.get('additional_cost_per_item', 0.0)),
+                min_value=0.0, 
+                format="%.2f", 
+                help="Any ongoing per-unit cost increase from the solution")
+        
+        # Return reduction estimate
+        st.markdown("### Impact Estimate")
+        
+        # Get data for context
+        tag = st.session_state.wizard_data.get('tag', '')
+        confidence = st.session_state.wizard_data.get('confidence_level', 'Medium')
+        
+        # Suggested reduction range based on tag and confidence
+        suggested_min = 15
+        suggested_max = 30
+        
+        if tag == "Size/Fit":
+            suggested_min = 20
+            suggested_max = 40
+        elif tag == "Product Description":
+            suggested_min = 15
+            suggested_max = 35
+        elif tag == "Quality":
+            suggested_min = 25
+            suggested_max = 45
+        
+        if confidence == "Low":
+            suggested_min = max(10, suggested_min - 5)
+            suggested_max = suggested_max - 5
+        elif confidence == "High":
+            suggested_min = suggested_min + 5
+            suggested_max = min(60, suggested_max + 5)
+        
+        st.info(f"Based on your solution category and confidence level, similar initiatives typically achieve a {suggested_min}%-{suggested_max}% reduction in returns.")
+        
+        reduction_rate = st.slider("Estimated Return Reduction (%)", 
+            min_value=0, max_value=100, 
+            value=int(st.session_state.wizard_data.get('reduction_rate', (suggested_min + suggested_max) // 2)),
+            help="Expected percentage reduction in returns after implementing the solution")
+        
+        risk_rating = st.selectbox("Risk Rating",
+            ["Low", "Medium", "High"],
+            index=["Low", "Medium", "High"].index(
+                st.session_state.wizard_data.get('risk_rating', 'Medium')),
+            help="Level of risk associated with this solution")
+        
+        # Calculate preview metrics
+        sales_30 = st.session_state.wizard_data.get('sales_30', 0)
+        returns_30 = st.session_state.wizard_data.get('returns_30', 0)
+        avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
+        current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
+        
+        # Safe calculations with proper error handling
+        try:
+            if sales_30 > 0 and returns_30 > 0:
+                return_rate = (returns_30 / sales_30) * 100
+                avoided_returns = returns_30 * (reduction_rate / 100)
+                new_return_rate = return_rate * (1 - reduction_rate/100)
+                
+                # ROI calculations
+                new_unit_cost = current_unit_cost + additional_cost_per_item
+                monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
+                monthly_cost = sales_30 * additional_cost_per_item
+                monthly_net = monthly_savings - monthly_cost
+                annual_net = monthly_net * 12
+                
+                if solution_cost > 0 and monthly_net > 0:
+                    breakeven_months = solution_cost / monthly_net
+                    annual_roi = (annual_net / solution_cost) * 100
+                else:
+                    breakeven_months = None
+                    annual_roi = None
+                
+                # Display financial impact
+                st.markdown("### Financial Impact")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown(f"**Monthly Net Benefit:** ${monthly_net:.2f}")
+                    st.markdown(f"**Annual Net Benefit:** ${annual_net:.2f}")
+                    
+                    if breakeven_months:
+                        st.markdown(f"**Breakeven Time:** {breakeven_months:.1f} months")
+                    else:
+                        st.markdown("**Breakeven Time:** N/A")
+                
+                with col2:
+                    if annual_roi:
+                        st.markdown(f"**Return on Investment:** {annual_roi:.1f}%")
+                    else:
+                        st.markdown("**Return on Investment:** N/A")
+                    
+                    st.markdown(f"**Avoided Returns (Monthly):** {avoided_returns:.1f} units")
+                    st.markdown(f"**New Return Rate:** {new_return_rate:.2f}%")
+        except Exception as e:
+            st.error(f"Error in calculations: {str(e)}")
+        
+        # Allow final edits
+        st.markdown("### Final Adjustments (Optional)")
+        st.caption("Make any final adjustments before proceeding to review")
+        
+        final_scenario_name = st.text_input("Final Scenario Name", 
+                                    value=st.session_state.wizard_data.get('scenario_name', ''))
+        
+        # Navigation buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back"):
+                st.session_state.wizard_step = 3
+                st.rerun()
+        
+        with col2:
+            if st.button("Next: Review"):
+                # Update name if changed
+                if final_scenario_name:
+                    st.session_state.wizard_data['scenario_name'] = final_scenario_name
+                
+                # Save to session state
+                st.session_state.wizard_data.update({
+                    'solution_cost': solution_cost,
+                    'additional_cost_per_item': additional_cost_per_item,
+                    'reduction_rate': reduction_rate,
+                    'risk_rating': risk_rating
+                })
+                
+                # Go to next step
+                st.session_state.wizard_step = 5
+                st.rerun()
+    
+    # Step 5: Review and Save
+    elif st.session_state.wizard_step == 5:
+        st.subheader("Step 5: Review & Save")
+        st.markdown("### Scenario Summary")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Basic Information")
+            st.markdown(f"**Scenario Name:** {st.session_state.wizard_data.get('scenario_name', '')}")
+            st.markdown(f"**SKU/Product ID:** {st.session_state.wizard_data.get('sku', '')}")
+            st.markdown(f"**Sales Channel:** {st.session_state.wizard_data.get('sales_channel', '')}")
+            st.markdown(f"**Category:** {st.session_state.wizard_data.get('tag', '')}")
+            
+            st.markdown("#### Solution Details")
+            st.markdown(f"**Solution:** {st.session_state.wizard_data.get('solution', '')}")
+            st.markdown(f"**Implementation Time:** {st.session_state.wizard_data.get('implementation_time', '')}")
+            st.markdown(f"**Confidence Level:** {st.session_state.wizard_data.get('confidence_level', '')}")
+            st.markdown(f"**Risk Rating:** {st.session_state.wizard_data.get('risk_rating', '')}")
+        
+        with col2:
+            st.markdown("#### Financial Data")
+            st.markdown(f"**Monthly Sales:** {st.session_state.wizard_data.get('sales_30', 0)} units")
+            st.markdown(f"**Monthly Returns:** {st.session_state.wizard_data.get('returns_30', 0)} units")
+            st.markdown(f"**Average Sale Price:** ${st.session_state.wizard_data.get('avg_sale_price', 0.0):.2f}")
+            st.markdown(f"**Current Unit Cost:** ${st.session_state.wizard_data.get('current_unit_cost', 0.0):.2f}")
+            
+            st.markdown("#### Solution Costs & Impact")
+            st.markdown(f"**Solution Cost:** ${st.session_state.wizard_data.get('solution_cost', 0.0):.2f}")
+            st.markdown(f"**Additional Cost/Item:** ${st.session_state.wizard_data.get('additional_cost_per_item', 0.0):.2f}")
+            st.markdown(f"**Expected Reduction:** {st.session_state.wizard_data.get('reduction_rate', 0)}%")
+        
+        # Calculate key metrics for summary
+        try:
+            sales_30 = st.session_state.wizard_data.get('sales_30', 0)
+            returns_30 = st.session_state.wizard_data.get('returns_30', 0)
+            avg_sale_price = st.session_state.wizard_data.get('avg_sale_price', 0.0)
+            current_unit_cost = st.session_state.wizard_data.get('current_unit_cost', 0.0)
+            reduction_rate = st.session_state.wizard_data.get('reduction_rate', 0.0)
+            solution_cost = st.session_state.wizard_data.get('solution_cost', 0.0)
+            additional_cost_per_item = st.session_state.wizard_data.get('additional_cost_per_item', 0.0)
+            
+            if sales_30 > 0 and returns_30 > 0:
+                return_rate = (returns_30 / sales_30) * 100
+                avoided_returns = returns_30 * (reduction_rate / 100)
+                new_unit_cost = current_unit_cost + additional_cost_per_item
+                monthly_savings = avoided_returns * (avg_sale_price - new_unit_cost)
+                monthly_cost = sales_30 * additional_cost_per_item
+                monthly_net = monthly_savings - monthly_cost
+                annual_net = monthly_net * 12
+                
+                # Calculate ROI and breakeven if applicable
+                if solution_cost > 0 and monthly_net > 0:
+                    breakeven_months = solution
