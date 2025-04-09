@@ -110,6 +110,21 @@ COLOR_SCHEMES = {
         "sidebar_bg": "#4c1d95",
         "hover": "#ddd6fe"
     }
+"dark": {
+        "primary": "#8B5CF6",      # Purple
+        "secondary": "#6366F1",    # Indigo
+        "tertiary": "#3B82F6",     # Blue
+        "background": "#1E1E2D",   # Dark background
+        "positive": "#10B981",     # Green
+        "negative": "#EF4444",     # Red
+        "warning": "#F59E0B",      # Amber
+        "neutral": "#60A5FA",      # Light blue
+        "text_dark": "#E2E8F0",    # Light gray for dark mode
+        "text_light": "#F8FAFC",   # Nearly white
+        "card_bg": "#2D2D3A",      # Slightly lighter than background
+        "sidebar_bg": "#171723",   # Darker than background
+        "hover": "#374151"         # Medium gray for hover
+    },
 }
 
 # Set default color scheme
