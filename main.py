@@ -3331,7 +3331,7 @@ def create_campaign_wizard() -> bool:
                 # Save to session state
                 st.session_state.wizard_data.update({
                     'ad_spend': ad_spend,
-                    'clicks': clicks,
+                    'clicks': clicks,))
                     'impressions': impressions,
                     'conversions': conversions,
                     'revenue': revenue,
