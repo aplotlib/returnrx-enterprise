@@ -2217,7 +2217,6 @@ def display_header():
     """Display app header with logo and navigation."""
     col1, col2, col3 = st.columns([1, 4, 1])
     
-    # Logo (placeholder - in a real app, replace with actual logo)
     with col1:
         st.markdown(f"""
         <div style="text-align: center; padding: 10px">
@@ -5504,7 +5503,7 @@ def setup_sidebar():
         # Campaign Wizard button
         st.markdown("### Tools")
         
-        if st.sidebar.button("🧙‍♂️ Campaign Wizard", use_container_width=True):
+        if st.sidebar.button("Campaign Wizard", use_container_width=True):
             st.session_state.view = "campaign_wizard"
             st.rerun()
         
