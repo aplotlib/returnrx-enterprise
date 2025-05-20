@@ -5790,41 +5790,8 @@ def display_settings(analyzer: MarketingAnalyzer):
     
     **Version:** 1.0.0  
     **Build Date:** May 2025  
-    **Developed for:** Vive Health E-commerce Team
+    **Developed for:** Vive Health E-commerce Team, contact alexander.popoff@vivehealth.com for support
     """)
-
-# Display help modal
-def display_help():
-    """Display help information in a Streamlit expander."""
-    with st.sidebar.expander("Help & Documentation", expanded=False):
-        st.markdown("""
-        ### Quick Start Guide
-        
-        **1. Add Campaigns**
-        - Create new campaigns using the "Add Campaign" page
-        - Use the Campaign Wizard for step-by-step guidance
-        - Add example campaigns in Settings for quick testing
-        
-        **2. Analyze Results**
-        - View ROAS, ACoS, and other key metrics
-        - Compare campaigns side by side
-        - Run What-If scenarios to model different assumptions
-        
-        **3. Export & Share**
-        - Export data in CSV or Excel formats
-        - Generate comprehensive reports
-        - Share insights with stakeholders
-        
-        ### Core Concepts
-        
-        **ROAS:** Return on Ad Spend (Revenue ÷ Ad Spend)
-        
-        **ACoS:** Advertising Cost of Sale (Ad Spend ÷ Revenue × 100%)
-        
-        **What-If Analysis:** Simulate different scenarios by adjusting parameters
-        
-        **Monte Carlo Simulation:** Runs thousands of simulations with varied parameters to assess risk and probability distributions
-        
-        ### Need More Help?
-        
-        Contact support at tech@
+     
+if __name__ == "__main__":
+    main()
