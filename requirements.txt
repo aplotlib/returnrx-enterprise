@@ -22,3 +22,32 @@ XlsxWriter==3.1.9
 fpdf==1.7.2
 fpdf==1.7.2
 pillow==10.2.0
+# Streamlit web framework
+streamlit>=1.18.1
+
+# Data manipulation & math
+pandas>=1.5.3
+numpy>=1.24.2
+python-dateutil>=2.8.2
+
+# Interactive charts
+plotly>=5.13.1
+
+# HTTP & API clients
+requests>=2.28.2
+openai>=0.27.0  # official OpenAI client (optional)
+
+# Environment & secrets
+python-dotenv>=0.21.0
+
+# Error monitoring
+sentry-sdk>=1.17.0
+
+# Excel support (if you import from .xlsx/.xls elsewhere)
+openpyxl>=3.1.0
+xlrd>=2.0.1
+
+# (Optional / dev—move into dev-requirements.txt)
+# pytest>=7.2.0
+# black>=24.1.0
+# flake8>=6.0.0
