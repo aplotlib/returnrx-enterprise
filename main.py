@@ -114,7 +114,7 @@ COLOR_SCHEMES = {
         "negative": "#dc3545",
         "warning": "#ffc107",
         "neutral": "#6c757d",
-        "text_dark": "#f8f9fa",
+        "text_dark": "#f8f9fa", # Inverted for dark mode
         "text_light": "#f8f9fa",
         "card_bg": "#2b3035",
         "sidebar_bg": "#1a1d20",
@@ -279,6 +279,16 @@ MEDICAL_DEVICE_CATEGORIES = [
     "Hearing Aids", "Electrotherapy", "Bariatric Equipment", "Pediatric Care"
 ]
 
+# Define Amazon listing categories and topics for the new AI assistant
+AMAZON_LISTING_TOPICS = [
+    "Product Title Optimization", "Bullet Points Enhancement", "Product Description", 
+    "Backend Keywords", "Image Optimization", "A+ Content", "Inventory Management", 
+    "Pricing Strategy", "Review Management", "Competitive Analysis", "Brand Registry", 
+    "Sponsored Products", "Sponsored Brands", "Sponsored Display", "Amazon DSP",
+    "Listing Compliance", "Search Term Optimization", "Variation Setup",
+    "Best Seller Rank Improvement", "Amazon Storefront"
+]
+
 # =============================================================================
 # Custom CSS Styling
 # =============================================================================
@@ -287,6 +297,29 @@ def load_custom_css():
     """Load custom CSS styling for the application"""
     st.markdown(f"""
     <style>
+        /* Dark Mode Detection */
+        @media (prefers-color-scheme: dark) {{
+            .streamlit-container {{
+                background-color: #1E1E1E;
+            }}
+            .custom-card {{
+                background-color: #2E2E2E !important;
+                color: #E0E0E0 !important;
+            }}
+            .custom-text {{
+                color: #E0E0E0 !important;
+            }}
+            .custom-title {{
+                color: #FFFFFF !important;
+            }}
+            .custom-subtitle {{
+                color: #CCCCCC !important;
+            }}
+            .custom-border {{
+                border-color: #444444 !important;
+            }}
+        }}
+        
         /* Main styling */
         body, .stApp {{
             background-color: {COLOR_SCHEME["background"]};
@@ -310,6 +343,9 @@ def load_custom_css():
             font-weight: 500;
             transition: all 0.3s;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            margin-bottom: 10px; /* Added for spacing */
+            white-space: nowrap; /* Prevent text wrapping */
+            min-width: 120px; /* Minimum width for button consistency */
         }}
         .stButton>button:hover {{
             background-color: {COLOR_SCHEME["primary"]};
@@ -414,6 +450,7 @@ def load_custom_css():
             flex-direction: column;
             position: relative;
             overflow: hidden;
+            margin-bottom: 15px; /* Added spacing */
         }}
         
         .enhanced-metric:hover {{
@@ -893,7 +930,7 @@ def load_custom_css():
             max-width: 80%;
             margin-bottom: 12px;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 15px;
             position: relative;
         }}
         
@@ -961,6 +998,111 @@ def load_custom_css():
         /* Fix expander padding */
         .streamlit-expanderContent {{
             padding: 0.5rem 1rem;
+        }}
+        
+        /* Amazon Listing Enhancement Chat styling */
+        .amazon-chat-container {{
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+            border: 1px solid #f0c14b;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+        
+        .amazon-chat-header {{
+            background-color: #232f3e;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }}
+        
+        .amazon-chat-header .logo {{
+            color: #ff9900;
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }}
+        
+        .amazon-chat-messages {{
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background-color: #f8f9fa;
+        }}
+        
+        .amazon-chat-input {{
+            display: flex;
+            padding: 12px;
+            background-color: white;
+            border-top: 1px solid #e2e8f0;
+            align-items: center;
+        }}
+        
+        .amazon-message {{
+            max-width: 80%;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }}
+        
+        .amazon-message.user {{
+            background-color: #232f3e;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }}
+        
+        .amazon-message.assistant {{
+            background-color: #fcfcfc;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 0;
+        }}
+        
+        .amazon-suggestion-chips {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }}
+        
+        .amazon-suggestion-chip {{
+            background-color: #f0f2f5;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        
+        .amazon-suggestion-chip:hover {{
+            background-color: #e1e4e8;
+            border-color: #d0d7de;
+        }}
+        
+        /* Fix for sidebar button spacing and alignment */
+        [data-testid="stSidebar"] .stButton > button {{
+            margin-bottom: 12px;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+        }}
+        
+        /* Fix for form field spacing */
+        .stForm > div > div > div {{
+            margin-bottom: 15px !important;
+        }}
+        
+        /* Fix for button row spacing */
+        .stHorizontal > div > .stButton > button {{
+            margin-right: 10px;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -1300,7 +1442,8 @@ def create_campaign_pdf(campaign_data: Dict[str, Any], analyzer) -> bytes:
         ("ACoS", f"{campaign_data['acos']:.2f}%"),
         ("Target ACoS", f"{campaign_data['target_acos']:.2f}%"),
         ("Conversion Rate", f"{campaign_data['conversion_rate']:.2f}%"),
-        ("CTR", f"{campaign_data['ctr']:.2f}%"),
+        # Calculate CTR if not in campaign_data
+        ("CTR", f"{campaign_data.get('ctr', safe_divide(campaign_data['clicks'] * 100, campaign_data['impressions'])):.2f}%"),
         ("Avg. CPC", f"${campaign_data['avg_cpc']:.2f}"),
     ]
     
@@ -1552,6 +1695,21 @@ For healthcare PPC specifically:
 
 The best-performing medical device categories currently are Mobility Aids (6.3x ROAS) and Pain Management (4.69x ROAS)."""
 
+    elif "amazon listing" in user_message.lower() or "product listing" in user_message.lower():
+        return """Based on your Amazon listings, here are my top recommendations:
+
+1. **Title Optimization**: Your current titles are keyword-stuffed and difficult to read. Restructure them to front-load your most important search terms while maintaining readability. For medical devices, prioritize clear product identification and main benefits.
+
+2. **Enhanced Brand Content**: Your A+ content is underutilized. Add comparison charts between your models, more lifestyle imagery showing the products in use, and detailed specification tables.
+
+3. **Secondary Images**: Add infographics highlighting key measurements, weight capacity, and medical benefits. Also include images showing the product from multiple angles and in different usage scenarios.
+
+4. **Bullet Points**: Restructure to lead with benefits before features. For example, instead of "Adjustable height 32-38 inches" say "Customizable comfort with adjustable height (32-38 inches) for users of all statures."
+
+5. **Backend Keywords**: You're missing important synonyms and common misspellings in your backend search terms. Add condition-specific terms that shoppers might use.
+
+Implementing these changes could potentially improve your conversion rate by 15-25% based on industry benchmarks for medical devices."""
+
     else:
         return """Based on your campaign performance data, I've identified several optimization opportunities:
 
@@ -1631,7 +1789,15 @@ def get_ai_campaign_insights(campaign_data: pd.DataFrame, specific_campaign: Opt
         system_prompt += f"ACoS: {campaign['acos']:.2f}%\n"
         system_prompt += f"Target ACoS: {campaign['target_acos']:.2f}%\n"
         system_prompt += f"Conversion Rate: {campaign['conversion_rate']:.2f}%\n"
-        system_prompt += f"CTR: {campaign['ctr']:.2f}%\n"
+        
+        # FIX: Check if 'ctr' exists before using it
+        if 'ctr' in campaign:
+            system_prompt += f"CTR: {campaign['ctr']:.2f}%\n"
+        else:
+            # Calculate CTR on the fly if it doesn't exist
+            calculated_ctr = safe_divide(campaign['clicks'] * 100, campaign['impressions'])
+            system_prompt += f"CTR: {calculated_ctr:.2f}%\n"
+            
         system_prompt += f"Product Cost: ${campaign['product_cost']:.2f}\n"
         system_prompt += f"Selling Price: ${campaign['selling_price']:.2f}\n"
         system_prompt += f"Profit Margin: {campaign['profit_margin']:.2f}%\n"
@@ -1698,6 +1864,47 @@ def get_ai_medical_device_chat_response(messages_history):
     
     # Get response from OpenAI
     response = call_openai_api(all_messages, max_tokens=1500)
+    return response
+
+def get_amazon_listing_assistant_response(messages_history):
+    """Get AI responses for Amazon listing optimization assistant."""
+    # Prepare system message for Amazon listing optimization context
+    system_message = f"""You are an expert Amazon Listing Optimization Specialist with deep experience in e-commerce and 
+    specifically Amazon's A9 algorithm and product listing requirements. Your role is to help sellers optimize their 
+    product listings to improve visibility, conversion rates, and overall sales performance.
+
+    You have specialized expertise in:
+    {', '.join(AMAZON_LISTING_TOPICS)}
+
+    You understand Amazon SEO, best practices for:
+    - Product title optimization for both algorithm and human readability
+    - Creating compelling bullet points that highlight benefits and features
+    - Writing product descriptions that convert
+    - Strategic keyword research and implementation
+    - A+ Content creation and enhancement
+    - Image optimization for main and secondary images
+    - Amazon advertising strategy integration with listings
+    - Review management and strategies for getting more positive reviews
+    - Pricing strategy and competitive positioning
+    
+    For medical device products, you understand the special considerations:
+    - Compliance with Amazon's restricted product policies
+    - FDA regulations and how to properly present medical claims
+    - The importance of clear usage instructions and safety information
+    - How to effectively communicate technical specifications to both professionals and consumers
+    
+    Current date: {datetime.now().strftime('%Y-%m-%d')}
+
+    Be concrete, actionable, and specific in your recommendations. Provide examples where possible, and explain the 
+    reasoning behind each suggestion. Focus on proven strategies that work specifically on Amazon rather than 
+    general e-commerce advice."""
+    
+    # Prepare all messages including system and history
+    all_messages = [{"role": "system", "content": system_message}]
+    all_messages.extend(messages_history)
+    
+    # Get response from OpenAI
+    response = call_openai_api(all_messages, max_tokens=2000, temperature=0.5)
     return response
 
 # =============================================================================
@@ -2040,10 +2247,19 @@ class MarketingAnalyzer:
                         1 + param_variations['ad_spend']/100
                     ))
                     
-                    sim_ctr = max(0, campaign['ctr'] * np.random.uniform(
-                        1 - param_variations['ctr']/100,
-                        1 + param_variations['ctr']/100
-                    ))
+                    # FIX: Check if 'ctr' exists before using it
+                    if 'ctr' in campaign:
+                        sim_ctr = max(0, campaign['ctr'] * np.random.uniform(
+                            1 - param_variations['ctr']/100,
+                            1 + param_variations['ctr']/100
+                        ))
+                    else:
+                        # Calculate CTR on the fly if it doesn't exist
+                        current_ctr = safe_divide(campaign['clicks'] * 100, campaign['impressions'])
+                        sim_ctr = max(0, current_ctr * np.random.uniform(
+                            1 - param_variations['ctr']/100,
+                            1 + param_variations['ctr']/100
+                        ))
                     
                     sim_conversion_rate = max(0, campaign['conversion_rate'] * np.random.uniform(
                         1 - param_variations['conversion_rate']/100,
@@ -2116,6 +2332,100 @@ class MarketingAnalyzer:
             logger.error(f"Error running Monte Carlo simulation: {str(e)}")
             return None, f"Error running simulation: {str(e)}"
     
+    def create_scenario(self, base_campaign_uid: str, **adjustments) -> Dict[str, Any]:
+        """
+        Create a what-if scenario based on an existing campaign.
+        
+        Args:
+            base_campaign_uid: UID of the base campaign
+            adjustments: Dict of parameters to adjust (e.g., ad_spend_change=20)
+            
+        Returns:
+            Dict with calculated metrics for the scenario
+        """
+        try:
+            campaign = self.get_campaign(base_campaign_uid)
+            if not campaign:
+                return {"error": "Campaign not found"}
+            
+            # Get adjustment parameters with defaults
+            ad_spend_change = adjustments.get('ad_spend_change', 0)
+            cpc_change = adjustments.get('cpc_change', 0)
+            ctr_change = adjustments.get('ctr_change', 0)
+            conversion_rate_change = adjustments.get('conversion_rate_change', 0)
+            price_change = adjustments.get('price_change', 0)
+            cost_change = adjustments.get('cost_change', 0)
+            
+            # Calculate new values
+            new_ad_spend = campaign['ad_spend'] * (1 + ad_spend_change / 100)
+            new_avg_cpc = campaign['avg_cpc'] * (1 + cpc_change / 100)
+            
+            # FIX: Check if 'ctr' exists before using it
+            if 'ctr' in campaign:
+                new_ctr = campaign['ctr'] * (1 + ctr_change / 100)
+            else:
+                # Calculate CTR on the fly if it doesn't exist
+                current_ctr = safe_divide(campaign['clicks'] * 100, campaign['impressions'])
+                new_ctr = current_ctr * (1 + ctr_change / 100)
+                
+            new_conversion_rate = campaign['conversion_rate'] * (1 + conversion_rate_change / 100)
+            new_selling_price = campaign['selling_price'] * (1 + price_change / 100)
+            new_product_cost = campaign['product_cost'] * (1 + cost_change / 100)
+            
+            # Calculate derived metrics
+            new_clicks = new_ad_spend / new_avg_cpc
+            new_impressions = (new_clicks * 100) / new_ctr
+            new_conversions = (new_clicks * new_conversion_rate) / 100
+            new_revenue = new_conversions * new_selling_price
+            
+            new_acos = safe_divide(new_ad_spend * 100, new_revenue)
+            new_roas = safe_divide(new_revenue, new_ad_spend)
+            
+            # Calculate profit metrics
+            new_ad_cost_per_sale = safe_divide(new_ad_spend, new_conversions)
+            new_profit_metrics = get_profit_metrics(
+                new_product_cost, new_selling_price, 
+                campaign['shipping_cost'], campaign['amazon_fees'], 
+                new_ad_cost_per_sale
+            )
+            
+            new_profit = new_profit_metrics["profit"] * new_conversions
+            new_profit_margin = new_profit_metrics["profit_margin"]
+            
+            # Create scenario dict
+            scenario = {
+                'base_campaign': campaign['campaign_name'],
+                'ad_spend': new_ad_spend,
+                'avg_cpc': new_avg_cpc,
+                'ctr': new_ctr,
+                'clicks': new_clicks,
+                'impressions': new_impressions,
+                'conversion_rate': new_conversion_rate,
+                'conversions': new_conversions,
+                'selling_price': new_selling_price,
+                'product_cost': new_product_cost,
+                'revenue': new_revenue,
+                'acos': new_acos,
+                'roas': new_roas,
+                'profit': new_profit,
+                'profit_margin': new_profit_margin,
+                # Calculate changes from base campaign
+                'changes': {
+                    'ad_spend_change': (new_ad_spend - campaign['ad_spend']) / campaign['ad_spend'] * 100 if campaign['ad_spend'] > 0 else 0,
+                    'clicks_change': (new_clicks - campaign['clicks']) / campaign['clicks'] * 100 if campaign['clicks'] > 0 else 0,
+                    'conversions_change': (new_conversions - campaign['conversions']) / campaign['conversions'] * 100 if campaign['conversions'] > 0 else 0,
+                    'revenue_change': (new_revenue - campaign['revenue']) / campaign['revenue'] * 100 if campaign['revenue'] > 0 else 0,
+                    'profit_change': (new_profit - campaign['profit']) / campaign['profit'] * 100 if campaign['profit'] > 0 else 0,
+                    'roas_change': (new_roas - campaign['roas']) / campaign['roas'] * 100 if campaign['roas'] > 0 else 0,
+                    'acos_change': (new_acos - campaign['acos']) / campaign['acos'] * 100 if campaign['acos'] > 0 else 0
+                }
+            }
+            
+            return scenario
+        except Exception as e:
+            logger.error(f"Error creating scenario: {str(e)}")
+            return {"error": f"Error creating scenario: {str(e)}"}
+
     def get_channel_statistics(self) -> Dict[str, Any]:
         """Get aggregate statistics across channels."""
         try:
@@ -2221,92 +2531,6 @@ class MarketingAnalyzer:
                 'error': str(e)
             }
 
-    def create_scenario(self, base_campaign_uid: str, **adjustments) -> Dict[str, Any]:
-        """
-        Create a what-if scenario based on an existing campaign.
-        
-        Args:
-            base_campaign_uid: UID of the base campaign
-            adjustments: Dict of parameters to adjust (e.g., ad_spend_change=20)
-            
-        Returns:
-            Dict with calculated metrics for the scenario
-        """
-        try:
-            campaign = self.get_campaign(base_campaign_uid)
-            if not campaign:
-                return {"error": "Campaign not found"}
-            
-            # Get adjustment parameters with defaults
-            ad_spend_change = adjustments.get('ad_spend_change', 0)
-            cpc_change = adjustments.get('cpc_change', 0)
-            ctr_change = adjustments.get('ctr_change', 0)
-            conversion_rate_change = adjustments.get('conversion_rate_change', 0)
-            price_change = adjustments.get('price_change', 0)
-            cost_change = adjustments.get('cost_change', 0)
-            
-            # Calculate new values
-            new_ad_spend = campaign['ad_spend'] * (1 + ad_spend_change / 100)
-            new_avg_cpc = campaign['avg_cpc'] * (1 + cpc_change / 100)
-            new_ctr = campaign['ctr'] * (1 + ctr_change / 100)
-            new_conversion_rate = campaign['conversion_rate'] * (1 + conversion_rate_change / 100)
-            new_selling_price = campaign['selling_price'] * (1 + price_change / 100)
-            new_product_cost = campaign['product_cost'] * (1 + cost_change / 100)
-            
-            # Calculate derived metrics
-            new_clicks = new_ad_spend / new_avg_cpc
-            new_impressions = (new_clicks * 100) / new_ctr
-            new_conversions = (new_clicks * new_conversion_rate) / 100
-            new_revenue = new_conversions * new_selling_price
-            
-            new_acos = safe_divide(new_ad_spend * 100, new_revenue)
-            new_roas = safe_divide(new_revenue, new_ad_spend)
-            
-            # Calculate profit metrics
-            new_ad_cost_per_sale = safe_divide(new_ad_spend, new_conversions)
-            new_profit_metrics = get_profit_metrics(
-                new_product_cost, new_selling_price, 
-                campaign['shipping_cost'], campaign['amazon_fees'], 
-                new_ad_cost_per_sale
-            )
-            
-            new_profit = new_profit_metrics["profit"] * new_conversions
-            new_profit_margin = new_profit_metrics["profit_margin"]
-            
-            # Create scenario dict
-            scenario = {
-                'base_campaign': campaign['campaign_name'],
-                'ad_spend': new_ad_spend,
-                'avg_cpc': new_avg_cpc,
-                'ctr': new_ctr,
-                'clicks': new_clicks,
-                'impressions': new_impressions,
-                'conversion_rate': new_conversion_rate,
-                'conversions': new_conversions,
-                'selling_price': new_selling_price,
-                'product_cost': new_product_cost,
-                'revenue': new_revenue,
-                'acos': new_acos,
-                'roas': new_roas,
-                'profit': new_profit,
-                'profit_margin': new_profit_margin,
-                # Calculate changes from base campaign
-                'changes': {
-                    'ad_spend_change': (new_ad_spend - campaign['ad_spend']) / campaign['ad_spend'] * 100 if campaign['ad_spend'] > 0 else 0,
-                    'clicks_change': (new_clicks - campaign['clicks']) / campaign['clicks'] * 100 if campaign['clicks'] > 0 else 0,
-                    'conversions_change': (new_conversions - campaign['conversions']) / campaign['conversions'] * 100 if campaign['conversions'] > 0 else 0,
-                    'revenue_change': (new_revenue - campaign['revenue']) / campaign['revenue'] * 100 if campaign['revenue'] > 0 else 0,
-                    'profit_change': (new_profit - campaign['profit']) / campaign['profit'] * 100 if campaign['profit'] > 0 else 0,
-                    'roas_change': (new_roas - campaign['roas']) / campaign['roas'] * 100 if campaign['roas'] > 0 else 0,
-                    'acos_change': (new_acos - campaign['acos']) / campaign['acos'] * 100 if campaign['acos'] > 0 else 0
-                }
-            }
-            
-            return scenario
-        except Exception as e:
-            logger.error(f"Error creating scenario: {str(e)}")
-            return {"error": f"Error creating scenario: {str(e)}"}
-
 # Initialize app
 if 'analyzer' not in st.session_state:
     st.session_state.analyzer = MarketingAnalyzer()
@@ -2326,6 +2550,10 @@ if 'api_key_status' not in st.session_state:
 # Chat history for the medical devices marketing assistant
 if 'chat_messages' not in st.session_state:
     st.session_state.chat_messages = []
+
+# Chat history for the Amazon listing assistant
+if 'amazon_chat_messages' not in st.session_state:
+    st.session_state.amazon_chat_messages = []
 
 # =============================================================================
 # UI Component Functions
@@ -3107,2760 +3335,3 @@ def create_campaign_wizard() -> bool:
                     'impressions': impressions,
                     'conversions': conversions,
                     'revenue': revenue,
-                    'target_acos': target_acos
-                })
-                
-                # Go to next step
-                st.session_state.wizard_step = 3
-                st.rerun()
-    
-    # Step 3: Product Economics
-    elif st.session_state.wizard_step == 3:
-        st.subheader("Step 3: Product Economics")
-        
-        # Show the campaign summary
-        st.markdown(f"""
-        <div style="padding: 10px; border-radius: 5px; background-color: {COLOR_SCHEME['primary']}20; margin-bottom: 20px;">
-            <strong>Campaign:</strong> {st.session_state.wizard_data.get('campaign_name', '')} | 
-            <strong>Channel:</strong> {st.session_state.wizard_data.get('channel', '')} | 
-            <strong>Revenue:</strong> ${float(st.session_state.wizard_data.get('revenue', 0.0)):.2f}
-        </div>
-        """, unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            product_cost = st.number_input("Product Cost ($)", 
-                value=float(st.session_state.wizard_data.get('product_cost', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Cost to produce or acquire the product")
-            
-            selling_price = st.number_input("Selling Price ($)", 
-                value=float(st.session_state.wizard_data.get('selling_price', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Price the product is sold for")
-        
-        with col2:
-            shipping_cost = st.number_input("Shipping Cost ($)", 
-                value=float(st.session_state.wizard_data.get('shipping_cost', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Cost to ship the product")
-            
-            amazon_fees = st.number_input("Platform Fees ($)", 
-                value=float(st.session_state.wizard_data.get('amazon_fees', 0.0)),
-                min_value=0.0, 
-                format="%.2f", 
-                help="Amazon referral, FBA fees, or other platform fees if applicable")
-        
-        with col3:
-            channel = st.session_state.wizard_data.get('channel', '')
-            
-            # Display channel-specific guidance
-            if channel == "Amazon":
-                st.markdown("""
-                **Amazon Fee Structure:**
-                - Referral Fee: 15% (most categories)
-                - FBA Fees: Varies by size/weight
-                - Storage Fees: Monthly + Long-term
-                """)
-            elif channel == "Vive Website":
-                st.markdown("""
-                **Website Economics:**
-                - Credit Card Processing: ~2.9% + $0.30
-                - Fulfillment Costs: Varies
-                - Customer Service: Consider time cost
-                """)
-            else:
-                st.markdown("""
-                **Fee Considerations:**
-                - Platform Commissions
-                - Payment Processing
-                - Return Rate Impact
-                - Warehousing & Fulfillment
-                """)
-        
-        # Calculate and show profit metrics if we have data
-        conversions = int(st.session_state.wizard_data.get('conversions', 0))
-        revenue = float(st.session_state.wizard_data.get('revenue', 0.0))
-        ad_spend = float(st.session_state.wizard_data.get('ad_spend', 0.0))
-        
-        if product_cost > 0 and selling_price > 0 and conversions > 0:
-            # Calculate metrics
-            ad_cost_per_sale = ad_spend / conversions if conversions > 0 else 0
-            profit_metrics = get_profit_metrics(
-                product_cost, selling_price, shipping_cost, amazon_fees, ad_cost_per_sale
-            )
-            
-            profit_per_unit = profit_metrics["profit"]
-            total_profit = profit_per_unit * conversions
-            profit_margin = profit_metrics["profit_margin"]
-            
-            # Display metrics
-            st.markdown("### Profit Analysis")
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("Cost Per Unit", f"${product_cost:.2f}")
-                st.metric("Total Costs", f"${(product_cost + shipping_cost + amazon_fees):.2f}")
-            
-            with col2:
-                st.metric("Ad Cost Per Sale", f"${ad_cost_per_sale:.2f}")
-                st.metric("Profit Per Sale", f"${profit_per_unit:.2f}")
-            
-            with col3:
-                st.metric("Total Profit", f"${total_profit:.2f}")
-                
-            with col4:
-                st.metric("Profit Margin", f"{profit_margin:.2f}%")
-                roi = (total_profit / ad_spend) * 100 if ad_spend > 0 else 0
-                st.metric("ROI", f"{roi:.2f}%")
-            
-            # Profit margin assessment
-            if profit_margin >= 30:
-                margin_assessment = "Excellent"
-                color = COLOR_SCHEME["positive"]
-            elif profit_margin >= 20:
-                margin_assessment = "Good"
-                color = COLOR_SCHEME["positive"]
-            elif profit_margin >= 10:
-                margin_assessment = "Average"
-                color = COLOR_SCHEME["warning"]
-            else:
-                margin_assessment = "Poor"
-                color = COLOR_SCHEME["negative"]
-            
-            st.markdown(f"""
-            <div style="padding: 10px; border-radius: 5px; background-color: {color}30; border-left: 4px solid {color};">
-                <strong>Profit Assessment:</strong> {margin_assessment} - Profit margin of {profit_margin:.2f}% 
-                with ${profit_per_unit:.2f} profit per unit and total profit of ${total_profit:.2f}
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Navigation buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("← Back"):
-                st.session_state.wizard_step = 2
-                st.rerun()
-        
-        with col2:
-            if st.button("Next: Review & Save"):
-                # Validate inputs
-                if product_cost <= 0:
-                    show_toast("Please enter a value greater than 0 for Product Cost", "error")
-                    return False
-                
-                if selling_price <= 0:
-                    show_toast("Please enter a value greater than 0 for Selling Price", "error")
-                    return False
-                
-                if selling_price < product_cost:
-                    show_toast("Selling price cannot be less than product cost", "warning")
-                
-                # Save to session state
-                st.session_state.wizard_data.update({
-                    'product_cost': product_cost,
-                    'selling_price': selling_price,
-                    'shipping_cost': shipping_cost,
-                    'amazon_fees': amazon_fees
-                })
-                
-                # Go to next step
-                st.session_state.wizard_step = 4
-                st.rerun()
-    
-    # Step 4: Review and Save
-    elif st.session_state.wizard_step == 4:
-        st.subheader("Step 4: Review & Save Campaign")
-        
-        # Get all the data from session state
-        data = st.session_state.wizard_data
-        
-        # Calculate metrics for display
-        clicks = int(data.get('clicks', 0))
-        impressions = int(data.get('impressions', 0))
-        conversions = int(data.get('conversions', 0))
-        ad_spend = float(data.get('ad_spend', 0.0))
-        revenue = float(data.get('revenue', 0.0))
-        
-        avg_cpc = ad_spend / clicks if clicks > 0 else 0
-        ctr = (clicks / impressions) * 100 if impressions > 0 else 0
-        conversion_rate = (conversions / clicks) * 100 if clicks > 0 else 0
-        acos = (ad_spend / revenue) * 100 if revenue > 0 else 0
-        roas = revenue / ad_spend if ad_spend > 0 else 0
-        
-        # Product economics
-        product_cost = float(data.get('product_cost', 0.0))
-        selling_price = float(data.get('selling_price', 0.0))
-        shipping_cost = float(data.get('shipping_cost', 0.0))
-        amazon_fees = float(data.get('amazon_fees', 0.0))
-        
-        ad_cost_per_sale = ad_spend / conversions if conversions > 0 else 0
-        profit_metrics = get_profit_metrics(
-            product_cost, selling_price, shipping_cost, amazon_fees, ad_cost_per_sale
-        )
-        
-        profit_per_unit = profit_metrics["profit"]
-        total_profit = profit_per_unit * conversions
-        profit_margin = profit_metrics["profit_margin"]
-        
-        # Display campaign summary
-        st.markdown("### Campaign Summary")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Basic Information")
-            st.markdown(f"""
-            **Campaign Name:** {data.get('campaign_name', '')}  
-            **Product Name:** {data.get('product_name', '')}  
-            **Channel:** {data.get('channel', '')}  
-            **Category:** {data.get('category', '')}  
-            **Date Range:** {data.get('start_date', '')} to {data.get('end_date', '')}
-            """)
-            
-            st.markdown("#### Marketing Metrics")
-            st.markdown(f"""
-            **Ad Spend:** ${ad_spend:.2f}  
-            **Impressions:** {impressions:,}  
-            **Clicks:** {clicks:,}  
-            **Conversions:** {conversions:,}  
-            **Revenue:** ${revenue:.2f}
-            """)
-        
-        with col2:
-            st.markdown("#### Performance Metrics")
-            st.markdown(f"""
-            **Avg. CPC:** ${avg_cpc:.2f}  
-            **CTR:** {ctr:.2f}%  
-            **Conversion Rate:** {conversion_rate:.2f}%  
-            **ACoS:** {acos:.2f}%  
-            **ROAS:** {roas:.2f}x
-            """)
-            
-            st.markdown("#### Economics")
-            st.markdown(f"""
-            **Product Cost:** ${product_cost:.2f}  
-            **Selling Price:** ${selling_price:.2f}  
-            **Profit Per Sale:** ${profit_per_unit:.2f}  
-            **Total Profit:** ${total_profit:.2f}  
-            **Profit Margin:** {profit_margin:.2f}%
-            """)
-        
-        # Campaign notes
-        st.markdown("#### Notes")
-        st.markdown(f"> {data.get('notes', 'No notes added.')}")
-        
-        # Campaign assessment visualization
-        st.markdown("### Performance Assessment")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            # ROAS gauge
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = roas,
-                title = {'text': "ROAS"},
-                gauge = {
-                    'axis': {'range': [0, 8], 'tickwidth': 1},
-                    'bar': {'color': COLOR_SCHEME["primary"]},
-                    'steps': [
-                        {'range': [0, 2], 'color': COLOR_SCHEME["negative"]},
-                        {'range': [2, 4], 'color': COLOR_SCHEME["warning"]},
-                        {'range': [4, 8], 'color': COLOR_SCHEME["positive"]}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 1
-                    }
-                }
-            ))
-            fig.update_layout(height=200, margin=dict(l=20, r=20, t=30, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # ACoS gauge
-            target_acos = float(data.get('target_acos', 20.0))
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = acos,
-                title = {'text': "ACoS"},
-                gauge = {
-                    'axis': {'range': [0, 100], 'tickwidth': 1},
-                    'bar': {'color': COLOR_SCHEME["primary"]},
-                    'steps': [
-                        {'range': [0, target_acos], 'color': COLOR_SCHEME["positive"]},
-                        {'range': [target_acos, target_acos*1.5], 'color': COLOR_SCHEME["warning"]},
-                        {'range': [target_acos*1.5, 100], 'color': COLOR_SCHEME["negative"]}
-                    ],
-                    'threshold': {
-                        'line': {'color': "green", 'width': 4},
-                        'thickness': 0.75,
-                        'value': target_acos
-                    }
-                }
-            ))
-            fig.update_layout(height=200, margin=dict(l=20, r=20, t=30, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col3:
-            # Profit Margin gauge
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = profit_margin,
-                title = {'text': "Profit Margin"},
-                gauge = {
-                    'axis': {'range': [0, 50], 'tickwidth': 1, 'ticksuffix': "%"},
-                    'bar': {'color': COLOR_SCHEME["primary"]},
-                    'steps': [
-                        {'range': [0, 10], 'color': COLOR_SCHEME["negative"]},
-                        {'range': [10, 20], 'color': COLOR_SCHEME["warning"]},
-                        {'range': [20, 50], 'color': COLOR_SCHEME["positive"]}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 0
-                    }
-                }
-            ))
-            fig.update_layout(height=200, margin=dict(l=20, r=20, t=30, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-        
-        # Overall assessment
-        overall_score = 0
-        if roas >= 4:
-            roas_assessment = "Excellent"
-            roas_score = 3
-        elif roas >= 2:
-            roas_assessment = "Good"
-            roas_score = 2
-        elif roas >= 1:
-            roas_assessment = "Average"
-            roas_score = 1
-        else:
-            roas_assessment = "Poor"
-            roas_score = 0
-        
-        if acos <= target_acos:
-            acos_assessment = "On Target"
-            acos_score = 3
-        elif acos <= target_acos * 1.5:
-            acos_assessment = "Above Target"
-            acos_score = 1
-        else:
-            acos_assessment = "Far Above Target"
-            acos_score = 0
-        
-        if profit_margin >= 30:
-            margin_assessment = "Excellent"
-            margin_score = 3
-        elif profit_margin >= 20:
-            margin_assessment = "Good"
-            margin_score = 2
-        elif profit_margin >= 10:
-            margin_assessment = "Average"
-            margin_score = 1
-        else:
-            margin_assessment = "Poor"
-            margin_score = 0
-        
-        # Average score
-        overall_score = (roas_score + acos_score + margin_score) / 3
-        
-        if overall_score >= 2.5:
-            overall_assessment = "Excellent"
-            color = COLOR_SCHEME["positive"]
-        elif overall_score >= 1.5:
-            overall_assessment = "Good"
-            color = COLOR_SCHEME["positive"]
-        elif overall_score >= 0.5:
-            overall_assessment = "Average"
-            color = COLOR_SCHEME["warning"]
-        else:
-            overall_assessment = "Poor"
-            color = COLOR_SCHEME["negative"]
-        
-        st.markdown(f"""
-        <div style="padding: 15px; border-radius: 8px; background-color: {color}30; border-left: 6px solid {color}; margin-top: 20px;">
-            <h4 style="margin-top: 0;">Overall Assessment: {overall_assessment}</h4>
-            <p>ROAS: <strong>{roas_assessment}</strong> ({roas:.2f}x)</p>
-            <p>ACoS: <strong>{acos_assessment}</strong> ({acos:.2f}% vs target {target_acos:.2f}%)</p>
-            <p>Profit Margin: <strong>{margin_assessment}</strong> ({profit_margin:.2f}%)</p>
-            <p>This campaign is {overall_assessment.lower()} overall with a {'' if profit_margin > 0 else 'negative'} profit margin 
-            and a return on ad spend of {roas:.2f}x.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # AI-powered insights if API is available
-        if st.session_state.api_key_status == "valid":
-            # Make a temporary df for AI analysis
-            temp_df = pd.DataFrame([data])
-            temp_df['roas'] = roas
-            temp_df['acos'] = acos
-            temp_df['conversion_rate'] = conversion_rate
-            temp_df['profit'] = total_profit
-            temp_df['profit_margin'] = profit_margin
-            
-            with st.expander("AI-Powered Campaign Insights", expanded=False):
-                st.markdown("#### AI Analysis")
-                
-                insights_placeholder = st.empty()
-                with insights_placeholder:
-                    st.info("Generating AI insights... This may take a few seconds.")
-                
-                insights = get_ai_campaign_insights(temp_df, data.get('campaign_name', ''))
-                
-                with insights_placeholder:
-                    st.markdown(insights)
-        
-        # Navigation and save buttons
-        col1, col2, col3 = st.columns([1, 1, 2])
-        with col1:
-            if st.button("← Back"):
-                st.session_state.wizard_step = 3
-                st.rerun()
-        
-        with col3:
-            if st.button("Save Campaign", type="primary"):
-                # Set loading state
-                st.session_state.is_loading = True
-                
-                success, message = analyzer.add_campaign(
-                    data.get('campaign_name', ''), 
-                    data.get('product_name', ''), 
-                    data.get('channel', ''), 
-                    data.get('category', ''),
-                    ad_spend, 
-                    clicks, 
-                    impressions, 
-                    conversions, 
-                    revenue,
-                    data.get('start_date', ''), 
-                    data.get('end_date', ''),
-                    product_cost, 
-                    selling_price, 
-                    shipping_cost, 
-                    amazon_fees,
-                    float(data.get('target_acos', 0)),
-                    data.get('notes', '')
-                )
-                
-                # Reset loading state
-                st.session_state.is_loading = False
-                
-                if success:
-                    show_toast(message, "success")
-                    # Reset wizard
-                    st.session_state.wizard_step = 1
-                    st.session_state.wizard_data = {}
-                    # Flag for completion
-                    st.success("Campaign added successfully! You'll be redirected to the dashboard.")
-                    time.sleep(1)
-                    return True
-                else:
-                    show_toast(message, "error")
-                    return False
-    
-    return False
-
-def display_campaigns_table(df: pd.DataFrame):
-    """Display campaigns in a sortable, filterable table."""
-    if df.empty:
-        st.info("No campaigns found. Add campaigns to see them here.")
-        return
-    
-    # Add a search box
-    search_term = st.text_input("Search Campaigns", "", help="Search by campaign name, product, or channel")
-    
-    # Filter data based on search term
-    if search_term:
-        filtered_df = df[
-            df['campaign_name'].str.contains(search_term, case=False, na=False) |
-            df['product_name'].str.contains(search_term, case=False, na=False) |
-            df['channel'].str.contains(search_term, case=False, na=False)
-        ]
-    else:
-        filtered_df = df
-    
-    # If still no results after filtering
-    if filtered_df.empty:
-        st.info(f"No campaigns found matching '{search_term}'.")
-        return
-    
-    # Add filter and sort options
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        # Channel filter
-        channels = ['All Channels'] + sorted(df['channel'].unique().tolist())
-        selected_channel = st.selectbox("Channel", channels)
-        
-        if selected_channel != 'All Channels':
-            filtered_df = filtered_df[filtered_df['channel'] == selected_channel]
-    
-    with col2:
-        # Category filter
-        categories = ['All Categories'] + sorted(df['category'].unique().tolist())
-        selected_category = st.selectbox("Category", categories)
-        
-        if selected_category != 'All Categories':
-            filtered_df = filtered_df[filtered_df['category'] == selected_category]
-    
-    with col3:
-        # Sort options
-        sort_options = {
-            'Campaign Name': 'campaign_name',
-            'ROAS (High to Low)': 'roas',
-            'ACoS (Low to High)': 'acos',
-            'Revenue (High to Low)': 'revenue',
-            'Profit (High to Low)': 'profit',
-            'Performance Score (High to Low)': 'performance_score'
-        }
-        
-        selected_sort = st.selectbox("Sort By", list(sort_options.keys()))
-        sort_col = sort_options[selected_sort]
-        
-        if 'High to Low' in selected_sort:
-            filtered_df = filtered_df.sort_values(by=sort_col, ascending=False)
-        elif 'Low to High' in selected_sort:
-            filtered_df = filtered_df.sort_values(by=sort_col, ascending=True)
-        else:
-            filtered_df = filtered_df.sort_values(by=sort_col)
-    
-    # Display count of filtered campaigns
-    st.markdown(f"Showing **{len(filtered_df)}** of **{len(df)}** campaigns")
-    
-    # Prepare display columns
-    display_df = filtered_df[['uid', 'campaign_name', 'channel', 'product_name', 'ad_spend', 
-                            'revenue', 'roas', 'acos', 'conversion_rate', 'profit', 'profit_margin',
-                            'performance_score']].copy()
-    
-    # Format columns
-    display_df['ad_spend'] = display_df['ad_spend'].apply(lambda x: f"${x:,.2f}")
-    display_df['revenue'] = display_df['revenue'].apply(lambda x: f"${x:,.2f}")
-    display_df['roas'] = display_df['roas'].apply(lambda x: f"{x:.2f}x")
-    display_df['acos'] = display_df['acos'].apply(lambda x: f"{x:.2f}%")
-    display_df['conversion_rate'] = display_df['conversion_rate'].apply(lambda x: f"{x:.2f}%")
-    display_df['profit'] = display_df['profit'].apply(lambda x: f"${x:,.2f}")
-    display_df['profit_margin'] = display_df['profit_margin'].apply(lambda x: f"{x:.2f}%")
-    display_df['performance_score'] = display_df['performance_score'].apply(
-        lambda x: f"{x:.1f}/100" if not pd.isna(x) else "N/A"
-    )
-    
-    # Column display names
-    display_df.columns = ['UID', 'Campaign Name', 'Channel', 'Product', 'Ad Spend', 
-                         'Revenue', 'ROAS', 'ACoS', 'Conv. Rate', 'Profit', 'Margin', 'Score']
-    
-    # Display the table with row highlighting
-    campaign_selection = st.dataframe(
-        display_df,
-        use_container_width=True,
-        column_config={
-            "UID": None  # Hide UID column
-        },
-        hide_index=True
-    )
-    
-    # Add export options
-    st.markdown("### Export Options")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        excel_data = to_excel(filtered_df)
-        st.download_button(
-            label="Download Excel Report",
-            data=excel_data,
-            file_name=f"campaign_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    
-    with col2:
-        # Convert to CSV for download
-        csv = filtered_df.to_csv(index=False)
-        b64 = base64.b64encode(csv.encode()).decode()
-        
-        st.download_button(
-            label="Download CSV Data",
-            data=csv,
-            file_name=f"campaign_data_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv"
-        )
-    
-    # Add campaign actions below table
-    st.markdown("### Campaign Actions")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        campaign_uid = st.text_input("Campaign UID for Actions", 
-                                  help="Enter the UID of the campaign you want to take action on")
-    
-    with col2:
-        action = st.selectbox("Select Action", 
-                           ["View Details", "Edit Campaign", "Clone Campaign", "Delete Campaign"])
-    
-    with col3:
-        if st.button("Execute Action"):
-            if not campaign_uid:
-                show_toast("Please enter a Campaign UID", "error")
-            elif campaign_uid not in df['uid'].values:
-                show_toast("Campaign not found with that UID", "error")
-            else:
-                # Execute the selected action
-                if action == "View Details":
-                    st.session_state.selected_campaign = campaign_uid
-                    st.session_state.view = "campaign_details"
-                    st.rerun()
-                elif action == "Edit Campaign":
-                    st.session_state.edit_campaign = campaign_uid
-                    st.session_state.view = "edit_campaign"
-                    st.rerun()
-                elif action == "Clone Campaign":
-                    success, message = analyzer.clone_campaign(campaign_uid)
-                    if success:
-                        show_toast(message, "success")
-                        st.rerun()
-                    else:
-                        show_toast(message, "error")
-                elif action == "Delete Campaign":
-                    if analyzer.delete_campaign(campaign_uid):
-                        show_toast("Campaign deleted successfully", "success")
-                        st.rerun()
-                    else:
-                        show_toast("Failed to delete campaign", "error")
-
-def display_campaign_details(campaign_uid: str):
-    """Display detailed view of a single campaign."""
-    campaign = analyzer.get_campaign(campaign_uid)
-    
-    if not campaign:
-        st.error("Campaign not found. It may have been deleted.")
-        if st.button("Back to Dashboard"):
-            st.session_state.view = "dashboard"
-            st.rerun()
-        return
-    
-    # Breadcrumb
-    display_breadcrumb([
-        ("Dashboard", "#"),
-        ("Campaigns", "#"),
-        (campaign['campaign_name'], "")
-    ])
-    
-    # Header with back button
-    col1, col2 = st.columns([1, 5])
-    
-    with col1:
-        if st.button("← Back"):
-            st.session_state.view = "dashboard"
-            st.rerun()
-    
-    with col2:
-        st.title(campaign['campaign_name'])
-        st.caption(f"Campaign for {campaign['product_name']} on {campaign['channel']}")
-    
-    # Export options
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        pdf_report = create_campaign_pdf(campaign, analyzer)
-        st.download_button(
-            label="Download PDF Report",
-            data=pdf_report,
-            file_name=f"{campaign['campaign_name']}_report.pdf",
-            mime="application/pdf"
-        )
-    
-    with col2:
-        # Export single campaign as Excel
-        campaign_df = pd.DataFrame([campaign])
-        excel_data = to_excel(campaign_df)
-        
-        st.download_button(
-            label="Export to Excel",
-            data=excel_data,
-            file_name=f"{campaign['campaign_name']}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    
-    # Campaign details
-    st.markdown("## Campaign Details")
-    
-    # Basic info and metrics
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("### Basic Information")
-        st.markdown(f"""
-        **Channel:** {campaign['channel']}  
-        **Category:** {campaign['category']}  
-        **Date Range:** {campaign['start_date']} to {campaign['end_date']}  
-        **UID:** {campaign['uid']}
-        """)
-        
-        if campaign.get('notes'):
-            st.markdown("### Notes")
-            st.markdown(f"> {campaign['notes']}")
-    
-    with col2:
-        st.markdown("### Performance Metrics")
-        st.markdown(f"""
-        **Ad Spend:** ${campaign['ad_spend']:,.2f}  
-        **Revenue:** ${campaign['revenue']:,.2f}  
-        **ROAS:** {campaign['roas']:.2f}x  
-        **ACoS:** {campaign['acos']:.2f}%  
-        **Target ACoS:** {campaign['target_acos']:.2f}%  
-        **Performance Score:** {campaign['performance_score']:.1f}/100
-        """)
-    
-    with col3:
-        st.markdown("### Traffic & Conversion")
-        st.markdown(f"""
-        **Impressions:** {campaign['impressions']:,}  
-        **Clicks:** {campaign['clicks']:,}  
-        **Conversions:** {campaign['conversions']:,}  
-        **CTR:** {campaign['ctr']:.2f}%  
-        **Conversion Rate:** {campaign['conversion_rate']:.2f}%  
-        **Avg. CPC:** ${campaign['avg_cpc']:.2f}
-        """)
-    
-    # Profit metrics and economics
-    st.markdown("## Economics & Profitability")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("### Product Economics")
-        st.markdown(f"""
-        **Product Cost:** ${campaign['product_cost']:,.2f}  
-        **Selling Price:** ${campaign['selling_price']:,.2f}  
-        **Shipping Cost:** ${campaign['shipping_cost']:,.2f}  
-        **Platform Fees:** ${campaign['amazon_fees']:,.2f}
-        """)
-    
-    with col2:
-        st.markdown("### Profit Metrics")
-        
-        # Calculate ad cost per sale
-        ad_cost_per_sale = campaign['ad_spend'] / campaign['conversions'] if campaign['conversions'] > 0 else 0
-        
-        # Calculate unit economics
-        unit_cost = campaign['product_cost'] + campaign['shipping_cost'] + campaign['amazon_fees']
-        profit_per_unit = campaign['selling_price'] - unit_cost - ad_cost_per_sale
-        
-        st.markdown(f"""
-        **Total Profit:** ${campaign['profit']:,.2f}  
-        **Profit Margin:** {campaign['profit_margin']:.2f}%  
-        **Ad Cost Per Sale:** ${ad_cost_per_sale:.2f}  
-        **Profit Per Unit:** ${profit_per_unit:.2f}
-        """)
-    
-    with col3:
-        st.markdown("### Breakeven Analysis")
-        
-        # Breakeven calculations
-        breakeven_acos = ((campaign['selling_price'] - unit_cost) / campaign['selling_price']) * 100
-        max_bid = (campaign['selling_price'] - unit_cost) * (campaign['conversion_rate'] / 100)
-        
-        st.markdown(f"""
-        **Breakeven ACoS:** {breakeven_acos:.2f}%  
-        **ACoS Margin:** {(breakeven_acos - campaign['acos']):.2f}%  
-        **Max Bid at Breakeven:** ${max_bid:.2f}  
-        **Current Avg CPC:** ${campaign['avg_cpc']:.2f}
-        """)
-    
-    # Visualizations
-    st.markdown("## Campaign Analysis")
-    
-    tab1, tab2, tab3 = st.tabs(["Performance Metrics", "Economics", "What-If Analysis"])
-    
-    with tab1:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # ROAS vs ACoS gauge charts
-            fig = make_subplots(
-                rows=1, cols=2,
-                specs=[[{"type": "indicator"}, {"type": "indicator"}]],
-                subplot_titles=("ROAS", "ACoS")
-            )
-            
-            fig.add_trace(
-                go.Indicator(
-                    mode="gauge+number",
-                    value=campaign['roas'],
-                    gauge={
-                        'axis': {'range': [0, 8], 'tickwidth': 1},
-                        'bar': {'color': get_channel_color(campaign['channel'])},
-                        'steps': [
-                            {'range': [0, 2], 'color': COLOR_SCHEME["negative"]},
-                            {'range': [2, 4], 'color': COLOR_SCHEME["warning"]},
-                            {'range': [4, 8], 'color': COLOR_SCHEME["positive"]}
-                        ],
-                        'threshold': {
-                            'line': {'color': "red", 'width': 4},
-                            'thickness': 0.75,
-                            'value': 1
-                        }
-                    }
-                ),
-                row=1, col=1
-            )
-            
-            fig.add_trace(
-                go.Indicator(
-                    mode="gauge+number",
-                    value=campaign['acos'],
-                    gauge={
-                        'axis': {'range': [0, 50], 'tickwidth': 1, 'ticksuffix': "%"},
-                        'bar': {'color': get_channel_color(campaign['channel'])},
-                        'steps': [
-                            {'range': [0, campaign['target_acos']], 'color': COLOR_SCHEME["positive"]},
-                            {'range': [campaign['target_acos'], campaign['target_acos']*1.5], 'color': COLOR_SCHEME["warning"]},
-                            {'range': [campaign['target_acos']*1.5, 50], 'color': COLOR_SCHEME["negative"]}
-                        ],
-                        'threshold': {
-                            'line': {'color': "green", 'width': 4},
-                            'thickness': 0.75,
-                            'value': campaign['target_acos']
-                        }
-                    }
-                ),
-                row=1, col=2
-            )
-            
-            fig.update_layout(
-                height=300, 
-                margin=dict(l=20, r=20, t=40, b=20),
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Funnel chart
-            conversion_funnel = go.Figure()
-            
-            funnel_values = [campaign['impressions'], campaign['clicks'], campaign['conversions']]
-            funnel_text = [
-                f"Impressions: {campaign['impressions']:,}",
-                f"Clicks: {campaign['clicks']:,} (CTR: {campaign['ctr']:.2f}%)",
-                f"Conversions: {campaign['conversions']:,} (CR: {campaign['conversion_rate']:.2f}%)"
-            ]
-            
-            conversion_funnel.add_trace(go.Funnel(
-                y = ["Impressions", "Clicks", "Conversions"],
-                x = funnel_values,
-                textinfo = "text",
-                text = funnel_text,
-                marker = {
-                    "color": [
-                        "rgba(0, 163, 224, 0.8)",
-                        "rgba(0, 163, 224, 0.6)",
-                        "rgba(0, 163, 224, 0.4)"
-                    ]
-                },
-                connector = {"line": {"color": "royalblue", "dash": "dot", "width": 3}}
-            ))
-            
-            conversion_funnel.update_layout(
-                title="Conversion Funnel",
-                margin=dict(l=20, r=20, t=60, b=20),
-                height=400
-            )
-            
-            st.plotly_chart(conversion_funnel, use_container_width=True)
-        
-        with col2:
-            # Performance Score gauge
-            if 'performance_score' in campaign and campaign['performance_score'] is not None:
-                fig = go.Figure(go.Indicator(
-                    mode="gauge+number",
-                    value=campaign['performance_score'],
-                    title={'text': "Performance Score"},
-                    gauge={
-                        'axis': {'range': [0, 100], 'tickwidth': 1},
-                        'bar': {'color': get_channel_color(campaign['channel'])},
-                        'steps': [
-                            {'range': [0, 50], 'color': COLOR_SCHEME["negative"]},
-                            {'range': [50, 70], 'color': COLOR_SCHEME["warning"]},
-                            {'range': [70, 100], 'color': COLOR_SCHEME["positive"]}
-                        ]
-                    }
-                ))
-                
-                fig.update_layout(
-                    height=300, 
-                    margin=dict(l=20, r=20, t=60, b=20),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)'
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-            
-            # Performance comparison
-            comparison_data = analyzer.campaigns[analyzer.campaigns['channel'] == campaign['channel']]
-            if not comparison_data.empty:
-                # Calculate averages
-                avg_roas = comparison_data['roas'].mean()
-                avg_acos = comparison_data['acos'].mean()
-                avg_conversion = comparison_data['conversion_rate'].mean()
-                avg_profit_margin = comparison_data['profit_margin'].mean()
-                
-                # Create comparison chart
-                comparison_fig = go.Figure()
-                
-                metrics = ['ROAS', 'ACoS', 'Conversion Rate', 'Profit Margin']
-                campaign_values = [
-                    campaign['roas'], 
-                    campaign['acos'], 
-                    campaign['conversion_rate'], 
-                    campaign['profit_margin']
-                ]
-                avg_values = [avg_roas, avg_acos, avg_conversion, avg_profit_margin]
-                
-                # For ACoS, lower is better, so we need special handling
-                comparison_fig.add_trace(go.Bar(
-                    name='This Campaign',
-                    x=metrics,
-                    y=campaign_values,
-                    marker_color=[
-                        COLOR_SCHEME["primary"] if campaign_values[i] >= avg_values[i] else COLOR_SCHEME["negative"] 
-                        for i in range(len(metrics)) if i != 1
-                    ] + [
-                        COLOR_SCHEME["primary"] if campaign_values[1] <= avg_values[1] else COLOR_SCHEME["negative"]
-                    ],
-                    text=[f"{v:.2f}{'x' if i == 0 else '%'}" for i, v in enumerate(campaign_values)],
-                    textposition='auto',
-                ))
-                
-                comparison_fig.add_trace(go.Bar(
-                    name=f'Avg on {campaign["channel"]}',
-                    x=metrics,
-                    y=avg_values,
-                    marker_color='rgba(100, 100, 100, 0.6)',
-                    text=[f"{v:.2f}{'x' if i == 0 else '%'}" for i, v in enumerate(avg_values)],
-                    textposition='auto',
-                ))
-                
-                comparison_fig.update_layout(
-                    title=f"Comparison to Other {campaign['channel']} Campaigns",
-                    barmode='group',
-                    height=400,
-                    margin=dict(l=20, r=20, t=60, b=40),
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.02,
-                        xanchor="right",
-                        x=1
-                    )
-                )
-                
-                st.plotly_chart(comparison_fig, use_container_width=True)
-    
-    with tab2:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Cost breakdown
-            cost_data = {
-                'Category': ['Product Cost', 'Shipping', 'Platform Fees', 'Ad Cost Per Sale'],
-                'Amount': [
-                    campaign['product_cost'],
-                    campaign['shipping_cost'],
-                    campaign['amazon_fees'],
-                    ad_cost_per_sale
-                ]
-            }
-            
-            cost_df = pd.DataFrame(cost_data)
-            cost_df['Percentage'] = cost_df['Amount'] / cost_df['Amount'].sum() * 100
-            
-            cost_fig = px.pie(
-                cost_df, 
-                values='Amount', 
-                names='Category',
-                title='Cost Breakdown Per Unit',
-                color_discrete_sequence=px.colors.sequential.Blues_r
-            )
-            
-            cost_fig.update_traces(
-                textposition='inside', 
-                textinfo='percent+label',
-                hovertemplate='%{label}: $%{value:.2f} (%{percent})'
-            )
-            
-            cost_fig.update_layout(
-                height=400,
-                margin=dict(l=20, r=20, t=60, b=20)
-            )
-            
-            st.plotly_chart(cost_fig, use_container_width=True)
-        
-        with col2:
-            # Revenue allocation
-            total_cost = campaign['product_cost'] + campaign['shipping_cost'] + campaign['amazon_fees']
-            
-            revenue_data = {
-                'Category': ['Cost of Goods', 'Ad Cost', 'Profit'],
-                'Amount': [
-                    total_cost * campaign['conversions'],
-                    campaign['ad_spend'],
-                    campaign['profit']
-                ]
-            }
-            
-            revenue_df = pd.DataFrame(revenue_data)
-            revenue_df['Percentage'] = revenue_df['Amount'] / campaign['revenue'] * 100
-            
-            revenue_fig = px.pie(
-                revenue_df, 
-                values='Amount', 
-                names='Category',
-                title='Revenue Allocation',
-                color_discrete_sequence=px.colors.sequential.Greens_r
-            )
-            
-            revenue_fig.update_traces(
-                textposition='inside', 
-                textinfo='percent+label',
-                hovertemplate='%{label}: $%{value:.2f} (%{percent})'
-            )
-            
-            revenue_fig.update_layout(
-                height=400,
-                margin=dict(l=20, r=20, t=60, b=20)
-            )
-            
-            st.plotly_chart(revenue_fig, use_container_width=True)
-            
-        # Profitability metrics
-        st.markdown("### Profitability Analysis")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            display_enhanced_metric(
-                "Cost Per Sale", 
-                total_cost + ad_cost_per_sale,
-                prefix="$", 
-                help_text="Total cost per each conversion/sale including product, shipping, fees and ad cost",
-                formatter=lambda x: f"{x:.2f}"
-            )
-        
-        with col2:
-            display_enhanced_metric(
-                "Breakeven ACoS", 
-                breakeven_acos,
-                suffix="%", 
-                badge="success" if campaign['acos'] < breakeven_acos else "danger",
-                help_text="Maximum ACoS at which the campaign remains profitable",
-                formatter=lambda x: f"{x:.2f}"
-            )
-        
-        with col3:
-            margin_dollars = campaign['selling_price'] - (total_cost + ad_cost_per_sale)
-            display_enhanced_metric(
-                "Margin Per Sale", 
-                margin_dollars,
-                prefix="$", 
-                badge="success" if margin_dollars > 0 else "danger",
-                help_text="Dollar profit per unit after all costs",
-                formatter=lambda x: f"{x:.2f}"
-            )
-        
-        with col4:
-            roi = (campaign['profit'] / campaign['ad_spend']) * 100 if campaign['ad_spend'] > 0 else 0
-            display_enhanced_metric(
-                "ROI", 
-                roi,
-                suffix="%", 
-                badge="success" if roi > 50 else ("warning" if roi > 0 else "danger"),
-                help_text="Return on Investment (Profit ÷ Ad Spend × 100%)",
-                formatter=lambda x: f"{x:.2f}"
-            )
-    
-    with tab3:
-        st.markdown("### What-If Scenario Analysis")
-        st.caption("Adjust parameters to see how changes would affect campaign results")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            ad_spend_change = st.slider("Ad Spend Change", -50, 100, 0, 5,
-                                    help="Percentage change in ad spend")
-            
-            cpc_change = st.slider("CPC Change", -30, 30, 0, 5,
-                                help="Percentage change in cost per click")
-        
-        with col2:
-            ctr_change = st.slider("CTR Change", -30, 50, 0, 5,
-                                help="Percentage change in click-through rate")
-            
-            conversion_rate_change = st.slider("Conversion Rate Change", -30, 50, 0, 5,
-                                           help="Percentage change in conversion rate")
-        
-        with col3:
-            price_change = st.slider("Price Change", -20, 30, 0, 5,
-                                  help="Percentage change in selling price")
-            
-            cost_change = st.slider("Cost Change", -20, 20, 0, 5,
-                                 help="Percentage change in product cost")
-        
-        # Calculate scenario
-        scenario = analyzer.create_scenario(
-            campaign_uid,
-            ad_spend_change=ad_spend_change,
-            cpc_change=cpc_change,
-            ctr_change=ctr_change,
-            conversion_rate_change=conversion_rate_change,
-            price_change=price_change,
-            cost_change=cost_change
-        )
-        
-        if 'error' in scenario:
-            st.error(scenario['error'])
-        else:
-            # Display scenario results
-            st.markdown("### Scenario Results")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Key metrics table
-                metrics_comparison = pd.DataFrame({
-                    'Metric': ['Ad Spend', 'Clicks', 'Conversions', 'Revenue', 'ROAS', 
-                              'ACoS', 'Profit', 'Profit Margin'],
-                    'Current': [
-                        f"${campaign['ad_spend']:.2f}",
-                        f"{campaign['clicks']:.0f}",
-                        f"{campaign['conversions']:.0f}",
-                        f"${campaign['revenue']:.2f}",
-                        f"{campaign['roas']:.2f}x",
-                        f"{campaign['acos']:.2f}%",
-                        f"${campaign['profit']:.2f}",
-                        f"{campaign['profit_margin']:.2f}%"
-                    ],
-                    'Scenario': [
-                        f"${scenario['ad_spend']:.2f}",
-                        f"{scenario['clicks']:.0f}",
-                        f"{scenario['conversions']:.0f}",
-                        f"${scenario['revenue']:.2f}",
-                        f"{scenario['roas']:.2f}x",
-                        f"{scenario['acos']:.2f}%",
-                        f"${scenario['profit']:.2f}",
-                        f"{scenario['profit_margin']:.2f}%"
-                    ],
-                    'Change': [
-                        f"{scenario['changes']['ad_spend_change']:.2f}%",
-                        f"{scenario['changes']['clicks_change']:.2f}%",
-                        f"{scenario['changes']['conversions_change']:.2f}%",
-                        f"{scenario['changes']['revenue_change']:.2f}%",
-                        f"{scenario['changes']['roas_change']:.2f}%",
-                        f"{scenario['changes']['acos_change']:.2f}%",
-                        f"{scenario['changes']['profit_change']:.2f}%",
-                        f"{(scenario['profit_margin'] - campaign['profit_margin']):.2f}%"
-                    ]
-                })
-                
-                st.dataframe(metrics_comparison, use_container_width=True, hide_index=True)
-            
-            with col2:
-                # Profit change visualization
-                profit_change = scenario['profit'] - campaign['profit']
-                profit_color = COLOR_SCHEME["positive"] if profit_change >= 0 else COLOR_SCHEME["negative"]
-                
-                st.markdown(f"""
-                <div style="text-align: center; padding: 20px; background-color: {profit_color}20; 
-                            border-radius: 10px; border: 2px solid {profit_color};">
-                    <h3 style="margin-bottom: 10px;">Profit Impact</h3>
-                    <p style="font-size: 2rem; font-weight: bold; color: {profit_color};">
-                        {'+' if profit_change >= 0 else ''}{profit_change:.2f}
-                    </p>
-                    <p>Current: ${campaign['profit']:.2f} → Scenario: ${scenario['profit']:.2f}</p>
-                    <p>Change: {scenario['changes']['profit_change']:.2f}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # ROAS & ACoS comparison
-                roas_acos_fig = make_subplots(
-                    rows=1, cols=2,
-                    specs=[[{"type": "indicator"}, {"type": "indicator"}]],
-                    subplot_titles=("ROAS Change", "ACoS Change")
-                )
-                
-                # ROAS delta
-                roas_delta = scenario['roas'] - campaign['roas']
-                roas_acos_fig.add_trace(
-                    go.Indicator(
-                        mode="delta",
-                        value=scenario['roas'],
-                        delta={'reference': campaign['roas'], 'relative': True, 'valueformat': '.1%'},
-                        title={'text': f"Current: {campaign['roas']:.2f}x → Scenario: {scenario['roas']:.2f}x"},
-                        number={'valueformat': '.2f', 'suffix': 'x'}
-                    ),
-                    row=1, col=1
-                )
-                
-                # ACoS delta
-                acos_delta = scenario['acos'] - campaign['acos']
-                roas_acos_fig.add_trace(
-                    go.Indicator(
-                        mode="delta",
-                        value=scenario['acos'],
-                        delta={
-                            'reference': campaign['acos'], 
-                            'relative': True, 
-                            'valueformat': '.1%',
-                            'decreasing': {'color': COLOR_SCHEME["positive"]},
-                            'increasing': {'color': COLOR_SCHEME["negative"]}
-                        },
-                        title={'text': f"Current: {campaign['acos']:.2f}% → Scenario: {scenario['acos']:.2f}%"},
-                        number={'valueformat': '.2f', 'suffix': '%'}
-                    ),
-                    row=1, col=2
-                )
-                
-                roas_acos_fig.update_layout(
-                    height=200,
-                    margin=dict(l=20, r=20, t=80, b=20)
-                )
-                
-                st.plotly_chart(roas_acos_fig, use_container_width=True)
-            
-            # Monte Carlo simulation
-            st.markdown("### Risk Analysis Simulation")
-            
-            # Allow user to run Monte Carlo simulation
-            col1, col2, col3 = st.columns([2, 2, 1])
-            
-            with col1:
-                num_simulations = st.slider("Number of Simulations", 100, 5000, 1000, 100,
-                                        help="More simulations give more accurate results but take longer")
-            
-            with col2:
-                simulation_variations = st.slider("Parameter Variation (%)", 5, 40, 20, 5,
-                                              help="How much parameters can vary in the simulation (higher = more variance)")
-            
-            with col3:
-                run_simulation = st.button("Run Simulation")
-            
-            if run_simulation:
-                # Set up parameter variations based on user input
-                param_variations = {
-                    'ad_spend': simulation_variations,
-                    'ctr': simulation_variations,
-                    'conversion_rate': simulation_variations,
-                    'avg_cpc': simulation_variations,
-                    'selling_price': simulation_variations / 2,  # Half variation for price and cost
-                    'product_cost': simulation_variations / 2
-                }
-                
-                # Run simulation
-                sim_results, sim_message = analyzer.run_monte_carlo_simulation(
-                    campaign_uid, num_simulations, param_variations
-                )
-                
-                if sim_results is not None:
-                    # Display simulation results
-                    st.success(f"Simulation completed: {num_simulations} scenarios analyzed")
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        # ROAS distribution
-                        roas_hist = px.histogram(
-                            sim_results, 
-                            x="roas", 
-                            nbins=30,
-                            title="ROAS Distribution",
-                            labels={"roas": "ROAS"},
-                            color_discrete_sequence=[COLOR_SCHEME["primary"]]
-                        )
-                        
-                        roas_hist.add_vline(
-                            x=campaign['roas'],
-                            line_dash="dash",
-                            line_color="red",
-                            annotation_text="Current ROAS"
-                        )
-                        
-                        roas_hist.update_layout(
-                            height=300,
-                            margin=dict(l=20, r=20, t=40, b=20)
-                        )
-                        
-                        st.plotly_chart(roas_hist, use_container_width=True)
-                    
-                    with col2:
-                        # Profit distribution
-                        profit_hist = px.histogram(
-                            sim_results, 
-                            x="profit", 
-                            nbins=30,
-                            title="Profit Distribution",
-                            labels={"profit": "Profit"},
-                            color_discrete_sequence=[COLOR_SCHEME["secondary"]]
-                        )
-                        
-                        profit_hist.add_vline(
-                            x=campaign['profit'],
-                            line_dash="dash",
-                            line_color="red",
-                            annotation_text="Current Profit"
-                        )
-                        
-                        profit_hist.update_layout(
-                            height=300,
-                            margin=dict(l=20, r=20, t=40, b=20)
-                        )
-                        
-                        st.plotly_chart(profit_hist, use_container_width=True)
-                    
-                    # Risk analysis
-                    st.markdown("### Risk Analysis")
-                    
-                    # Calculate risk metrics
-                    prob_profit = (sim_results['profit'] > 0).mean() * 100
-                    prob_better_roas = (sim_results['roas'] > campaign['roas']).mean() * 100
-                    prob_better_profit = (sim_results['profit'] > campaign['profit']).mean() * 100
-                    
-                    worst_case_profit = sim_results['profit'].quantile(0.05)
-                    expected_profit = sim_results['profit'].mean()
-                    best_case_profit = sim_results['profit'].quantile(0.95)
-                    
-                    # Display risk metrics
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        display_enhanced_metric(
-                            "Prob. of Profit", 
-                            prob_profit,
-                            suffix="%", 
-                            badge="success" if prob_profit > 80 else ("warning" if prob_profit > 50 else "danger"),
-                            help_text="Probability of having positive profit",
-                            formatter=lambda x: f"{x:.1f}"
-                        )
-                    
-                    with col2:
-                        display_enhanced_metric(
-                            "Prob. of Better ROAS", 
-                            prob_better_roas,
-                            suffix="%", 
-                            badge="success" if prob_better_roas > 60 else ("warning" if prob_better_roas > 40 else "danger"),
-                            help_text="Probability of having better ROAS than current",
-                            formatter=lambda x: f"{x:.1f}"
-                        )
-                    
-                    with col3:
-                        display_enhanced_metric(
-                            "Prob. of Better Profit", 
-                            prob_better_profit,
-                            suffix="%", 
-                            badge="success" if prob_better_profit > 60 else ("warning" if prob_better_profit > 40 else "danger"),
-                            help_text="Probability of having better profit than current",
-                            formatter=lambda x: f"{x:.1f}"
-                        )
-                    
-                    with col4:
-                        performance_risk = 100 - prob_profit
-                        display_enhanced_metric(
-                            "Performance Risk", 
-                            performance_risk,
-                            suffix="%", 
-                            badge="success" if performance_risk < 20 else ("warning" if performance_risk < 50 else "danger"),
-                            help_text="Risk of unprofitable performance",
-                            formatter=lambda x: f"{x:.1f}"
-                        )
-                    
-                    # Profit range
-                    st.markdown("#### Expected Profit Range")
-                    
-                    profit_range_html = f"""
-                    <div style="display: flex; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
-                        <div style="flex: 1; text-align: center; padding: 10px; background-color: {COLOR_SCHEME["negative"]}20; border-radius: 5px; margin-right: 10px;">
-                            <div style="font-size: 0.9rem; font-weight: bold;">Worst Case (5%)</div>
-                            <div style="font-size: 1.4rem;">${worst_case_profit:.2f}</div>
-                        </div>
-                        <div style="flex: 1; text-align: center; padding: 10px; background-color: {COLOR_SCHEME["primary"]}20; border-radius: 5px; margin-right: 10px;">
-                            <div style="font-size: 0.9rem; font-weight: bold;">Expected</div>
-                            <div style="font-size: 1.4rem;">${expected_profit:.2f}</div>
-                        </div>
-                        <div style="flex: 1; text-align: center; padding: 10px; background-color: {COLOR_SCHEME["positive"]}20; border-radius: 5px;">
-                            <div style="font-size: 0.9rem; font-weight: bold;">Best Case (95%)</div>
-                            <div style="font-size: 1.4rem;">${best_case_profit:.2f}</div>
-                        </div>
-                    </div>
-                    """
-                    
-                    st.markdown(profit_range_html, unsafe_allow_html=True)
-                    
-                    # Correlation analysis
-                    st.markdown("#### Sensitivity Analysis")
-                    st.caption("Correlation between input parameters and profit/ROAS")
-                    
-                    # Calculate correlations
-                    correlations = sim_results[['ctr', 'conversion_rate', 'avg_cpc', 
-                                              'ad_spend', 'profit', 'roas']].corr()
-                    
-                    # Sensitivity to profit
-                    profit_corr = correlations['profit'].drop(['profit', 'roas']).sort_values(ascending=False)
-                    roas_corr = correlations['roas'].drop(['profit', 'roas']).sort_values(ascending=False)
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        # Profit sensitivity
-                        profit_corr_fig = px.bar(
-                            x=profit_corr.values,
-                            y=profit_corr.index,
-                            orientation='h',
-                            title="Factors Affecting Profit",
-                            labels={"x": "Correlation", "y": "Factor"},
-                            color=profit_corr.values,
-                            color_continuous_scale=px.colors.sequential.Blues,
-                        )
-                        
-                        profit_corr_fig.update_layout(
-                            height=300,
-                            margin=dict(l=20, r=20, t=40, b=20),
-                            yaxis={'categoryorder': 'total ascending'}
-                        )
-                        
-                        st.plotly_chart(profit_corr_fig, use_container_width=True)
-                    
-                    with col2:
-                        # ROAS sensitivity
-                        roas_corr_fig = px.bar(
-                            x=roas_corr.values,
-                            y=roas_corr.index,
-                            orientation='h',
-                            title="Factors Affecting ROAS",
-                            labels={"x": "Correlation", "y": "Factor"},
-                            color=roas_corr.values,
-                            color_continuous_scale=px.colors.sequential.Greens,
-                        )
-                        
-                        roas_corr_fig.update_layout(
-                            height=300,
-                            margin=dict(l=20, r=20, t=40, b=20),
-                            yaxis={'categoryorder': 'total ascending'}
-                        )
-                        
-                        st.plotly_chart(roas_corr_fig, use_container_width=True)
-                else:
-                    st.error(sim_message)
-    
-    # AI-powered insights
-    st.markdown("## AI-Powered Insights")
-    
-    if st.session_state.api_key_status == "valid":
-        insights = get_ai_campaign_insights(analyzer.campaigns, campaign['campaign_name'])
-        st.markdown(insights)
-    else:
-        st.info("""
-        AI-powered campaign recommendations require an OpenAI API key. 
-        Please ensure your API key is correctly set in the Streamlit secrets.
-        """)
-    
-    # Campaign actions
-    st.markdown("## Campaign Actions")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("Edit Campaign"):
-            st.session_state.edit_campaign = campaign_uid
-            st.session_state.view = "edit_campaign"
-            st.rerun()
-    
-    with col2:
-        if st.button("Clone Campaign"):
-            success, message = analyzer.clone_campaign(campaign_uid)
-            if success:
-                show_toast(message, "success")
-                st.session_state.view = "dashboard"
-                st.rerun()
-            else:
-                show_toast(message, "error")
-    
-    with col3:
-        if st.button("Delete Campaign", type="primary"):
-            if analyzer.delete_campaign(campaign_uid):
-                show_toast("Campaign deleted successfully", "success")
-                st.session_state.view = "dashboard"
-                st.rerun()
-            else:
-                show_toast("Failed to delete campaign", "error")
-
-def display_edit_campaign(campaign_uid: str):
-    """Display form for editing an existing campaign."""
-    campaign = analyzer.get_campaign(campaign_uid)
-    
-    if not campaign:
-        st.error("Campaign not found. It may have been deleted.")
-        if st.button("Back to Dashboard"):
-            st.session_state.view = "dashboard"
-            st.rerun()
-        return
-    
-    # Breadcrumb
-    display_breadcrumb([
-        ("Dashboard", "#"),
-        ("Campaigns", "#"),
-        (campaign['campaign_name'], "#"),
-        ("Edit", "")
-    ])
-    
-    # Header with back button
-    col1, col2 = st.columns([1, 5])
-    
-    with col1:
-        if st.button("← Back"):
-            st.session_state.selected_campaign = campaign_uid
-            st.session_state.view = "campaign_details"
-            st.rerun()
-    
-    with col2:
-        st.title(f"Edit Campaign: {campaign['campaign_name']}")
-    
-    with st.form(key="edit_campaign_form"):
-        st.subheader("Campaign Information")
-        
-        # Basic Information
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            campaign_name = st.text_input("Campaign Name", 
-                                      value=campaign['campaign_name'],
-                                      help="A descriptive name for this marketing campaign")
-            
-            product_name = st.text_input("Product Name", 
-                                     value=campaign['product_name'],
-                                     help="The product being advertised")
-            
-            # Channel selection
-            channel = st.selectbox("Marketing Channel", 
-                                DEFAULT_CHANNELS,
-                                index=DEFAULT_CHANNELS.index(campaign['channel']) 
-                                    if campaign['channel'] in DEFAULT_CHANNELS else 0,
-                                help="The platform or channel where the campaign is running")
-        
-        with col2:
-            category = st.selectbox("Product Category", 
-                                 DEFAULT_CATEGORIES,
-                                 index=DEFAULT_CATEGORIES.index(campaign['category']) 
-                                    if campaign['category'] in DEFAULT_CATEGORIES else 0,
-                                 help="The category this product belongs to")
-            
-            start_date = st.date_input("Start Date", 
-                                     datetime.strptime(campaign['start_date'], '%Y-%m-%d'),
-                                     help="When the campaign started")
-            
-            end_date = st.date_input("End Date", 
-                                   datetime.strptime(campaign['end_date'], '%Y-%m-%d'),
-                                   help="When the campaign ended")
-        
-        # Marketing Metrics
-        st.markdown("### Marketing Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            ad_spend = st.number_input("Ad Spend ($)", 
-                                    value=campaign['ad_spend'],
-                                    min_value=0.0, 
-                                    format="%.2f", 
-                                    help="Total amount spent on ads")
-            
-            impressions = st.number_input("Impressions", 
-                                       value=int(campaign['impressions']),
-                                       min_value=0, 
-                                       help="Total number of ad impressions")
-        
-        with col2:
-            clicks = st.number_input("Clicks", 
-                                  value=int(campaign['clicks']),
-                                  min_value=0, 
-                                  help="Total number of clicks on ads")
-            
-            conversions = st.number_input("Conversions", 
-                                       value=int(campaign['conversions']),
-                                       min_value=0, 
-                                       help="Total number of conversions or sales")
-        
-        with col3:
-            revenue = st.number_input("Revenue ($)", 
-                                   value=campaign['revenue'],
-                                   min_value=0.0, 
-                                   format="%.2f", 
-                                   help="Total revenue generated from the campaign")
-            
-            target_acos = st.number_input("Target ACoS (%)", 
-                                       value=campaign['target_acos'],
-                                       min_value=0.0, 
-                                       max_value=100.0, 
-                                       format="%.2f", 
-                                       help="Target Advertising Cost of Sales percentage")
-        
-        # Product Economics
-        st.markdown("### Product Economics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            product_cost = st.number_input("Product Cost ($)", 
-                                        value=campaign['product_cost'],
-                                        min_value=0.0, 
-                                        format="%.2f", 
-                                        help="Cost to produce or acquire the product")
-            
-            selling_price = st.number_input("Selling Price ($)", 
-                                         value=campaign['selling_price'],
-                                         min_value=0.0, 
-                                         format="%.2f", 
-                                         help="Price the product is sold for")
-        
-        with col2:
-            shipping_cost = st.number_input("Shipping Cost ($)", 
-                                         value=campaign['shipping_cost'],
-                                         min_value=0.0, 
-                                         format="%.2f",
-                                         help="Cost to ship the product")
-            
-            amazon_fees = st.number_input("Platform Fees ($)", 
-                                       value=campaign['amazon_fees'],
-                                       min_value=0.0, 
-                                       format="%.2f",
-                                       help="Amazon referral, FBA fees, or other platform fees")
-        
-        with col3:
-            notes = st.text_area("Campaign Notes", 
-                              value=campaign.get('notes', ''),
-                              help="Additional details about the campaign")
-        
-        # Calculate and preview stats if we have data
-        if ad_spend > 0 and clicks > 0 and conversions > 0 and revenue > 0:
-            # Calculate metrics
-            avg_cpc = ad_spend / clicks if clicks > 0 else 0
-            ctr = (clicks / impressions) * 100 if impressions > 0 else 0
-            conversion_rate = (conversions / clicks) * 100 if clicks > 0 else 0
-            acos = (ad_spend / revenue) * 100 if revenue > 0 else 0
-            roas = revenue / ad_spend if ad_spend > 0 else 0
-            
-            # Calculate profit
-            ad_cost_per_sale = ad_spend / conversions if conversions > 0 else 0
-            profit_metrics = get_profit_metrics(
-                product_cost, selling_price, shipping_cost, amazon_fees, ad_cost_per_sale
-            )
-            profit_per_unit = profit_metrics["profit"]
-            profit = profit_per_unit * conversions
-            profit_margin = profit_metrics["profit_margin"]
-            
-            # Display preview
-            st.markdown("### Campaign Performance Preview")
-            
-            # Performance metrics
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("Avg. CPC", f"${avg_cpc:.2f}", 
-                        delta=f"{avg_cpc - campaign['avg_cpc']:.2f}" if campaign['avg_cpc'] > 0 else None,
-                        delta_color="inverse")
-                st.metric("CTR", f"{ctr:.2f}%",
-                        delta=f"{ctr - campaign['ctr']:.2f}%" if campaign['ctr'] > 0 else None)
-            
-            with col2:
-                st.metric("Conversion Rate", f"{conversion_rate:.2f}%",
-                        delta=f"{conversion_rate - campaign['conversion_rate']:.2f}%" if campaign['conversion_rate'] > 0 else None)
-                st.metric("ACoS", f"{acos:.2f}%", 
-                        delta=f"{campaign['acos'] - acos:.2f}%" if campaign['acos'] > 0 else None,
-                        delta_color="inverse")
-            
-            with col3:
-                st.metric("ROAS", f"{roas:.2f}x",
-                        delta=f"{roas - campaign['roas']:.2f}x" if campaign['roas'] > 0 else None)
-                st.metric("Profit Margin", f"{profit_margin:.2f}%",
-                        delta=f"{profit_margin - campaign['profit_margin']:.2f}%" if campaign['profit_margin'] > 0 else None)
-            
-            with col4:
-                st.metric("Total Profit", f"${profit:.2f}",
-                        delta=f"${profit - campaign['profit']:.2f}" if campaign['profit'] > 0 else None)
-                st.metric("Profit per Sale", f"${profit_per_unit:.2f}")
-        
-        # Submit buttons
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            cancel = st.form_submit_button("Cancel")
-            if cancel:
-                st.session_state.selected_campaign = campaign_uid
-                st.session_state.view = "campaign_details"
-                st.rerun()
-        
-        with col2:
-            submitted = st.form_submit_button("Save Changes")
-            
-            if submitted:
-                # Set loading state
-                st.session_state.is_loading = True
-                
-                # Update campaign
-                updated_data = {
-                    'campaign_name': campaign_name,
-                    'product_name': product_name,
-                    'channel': channel,
-                    'category': category,
-                    'start_date': start_date.strftime('%Y-%m-%d'),
-                    'end_date': end_date.strftime('%Y-%m-%d'),
-                    'ad_spend': ad_spend,
-                    'clicks': clicks,
-                    'impressions': impressions,
-                    'conversions': conversions,
-                    'revenue': revenue,
-                    'target_acos': target_acos,
-                    'product_cost': product_cost,
-                    'selling_price': selling_price,
-                    'shipping_cost': shipping_cost,
-                    'amazon_fees': amazon_fees,
-                    'notes': notes
-                }
-                
-                success, message = analyzer.update_campaign(campaign_uid, **updated_data)
-                
-                # Reset loading state
-                st.session_state.is_loading = False
-                
-                if success:
-                    show_toast(message, "success")
-                    st.session_state.selected_campaign = campaign_uid
-                    st.session_state.view = "campaign_details"
-                    st.rerun()
-                else:
-                    show_toast(message, "error")
-
-def display_channel_analysis():
-    """Display a detailed analysis of all marketing channels."""
-    st.title("Channel Performance Analysis")
-    
-    # Get data
-    df = analyzer.campaigns
-    if df.empty:
-        st.info("Add or import campaigns to see channel analysis.")
-        return
-    
-    # Get channel statistics
-    stats = analyzer.get_channel_statistics()
-    
-    # Display channel overview
-    st.subheader("Channel Performance Overview")
-    
-    # Pie chart for ad spend distribution
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Channel ad spend distribution
-        channel_spend = pd.DataFrame([(c['name'], c['ad_spend']) for c in stats['channels']], 
-                                  columns=['Channel', 'Ad Spend'])
-        
-        fig = px.pie(
-            channel_spend, 
-            values='Ad Spend', 
-            names='Channel',
-            title='Ad Spend Distribution by Channel',
-            color_discrete_sequence=px.colors.qualitative.Bold
-        )
-        
-        fig.update_traces(
-            textposition='inside', 
-            textinfo='percent+label',
-            hovertemplate='%{label}: $%{value:.2f} (%{percent})'
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        # Channel ROAS comparison
-        channel_roas = pd.DataFrame([(c['name'], c['roas']) for c in stats['channels']], 
-                                 columns=['Channel', 'ROAS'])
-        
-        fig = px.bar(
-            channel_roas.sort_values('ROAS', ascending=False),
-            x='Channel',
-            y='ROAS',
-            title='ROAS by Channel',
-            color='ROAS',
-            color_continuous_scale=px.colors.sequential.Viridis,
-            text_auto='.2f'
-        )
-        
-        fig.update_traces(textfont_size=12, textangle=0, textposition='outside', cliponaxis=False)
-        
-        fig.update_layout(
-            xaxis_title=None,
-            yaxis_title='ROAS (Return on Ad Spend)',
-            coloraxis_showscale=False
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Channel metrics comparison
-    st.subheader("Channel Metrics Comparison")
-    
-    # Prepare channel metrics for radar chart
-    channel_metrics = []
-    metric_names = ['ROAS', 'ACoS', 'Conversion Rate', 'Profit Margin', 'Revenue']
-    
-    # Normalize metrics for radar chart (0-1 scale)
-    max_roas = max([c['roas'] for c in stats['channels']]) if stats['channels'] else 1
-    max_acos = max([c['acos'] for c in stats['channels']]) if stats['channels'] else 1
-    max_conv = max([c['conversion_rate'] for c in stats['channels']]) if stats['channels'] else 1
-    max_margin = max([c['profit_margin'] for c in stats['channels']]) if stats['channels'] else 1
-    max_revenue = max([c['revenue'] for c in stats['channels']]) if stats['channels'] else 1
-    
-    for channel in stats['channels']:
-        # Normalize metrics (for ACoS, lower is better, so invert)
-        norm_roas = channel['roas'] / max_roas if max_roas > 0 else 0
-        norm_acos = 1 - (channel['acos'] / max_acos if max_acos > 0 else 0)  # Invert for radar
-        norm_conv = channel['conversion_rate'] / max_conv if max_conv > 0 else 0
-        norm_margin = channel['profit_margin'] / max_margin if max_margin > 0 else 0
-        norm_revenue = channel['revenue'] / max_revenue if max_revenue > 0 else 0
-        
-        channel_metrics.append({
-            'Channel': channel['name'],
-            'ROAS': norm_roas,
-            'ACoS': norm_acos,
-            'Conversion Rate': norm_conv,
-            'Profit Margin': norm_margin,
-            'Revenue': norm_revenue
-        })
-    
-    # Create radar chart
-    radar_fig = go.Figure()
-    
-    for channel in channel_metrics:
-        radar_fig.add_trace(go.Scatterpolar(
-            r=[channel[m] for m in metric_names],
-            theta=metric_names,
-            fill='toself',
-            name=channel['Channel']
-        ))
-    
-    radar_fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1]
-            )
-        ),
-        title="Channel Performance Comparison",
-        showlegend=True
-    )
-    
-    st.plotly_chart(radar_fig, use_container_width=True)
-    
-    # Channel metrics tables
-    st.subheader("Detailed Channel Metrics")
-    
-    # Create metrics table
-    metrics_df = pd.DataFrame([
-        {
-            'Channel': channel['name'],
-            'Ad Spend': f"${channel['ad_spend']:,.2f}",
-            'Revenue': f"${channel['revenue']:,.2f}",
-            'ROAS': f"{channel['roas']:.2f}x",
-            'ACoS': f"{channel['acos']:.2f}%",
-            'Profit': f"${channel['profit']:,.2f}",
-            'Margin': f"{channel['profit_margin']:.2f}%",
-            'Conv. Rate': f"{channel['conversion_rate']:.2f}%",
-            'Clicks': f"{channel['clicks']:,}",
-            'Conversions': f"{channel['conversions']:,}"
-        }
-        for channel in stats['channels']
-    ])
-    
-    st.dataframe(metrics_df, use_container_width=True, hide_index=True)
-    
-    # Channel trends (simulate trends for demo - in a real app this would use historical data)
-    st.subheader("Channel Trends Over Time")
-    
-    # Create dummy trend data
-    trend_data = []
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    
-    for channel in stats['channels']:
-        base_roas = channel['roas']
-        base_spend = channel['ad_spend'] / 6  # Divide by 6 months for monthly average
-        
-        for i, month in enumerate(months):
-            # Add some random variation for the trend
-            roas_value = base_roas * (1 + np.random.uniform(-0.2, 0.2))
-            spend_value = base_spend * (1 + np.random.uniform(-0.15, 0.25))
-            
-            trend_data.append({
-                'Channel': channel['name'],
-                'Month': month,
-                'Month_Num': i + 1,
-                'ROAS': roas_value,
-                'Ad Spend': spend_value
-            })
-    
-    trend_df = pd.DataFrame(trend_data)
-    
-    # Create plotly figure
-    fig = make_subplots(rows=1, cols=2, subplot_titles=("ROAS Trend by Channel", "Ad Spend Trend by Channel"))
-    
-    # ROAS trends
-    for channel in stats['channels']:
-        channel_data = trend_df[trend_df['Channel'] == channel['name']]
-        
-        fig.add_trace(
-            go.Scatter(
-                x=channel_data['Month'],
-                y=channel_data['ROAS'],
-                mode='lines+markers',
-                name=channel['name'],
-                line=dict(color=get_channel_color(channel['name']))
-            ),
-            row=1, col=1
-        )
-    
-    # Ad spend trends
-    for channel in stats['channels']:
-        channel_data = trend_df[trend_df['Channel'] == channel['name']]
-        
-        fig.add_trace(
-            go.Scatter(
-                x=channel_data['Month'],
-                y=channel_data['Ad Spend'],
-                mode='lines+markers',
-                name=channel['name'],
-                showlegend=False,
-                line=dict(color=get_channel_color(channel['name']))
-            ),
-            row=1, col=2
-        )
-    
-    # Update layout
-    fig.update_layout(
-        height=400,
-        yaxis_title="ROAS",
-        yaxis2_title="Ad Spend ($)",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
-    )
-    
-    # Update y-axis format
-    fig.update_yaxes(tickprefix="$", row=1, col=2)
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Channel performance map (heatmap)
-    st.subheader("Channel Performance Matrix")
-    
-    # Create performance matrix data
-    performance_data = []
-    categories = df['category'].unique()
-    
-    for channel in stats['channels']:
-        channel_name = channel['name']
-        
-        for category in categories:
-            # Filter data for this channel and category
-            filtered = df[(df['channel'] == channel_name) & (df['category'] == category)]
-            
-            if not filtered.empty:
-                avg_roas = filtered['roas'].mean()
-                avg_acos = filtered['acos'].mean()
-                avg_margin = filtered['profit_margin'].mean()
-                total_spend = filtered['ad_spend'].sum()
-                
-                # Calculate performance score
-                performance_score = (
-                    (avg_roas / 5) * 0.4 +  # Scale ROAS to 0-1 (assume 5 is excellent)
-                    (1 - (avg_acos / 40)) * 0.3 +  # Scale ACoS to 0-1 (lower is better)
-                    (avg_margin / 40) * 0.3  # Scale margin to 0-1 (assume 40% is excellent)
-                ) * 100
-                
-                performance_data.append({
-                    'Channel': channel_name,
-                    'Category': category,
-                    'Performance Score': performance_score,
-                    'ROAS': avg_roas,
-                    'ACoS': avg_acos,
-                    'Profit Margin': avg_margin,
-                    'Ad Spend': total_spend
-                })
-    
-    # Create dataframe
-    perf_df = pd.DataFrame(performance_data)
-    
-    if not perf_df.empty:
-        # Create heatmap
-        perf_pivot = perf_df.pivot(index='Channel', columns='Category', values='Performance Score')
-        
-        # Create custom hover text
-        hover_text = []
-        for channel in perf_pivot.index:
-            channel_hover = []
-            for category in perf_pivot.columns:
-                filtered = perf_df[(perf_df['Channel'] == channel) & (perf_df['Category'] == category)]
-                
-                if not filtered.empty:
-                    row = filtered.iloc[0]
-                    text = f"Channel: {channel}<br>" \
-                          f"Category: {category}<br>" \
-                          f"Performance: {row['Performance Score']:.1f}/100<br>" \
-                          f"ROAS: {row['ROAS']:.2f}x<br>" \
-                          f"ACoS: {row['ACoS']:.2f}%<br>" \
-                          f"Margin: {row['Profit Margin']:.2f}%<br>" \
-                          f"Spend: ${row['Ad Spend']:.2f}"
-                else:
-                    text = f"No data"
-                
-                channel_hover.append(text)
-            
-            hover_text.append(channel_hover)
-        
-        # Create heatmap
-        heatmap = go.Figure(data=go.Heatmap(
-            z=perf_pivot.values,
-            x=perf_pivot.columns,
-            y=perf_pivot.index,
-            colorscale='Viridis',
-            hoverongaps=False,
-            text=hover_text,
-            hoverinfo='text',
-            colorbar=dict(
-                title='Performance<br>Score',
-                titleside='top',
-                tickmode='array',
-                tickvals=[0, 25, 50, 75, 100],
-                ticktext=['Poor', 'Below Avg', 'Average', 'Good', 'Excellent'],
-                ticks='outside'
-            )
-        ))
-        
-        heatmap.update_layout(
-            title='Channel Performance by Product Category',
-            xaxis_title='Product Category',
-            yaxis_title='Channel',
-            height=400
-        )
-        
-        st.plotly_chart(heatmap, use_container_width=True)
-    
-    # Channel recommendations
-    st.subheader("Channel Recommendations")
-    
-    # Get AI insights if available
-    if st.session_state.api_key_status == "valid":
-        insights = get_ai_campaign_insights(analyzer.campaigns)
-        st.markdown(insights)
-    else:
-        # Calculate basic recommendations without AI
-        recommendations = []
-        
-        # Best performing channel
-        if stats['best_channel_roas']:
-            recommendations.append(f"""
-            **Increase investment in {stats['best_channel_roas']['name']}**
-            
-            This channel shows the highest ROAS at {stats['best_channel_roas']['roas']:.2f}x, 
-            indicating strong performance. Consider increasing budget allocation to this channel
-            to maximize returns.
-            """)
-        
-        # Underperforming channels
-        if stats['worst_channel_roas'] and stats['worst_channel_roas']['roas'] < 2:
-            recommendations.append(f"""
-            **Optimize or reduce spend on {stats['worst_channel_roas']['name']}**
-            
-            This channel shows the lowest ROAS at {stats['worst_channel_roas']['roas']:.2f}x.
-            Consider optimizing campaigns or reducing budget allocation if performance doesn't improve.
-            """)
-        
-        # Category specialization
-        if not perf_df.empty:
-            # Find best channel-category combinations
-            top_combos = perf_df.sort_values('Performance Score', ascending=False).head(3)
-            
-            for _, combo in top_combos.iterrows():
-                recommendations.append(f"""
-                **Focus on {combo['Category']} products in {combo['Channel']}**
-                
-                This combination shows strong performance with a score of {combo['Performance Score']:.1f}/100,
-                ROAS of {combo['ROAS']:.2f}x, and profit margin of {combo['Profit Margin']:.2f}%.
-                Consider developing more campaigns for this product category on this channel.
-                """)
-        
-        # Display recommendations
-        for i, rec in enumerate(recommendations[:5], 1):  # Limit to top 5 recommendations
-            st.markdown(f"### Recommendation {i}")
-            st.markdown(rec)
-
-def display_insights_page():
-    """Display AI-powered insights and recommendations."""
-    st.title("AI-Powered Marketing Insights")
-    
-    if analyzer.campaigns.empty:
-        st.info("Add or import campaigns to see AI-powered insights.")
-        return
-    
-    # Check API key status
-    if st.session_state.api_key_status != "valid":
-        st.warning("""
-        AI-powered insights require an OpenAI API key. 
-        Please check your Streamlit secrets to ensure your API key is correctly set.
-        """)
-        
-        st.markdown("""
-        ### Sample Insights (Preview Only)
-        
-        The following insights are examples of what you would see with an active API key:
-        """)
-        
-        # Display mock insights
-        with st.expander("Overall Marketing Performance", expanded=True):
-            st.markdown("""
-            Based on your campaign data, I've identified several key insights and opportunities:
-
-            1. **Amazon PPC campaigns are outperforming other channels** with an average ROAS of 5.49x compared to 4.20x for Paid Social and 3.90x for Walmart. Consider shifting 10-15% of budget from lower-performing channels to Amazon PPC.
-
-            2. **Your TENS Unit campaign shows the strongest conversion rate** at 5.00%, significantly above your average of 3.45%. Analyze what's working well in this campaign and apply similar strategies to other products.
-
-            3. **Website PPC for Walkers is underperforming your target ACoS** by 0.12%. Review the keyword strategy and consider implementing more negative keywords to reduce wasted spend.
-
-            4. **Paid Social has the lowest conversion rate** at 2.00% but high click-through rates. This suggests your creative is engaging but the landing page or offer may need optimization.
-
-            5. **Mobility products have your highest profit margins** across all channels (average 42.3%). Consider expanding your product range in this category or increasing ad spend where ROAS remains above 4.0x.
-            """)
-        
-        with st.expander("Budget Optimization Recommendations"):
-            st.markdown("""
-            Based on your current campaign performance, here are my top budget optimization recommendations:
-
-            ### Recommended Budget Reallocation
-            
-            | Channel | Current Spend | Recommended Spend | Change | Estimated Impact |
-            |---------|---------------|-------------------|--------|------------------|
-            | Amazon PPC | $7,800 | $9,360 | +$1,560 (20%) | Additional $9,828 revenue, $2,948 profit |
-            | Vive Website | $3,200 | $3,680 | +$480 (15%) | Additional $1,910 revenue, $573 profit |
-            | Walmart | $1,500 | $1,200 | -$300 (-20%) | Minimal revenue loss with improved efficiency |
-            | Paid Social | $4,000 | $3,000 | -$1,000 (-25%) | Improved overall ROAS by focusing on top-performing segments |
-            
-            ### Specific Recommendations:
-            
-            1. **Increase Amazon PPC budget by 20%** focused on Mobility Scooters and TENS Units, which show strong ROAS and profit margins.
-               
-            2. **Increase Website PPC budget by 15%** with improved targeting to maintain current ACoS.
-               
-            3. **Decrease Walmart spend by 20%** until conversion rates improve - reallocate to better-performing channels.
-               
-            4. **Reduce Paid Social spend by 25%** while improving targeting to focus only on high-converting audience segments.
-            
-            Implementing these changes could improve your overall marketing ROI by approximately 18-22%.
-            """)
-        
-        with st.expander("Campaign Optimization Opportunities"):
-            st.markdown("""
-            Here are specific optimization opportunities I've identified for your campaigns:
-
-            ### Amazon PPC - TENS Units
-            
-            This campaign shows strong fundamentals with a 4.69x ROAS and 21.33% ACoS, but has optimization potential:
-            
-            1. **Bid Optimization**: Your average CPC of $0.80 is below market average for similar products, suggesting opportunity to increase bids by 15-20% to gain more impression share without significantly impacting ACoS.
-            
-            2. **Targeting Expansion**: Add 10-15 additional highly relevant keywords based on current converting search terms. This could increase impressions by approximately 30-40% while maintaining similar conversion rates.
-            
-            3. **Product Listing Enhancement**: Improve product images and A+ content to increase conversion rate by an estimated 0.5-1.0 percentage points.
-            
-            **Expected Impact**: These changes could increase revenue by 25-30% while maintaining current ACoS, resulting in approximately $3,300-$3,900 additional revenue and $950-$1,100 additional profit.
-
-            ### Meta Ads - Health Products
-            
-            This campaign has the lowest conversion rate (2.00%) despite good click-through rates, indicating targeting or landing page issues:
-            
-            1. **Audience Refinement**: Create more targeted audience segments based on past purchaser behavior and interest categories. Focus on demographics that match your highest converting customers.
-            
-            2. **Creative Testing**: Implement A/B testing with 3-4 variations of ad creative focusing on different value propositions (price, quality, comfort, warranty).
-            
-            3. **Landing Page Optimization**: Create dedicated landing pages for each ad group with consistent messaging and stronger calls-to-action. Add social proof and testimonials prominently.
-            
-            **Expected Impact**: These optimizations could improve conversion rates from 2.00% to 3.00-3.50%, increasing revenue by approximately $8,400-$12,600 while maintaining the same ad spend.
-            """)
-        
-        return
-    
-    # Display AI-powered insights
-    # Overall insights
-    with st.expander("Overall Marketing Performance", expanded=True):
-        insights = get_ai_campaign_insights(analyzer.campaigns)
-        st.markdown(insights)
-    
-    # Specific campaign insights
-    st.subheader("Campaign-Specific Insights")
-    
-    # Let user select a campaign
-    campaign_names = analyzer.campaigns['campaign_name'].unique().tolist()
-    selected_campaign = st.selectbox("Select a campaign for detailed insights", campaign_names)
-    
-    if selected_campaign:
-        campaign_insights = get_ai_campaign_insights(
-            analyzer.campaigns, 
-            selected_campaign
-        )
-        st.markdown(campaign_insights)
-    
-    # Advanced insights
-    st.subheader("Advanced Marketing Analytics")
-    
-    tab1, tab2, tab3 = st.tabs(["Budget Optimization", "Channel Strategy", "Product Recommendations"])
-    
-    with tab1:
-        insights_placeholder = st.empty()
-        
-        with insights_placeholder:
-            st.info("Generating budget optimization insights... This may take a few seconds.")
-        
-        # Custom prompt for budget optimization
-        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis for medical devices."
-        user_prompt = """
-        Based on the campaign data, provide specific budget optimization recommendations for a medical device company. 
-        Include suggested budget allocations across channels, expected ROAS impact, and justification.
-        Present your recommendations in a structured format with concrete numbers and percentages.
-        Focus on optimizing marketing spend for healthcare and medical device products.
-        """
-        
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # Call the API
-        insights = call_openai_api(messages)
-        
-        with insights_placeholder:
-            st.markdown(insights)
-    
-    with tab2:
-        insights_placeholder = st.empty()
-        
-        with insights_placeholder:
-            st.info("Generating channel strategy insights... This may take a few seconds.")
-        
-        # Custom prompt for channel strategy
-        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis for medical devices."
-        user_prompt = """
-        Based on the campaign data, provide a detailed channel strategy analysis for medical device marketing.
-        Compare the strengths and weaknesses of each channel, identify which medical device categories perform best on each channel,
-        and recommend how to optimize the channel mix for maximum ROI.
-        Include specific strategy recommendations for each major channel considering healthcare advertising regulations and best practices.
-        """
-        
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # Call the API
-        insights = call_openai_api(messages)
-        
-        with insights_placeholder:
-            st.markdown(insights)
-    
-    with tab3:
-        insights_placeholder = st.empty()
-        
-        with insights_placeholder:
-            st.info("Generating product recommendations... This may take a few seconds.")
-        
-        # Custom prompt for product recommendations
-        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis for Vive Health, a medical device company."
-        user_prompt = """
-        Based on the campaign data, provide specific medical device product marketing recommendations.
-        Identify which medical device products have the highest ROI potential, which need optimization,
-        and suggest specific advertising strategies for different healthcare product categories.
-        Consider profit margins, conversion rates, and channel performance in your analysis.
-        Provide concrete recommendations tailored to medical device marketing, taking into account 
-        healthcare regulations and customer demographics for medical products.
-        """
-        
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # Call the API
-        insights = call_openai_api(messages)
-        
-        with insights_placeholder:
-            st.markdown(insights)
-
-def display_medical_device_chat():
-    """Display a specialized AI chat interface for medical device marketing questions."""
-    st.title("Medical Device Marketing Assistant")
-    
-    st.markdown("""
-    This AI assistant specializes in medical device marketing strategy and PPC campaign optimization. 
-    Ask questions about marketing healthcare products, targeting healthcare professionals or patients, 
-    optimizing ad campaigns for specific device categories, or anything related to medical device marketing.
-    """)
-    
-    # Initialize chat messages if not already done
-    if 'chat_messages' not in st.session_state:
-        st.session_state.chat_messages = []
-    
-    # Create a container for chat messages
-    chat_container = st.container()
-    
-    # Input for new messages
-    with st.form(key="chat_form", clear_on_submit=True):
-        col1, col2 = st.columns([5, 1])
-        
-        with col1:
-            user_input = st.text_area("Your message:", key="chat_input", height=100)
-        
-        with col2:
-            submit_button = st.form_submit_button("Send")
-    
-    # Clear chat button
-    if st.button("Clear Chat History"):
-        st.session_state.chat_messages = []
-        st.rerun()
-    
-    # Process input and generate response
-    if submit_button and user_input:
-        # Add user message to chat history
-        st.session_state.chat_messages.append({"role": "user", "content": user_input})
-        
-        # Get AI response
-        with st.spinner("Generating response..."):
-            # Check if API key is valid
-            if st.session_state.api_key_status == "valid":
-                ai_response = get_ai_medical_device_chat_response(st.session_state.chat_messages)
-            else:
-                ai_response = "API key is not configured or invalid. Please check your Streamlit secrets to ensure your OpenAI API key is correctly set."
-        
-        # Add AI response to chat history
-        st.session_state.chat_messages.append({"role": "assistant", "content": ai_response})
-        
-        # Force a rerun to display the updated messages
-        st.rerun()
-    
-    # Display chat messages
-    with chat_container:
-        for message in st.session_state.chat_messages:
-            if message["role"] == "user":
-                st.markdown(f"""
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-                    <div style="background-color: {COLOR_SCHEME['primary']}; color: white; padding: 10px 15px; 
-                    border-radius: 15px 15px 0 15px; max-width: 80%; margin-left: auto;">
-                        {message["content"]}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-                    <div style="background-color: #f0f2f6; padding: 10px 15px; 
-                    border-radius: 15px 15px 15px 0; max-width: 80%;">
-                        {message["content"]}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-    
-    # Sample questions if chat is empty
-    if not st.session_state.chat_messages:
-        st.markdown("### Sample Questions to Ask:")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("""
-            - What are the best marketing channels for mobility aids?
-            - How can we optimize our Amazon PPC campaigns for medical devices?
-            - What regulatory considerations should we keep in mind for medical device marketing?
-            - How can we improve conversion rates for healthcare products?
-            """)
-        
-        with col2:
-            st.markdown("""
-            - What are effective targeting strategies for healthcare professionals?
-            - How should we structure ad campaigns for different medical device categories?
-            - What are typical ROAS benchmarks for medical device PPC campaigns?
-            - How can we improve our product listings for medical devices?
-            """)
-
-def display_settings_page():
-    """Display application settings page."""
-    st.title("Application Settings")
-    
-    # Display tabs for different settings sections
-    tab1, tab2, tab3 = st.tabs(["General Settings", "Data Management", "API Settings"])
-    
-    with tab1:
-        st.subheader("Application Preferences")
-        
-        # App mode selection
-        app_mode = st.radio(
-            "Application Mode",
-            ["Basic", "Advanced"],
-            index=0 if st.session_state.app_mode == "Basic" else 1,
-            horizontal=True,
-            help="Basic mode simplifies the interface, Advanced shows more features and metrics"
-        )
-        
-        if app_mode != st.session_state.app_mode:
-            st.session_state.app_mode = app_mode
-            st.success(f"Application mode changed to {app_mode}")
-            st.rerun()
-        
-        # Color scheme selection
-        color_schemes = list(COLOR_SCHEMES.keys())
-        color_scheme = st.selectbox(
-            "Color Scheme",
-            color_schemes,
-            index=color_schemes.index(st.session_state.color_scheme),
-            help="Select a color scheme for the application"
-        )
-        
-        if color_scheme != st.session_state.color_scheme:
-            st.session_state.color_scheme = color_scheme
-            st.success(f"Color scheme changed to {color_scheme}")
-            st.rerun()
-        
-        # Default channel and category settings
-        st.subheader("Default Values")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            default_channels = st.multiselect(
-                "Default Marketing Channels",
-                ["Amazon", "Vive Website", "Walmart", "eBay", "Paid Social", 
-                "Google Ads", "Microsoft Ads", "Meta Ads", "TikTok Ads", "Pinterest Ads"],
-                DEFAULT_CHANNELS,
-                help="Set default channels that appear in dropdown menus"
-            )
-        
-        with col2:
-            default_categories = st.multiselect(
-                "Default Product Categories",
-                ["Mobility", "Pain Relief", "Bathroom Safety", "Bedroom", "Daily Living Aids",
-                "Wheelchairs", "Rollators", "Walkers", "Canes", "Scooters", "TENS Units", 
-                "Hot & Cold Therapy", "Braces & Supports"],
-                DEFAULT_CATEGORIES,
-                help="Set default product categories that appear in dropdown menus"
-            )
-        
-        # Save default values
-        if st.button("Save Default Values"):
-            global DEFAULT_CHANNELS, DEFAULT_CATEGORIES
-            DEFAULT_CHANNELS = default_channels if default_channels else ["Amazon", "Vive Website"]
-            DEFAULT_CATEGORIES = default_categories if default_categories else ["Mobility", "Pain Relief"]
-            st.success("Default values saved successfully")
-    
-    with tab2:
-        st.subheader("Data Import/Export")
-        
-        # Export campaigns
-        if not analyzer.campaigns.empty:
-            export_data = analyzer.download_json()
-            
-            st.download_button(
-                label="Export Campaigns as JSON",
-                data=export_data,
-                file_name="viveroi_campaigns.json",
-                mime="application/json",
-                help="Download all campaign data as a JSON file for backup or transfer"
-            )
-            
-            # Excel export
-            excel_data = to_excel(analyzer.campaigns)
-            st.download_button(
-                label="Export All Campaigns to Excel",
-                data=excel_data,
-                file_name="viveroi_campaigns.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                help="Download all campaign data as an Excel file"
-            )
-        else:
-            st.info("No campaigns available to export. Add campaigns first.")
-        
-        # Import campaigns
-        st.subheader("Import Campaigns")
-        
-        uploaded_file = st.file_uploader(
-            "Upload JSON Campaign File", 
-            type=["json"],
-            help="Upload a JSON file containing campaign data"
-        )
-        
-        if uploaded_file is not None:
-            try:
-                json_str = uploaded_file.getvalue().decode("utf-8")
-                success = analyzer.upload_json(json_str)
-                
-                if success:
-                    st.success("Campaigns imported successfully!")
-                    st.rerun()
-                else:
-                    st.error("Failed to import campaigns. Invalid format.")
-            except Exception as e:
-                st.error(f"Error importing file: {str(e)}")
-        
-        # Data reset options
-        st.subheader("Data Management")
-        
-        danger_zone = st.expander("Danger Zone", expanded=False)
-        
-        with danger_zone:
-            st.warning("""
-            **Warning:** These actions cannot be undone. Make sure to export your data before proceeding.
-            """)
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Load Example Campaigns", key="load_examples"):
-                    # Clear existing campaigns if requested
-                    if st.checkbox("Clear existing campaigns first"):
-                        analyzer.campaigns = pd.DataFrame(columns=CAMPAIGN_COLUMNS)
-                    
-                    # Add examples
-                    num_added = analyzer.add_example_campaigns()
-                    
-                    if num_added > 0:
-                        st.success(f"Added {num_added} example campaigns successfully!")
-                        st.rerun()
-                    else:
-                        st.error("Failed to add example campaigns.")
-            
-            with col2:
-                if st.button("Clear All Campaigns", type="primary"):
-                    analyzer.campaigns = pd.DataFrame(columns=CAMPAIGN_COLUMNS)
-                    analyzer.save_data()
-                    st.success("All campaigns cleared successfully!")
-                    st.rerun()
-    
-    with tab3:
-        st.subheader("API Status")
-        
-        # Check OpenAI API key status
-        api_status_msg = ""
-        api_status_color = ""
-        
-        if 'api_key_status' in st.session_state:
-            if st.session_state.api_key_status == "valid":
-                api_status_msg = "✅ API key is valid and working"
-                api_status_color = "green"
-            elif st.session_state.api_key_status == "invalid":
-                api_status_msg = "❌ API key is invalid"
-                api_status_color = "red"
-            elif st.session_state.api_key_status == "missing":
-                api_status_msg = "⚠️ API key is not configured"
-                api_status_color = "orange"
-            else:
-                api_status_msg = "⚠️ Error checking API key"
-                api_status_color = "red"
-        
-        st.markdown(f"""
-        <p style="color: {api_status_color}; font-weight: 500;">{api_status_msg}</p>
-        """, unsafe_allow_html=True)
-        
-        # Option to refresh API key status
-        if st.button("Check API Key Status"):
-            check_openai_api_key()
-            st.rerun()
-        
-        st.markdown("""
-        ### OpenAI API Integration
-        
-        This application uses the OpenAI API to provide AI-powered marketing insights and recommendations
-        for medical device marketing. The API key should be configured in your Streamlit secrets.toml file.
-        
-        If the API key is not valid or missing, you can still use the application's core features, but
-        AI-powered insights will not be available.
-        
-        **API Features:**
-        - Generate detailed marketing insights and recommendations for medical devices
-        - Analyze campaign performance across different healthcare categories
-        - Get AI-powered optimization suggestions for medical device marketing
-        - Ask specific questions in the Medical Device Marketing Assistant chat
-        
-        The API integration is configured to use GPT-4o for optimal performance.
-        """)
-        
-        st.info("""
-        **Note for Administrators:** 
-        
-        The OpenAI API key is stored in the Streamlit secrets.toml file. To configure it:
-        
-        1. Create or edit your `.streamlit/secrets.toml` file
-        2. Add the following line: `openai_api_key = "your-api-key-here"`
-        3. Restart the Streamlit application
-        
-        This is a secure way to store your API key without exposing it in the code.
-        """)
-
-def setup_sidebar():
-    """Set up and display the sidebar navigation."""
-    with st.sidebar:
-        st.markdown(f"""
-        <div style="text-align: center; padding: 10px; margin-bottom: 20px;">
-            <h2 style="color: {COLOR_SCHEME['text_light']};">ViveROI Analytics</h2>
-            <p style="color: {COLOR_SCHEME['text_light']};">Version {APP_VERSION}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Main navigation
-        st.markdown("### Navigation")
-        
-        nav_options = [
-            ("Dashboard", "house", "dashboard"),
-            ("Campaigns", "file-text", "campaigns"),
-            ("Channel Analysis", "bar-chart-2", "channel_analysis"),
-            ("Insights", "lightbulb", "insights"),
-            ("MD Marketing Assistant", "message-circle", "md_assistant"),
-            ("Settings", "settings", "settings")
-        ]
-        
-        for option_name, icon, view_name in nav_options:
-            # Highlight active menu item
-            bg_color = COLOR_SCHEME["primary"] if st.session_state.view == view_name else "transparent"
-            text_color = COLOR_SCHEME["text_light"] if st.session_state.view != view_name else "white"
-            
-            if st.sidebar.button(
-                f"{option_name}", 
-                key=f"nav_{view_name}",
-                use_container_width=True,
-                type="secondary" if st.session_state.view != view_name else "primary"
-            ):
-                st.session_state.view = view_name
-                # Reset any selected campaign
-                if 'selected_campaign' in st.session_state:
-                    del st.session_state.selected_campaign
-                if 'edit_campaign' in st.session_state:
-                    del st.session_state.edit_campaign
-                st.rerun()
-        
-        # Campaign Wizard button
-        st.markdown("### Tools")
-        
-        if st.sidebar.button("Campaign Wizard", use_container_width=True):
-            st.session_state.view = "campaign_wizard"
-            st.rerun()
-        
-        # Additional sidebar sections based on app mode
-        if st.session_state.app_mode == "Advanced":
-            # Quick Stats
-            if not analyzer.campaigns.empty:
-                stats = analyzer.get_channel_statistics()
-                
-                st.markdown("### Quick Stats")
-                st.markdown(f"""
-                <div style="padding: 10px; background-color: {COLOR_SCHEME['sidebar_bg']}30; border-radius: 5px; margin-top: 10px;">
-                    <p style="color: {COLOR_SCHEME['text_light']}; margin: 0;">
-                        <strong>Campaigns:</strong> {stats['total_campaigns']}
-                    </p>
-                    <p style="color: {COLOR_SCHEME['text_light']}; margin: 0;">
-                        <strong>Ad Spend:</strong> ${stats['total_spend']:,.2f}
-                    </p>
-                    <p style="color: {COLOR_SCHEME['text_light']}; margin: 0;">
-                        <strong>ROAS:</strong> {stats['overall_roas']:.2f}x
-                    </p>
-                    <p style="color: {COLOR_SCHEME['text_light']}; margin: 0;">
-                        <strong>Total Profit:</strong> ${stats['total_profit']:,.2f}
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        # App info and help
-        st.markdown("### About")
-        st.markdown(f"""
-        <div style="font-size: 0.85rem; color: {COLOR_SCHEME['text_light']}; opacity: 0.8; margin-top: 20px;">
-            <p>ViveROI Analytics helps analyze and optimize marketing spend across channels for medical devices.</p>
-            <p style="margin-top: 10px;">Need help? Contact:</p>
-            <p>{SUPPORT_EMAIL}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# =============================================================================
-# Main Application
-# =============================================================================
-
-def main():
-    """Main application entry point."""
-    # Load custom CSS
-    load_custom_css()
-    
-    # Initialize view if not already set
-    if 'view' not in st.session_state:
-        st.session_state.view = "dashboard"
-    
-    # Set up sidebar
-    setup_sidebar()
-    
-    # Display loading spinner
-    display_loading_spinner()
-    
-    # Display views based on selection
-    if st.session_state.view == "dashboard":
-        display_header()
-        display_metrics_overview(analyzer.campaigns)
-        display_campaigns_table(analyzer.campaigns)
-    
-    elif st.session_state.view == "campaigns":
-        display_header()
-        display_campaigns_table(analyzer.campaigns)
-    
-    elif st.session_state.view == "channel_analysis":
-        display_header()
-        display_channel_analysis()
-    
-    elif st.session_state.view == "insights":
-        display_header()
-        display_insights_page()
-        
-    elif st.session_state.view == "md_assistant":
-        display_header()
-        display_medical_device_chat()
-    
-    elif st.session_state.view == "settings":
-        display_header()
-        display_settings_page()
-    
-    elif st.session_state.view == "campaign_wizard":
-        display_header()
-        if create_campaign_wizard():
-            # If wizard completed successfully, go back to dashboard
-            st.session_state.view = "dashboard"
-            st.rerun()
-    
-    elif st.session_state.view == "campaign_details" and 'selected_campaign' in st.session_state:
-        display_campaign_details(st.session_state.selected_campaign)
-    
-    elif st.session_state.view == "edit_campaign" and 'edit_campaign' in st.session_state:
-        display_edit_campaign(st.session_state.edit_campaign)
-    
-    else:
-        display_header()
-        st.error("Invalid view or missing parameters")
-        
-        if st.button("Return to Dashboard"):
-            st.session_state.view = "dashboard"
-            st.rerun()
-
-if __name__ == "__main__":
-    main()
