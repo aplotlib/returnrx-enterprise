@@ -5792,6 +5792,3 @@ def display_settings(analyzer: MarketingAnalyzer):
     **Build Date:** May 2025  
     **Developed for:** Vive Health E-commerce Team, contact alexander.popoff@vivehealth.com for support
     """)
-     
-if __name__ == "__main__":
-    main()
