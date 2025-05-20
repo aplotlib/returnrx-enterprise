@@ -5306,7 +5306,6 @@ def display_settings_page():
         
         # Save default values
         if st.button("Save Default Values"):
-            global DEFAULT_CHANNELS, DEFAULT_CATEGORIES
             DEFAULT_CHANNELS = default_channels if default_channels else ["Amazon", "Vive Website"]
             DEFAULT_CATEGORIES = default_categories if default_categories else ["Mobility", "Pain Relief"]
             st.success("Default values saved successfully")
