@@ -132,8 +132,6 @@ COLOR_SCHEMES = {
 if 'color_scheme' not in st.session_state:
     st.session_state.color_scheme = "vive"
 
-# Get current color scheme
-COLOR_SCHEME = COLOR_SCHEMES[st.session_state.color_scheme]
 
 # Example marketing campaigns for demonstration
 EXAMPLE_CAMPAIGNS = [
