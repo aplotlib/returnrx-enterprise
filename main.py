@@ -5884,6 +5884,7 @@ def display_amazon_listing_assistant():
 
 def display_settings_page():
     """Display application settings page."""
+    global DEFAULT_CHANNELS, DEFAULT_CATEGORIES
     st.title("Application Settings")
     
     # Display tabs for different settings sections
