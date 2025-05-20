@@ -16,6 +16,9 @@ import logging
 import requests
 import traceback
 from typing import Dict, List, Tuple, Optional, Union, Any
+import base64
+import xlsxwriter
+from fpdf import FPDF
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -26,7 +29,7 @@ logger = logging.getLogger("viveroi_analytics")
 warnings.filterwarnings('ignore')
 
 # Version info
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 SUPPORT_EMAIL = "alexander.popoff@vivehealth.com"
 
 # Fallback for rerun depending on Streamlit version
@@ -267,6 +270,15 @@ CAMPAIGN_COLUMNS = [
     'target_acos', 'performance_score', 'timestamp', 'notes'
 ]
 
+# Define medical device categories for AI assistant
+MEDICAL_DEVICE_CATEGORIES = [
+    "Mobility Aids", "Pain Management", "Orthopedic Supports", "Respiratory Devices",
+    "Bathroom Safety", "Bedroom Aids", "Daily Living Aids", "Diagnostics",
+    "Rehabilitation Equipment", "Wound Care", "Compression Therapy", "Patient Monitoring",
+    "Diabetes Management", "Incontinence Care", "Cold & Hot Therapy", "Vision Aids",
+    "Hearing Aids", "Electrotherapy", "Bariatric Equipment", "Pediatric Care"
+]
+
 # =============================================================================
 # Custom CSS Styling
 # =============================================================================
@@ -284,7 +296,6 @@ def load_custom_css():
         
         /* Headers */
         h1, h2, h3, h4, h5, h6 {{
-            font-family: 'Poppins', sans-serif;
             font-weight: 600;
             color: {COLOR_SCHEME["primary"]};
         }}
@@ -293,7 +304,7 @@ def load_custom_css():
         .stButton>button {{
             background-color: {COLOR_SCHEME["secondary"]};
             color: white;
-            border-radius: 8px;
+            border-radius: 6px;
             border: none;
             padding: 0.5rem 1rem;
             font-weight: 500;
@@ -315,7 +326,7 @@ def load_custom_css():
         .stSelectbox>div>div>div,
         .stTextArea>div>div>textarea,
         .stDateInput>div>div>input {{
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid #e2e8f0;
             padding: 0.75rem;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -346,7 +357,7 @@ def load_custom_css():
         
         /* Cards */
         .css-card {{
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1.5rem;
             background-color: {COLOR_SCHEME["card_bg"]};
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -363,7 +374,7 @@ def load_custom_css():
         /* Metric cards */
         .metric-container {{
             background-color: {COLOR_SCHEME["card_bg"]};
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1.25rem;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -378,14 +389,14 @@ def load_custom_css():
         }}
         
         .metric-value {{
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
             line-height: 1.2;
             margin-bottom: 0.5rem;
         }}
         
         .metric-label {{
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #64748b;
             font-weight: 500;
         }}
@@ -393,7 +404,7 @@ def load_custom_css():
         /* Enhanced Metric Card */
         .enhanced-metric {{
             background-color: {COLOR_SCHEME["card_bg"]};
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1.25rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
@@ -418,14 +429,14 @@ def load_custom_css():
         }}
         
         .enhanced-metric .value {{
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
             line-height: 1.2;
             margin-bottom: 0.5rem;
         }}
         
         .enhanced-metric .trend {{
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             margin-top: auto;
@@ -476,7 +487,7 @@ def load_custom_css():
             margin: 0 0 1rem 0;
             padding: 0.5rem 1rem;
             background-color: {COLOR_SCHEME["background"]};
-            border-radius: 8px;
+            border-radius: 6px;
         }}
         
         .breadcrumb-item {{
@@ -514,7 +525,7 @@ def load_custom_css():
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            border-radius: 8px 8px 0px 0px;
+            border-radius: 6px 6px 0px 0px;
             padding: 10px 18px;
             background-color: #f1f5f9;
             border: 1px solid #e2e8f0;
@@ -540,7 +551,7 @@ def load_custom_css():
             background-color: {COLOR_SCHEME["text_dark"]};
             color: #fff;
             text-align: left;
-            border-radius: 8px;
+            border-radius: 6px;
             padding: 12px;
             position: absolute;
             z-index: 1000;
@@ -564,7 +575,7 @@ def load_custom_css():
             background-color: {COLOR_SCHEME["hover"]};
             border-left: 5px solid {COLOR_SCHEME["neutral"]};
             padding: 1rem;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 6px 6px 0;
             margin: 1rem 0;
         }}
         
@@ -572,7 +583,7 @@ def load_custom_css():
             background-color: rgba(255, 193, 7, 0.1);
             border-left: 5px solid {COLOR_SCHEME["warning"]};
             padding: 1rem;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 6px 6px 0;
             margin: 1rem 0;
         }}
         
@@ -580,7 +591,7 @@ def load_custom_css():
             background-color: rgba(40, 167, 69, 0.1);
             border-left: 5px solid {COLOR_SCHEME["positive"]};
             padding: 1rem;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 6px 6px 0;
             margin: 1rem 0;
         }}
         
@@ -588,7 +599,7 @@ def load_custom_css():
             background-color: rgba(220, 53, 69, 0.1);
             border-left: 5px solid {COLOR_SCHEME["negative"]};
             padding: 1rem;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 6px 6px 0;
             margin: 1rem 0;
         }}
         
@@ -603,7 +614,7 @@ def load_custom_css():
         
         /* Charts */
         .js-plotly-plot {{
-            border-radius: 12px;
+            border-radius: 8px;
             background-color: {COLOR_SCHEME["card_bg"]};
             padding: 1rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -700,7 +711,7 @@ def load_custom_css():
         }}
         
         .metric-box .value {{
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #333;
         }}
@@ -716,15 +727,6 @@ def load_custom_css():
         
         .metric-box .negative {{
             color: {COLOR_SCHEME["negative"]};
-        }}
-        
-        /* Amazon specific styling */
-        .amazon-orange {{
-            color: #ff9900;
-        }}
-        
-        .amazon-blue {{
-            color: #146eb4;
         }}
         
         /* Campaign card */
@@ -796,7 +798,7 @@ def load_custom_css():
         
         .campaign-card .metric-value {{
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
         }}
         
         /* Loading spinner */
@@ -863,202 +865,48 @@ def load_custom_css():
             to {{ opacity: 0; visibility: hidden; }}
         }}
         
-        /* Help button */
-        .help-button {{
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: {COLOR_SCHEME["primary"]};
-            color: white;
+        /* Chat container */
+        .chat-container {{
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            cursor: pointer;
-            z-index: 9998;
-            transition: all 0.3s;
-        }}
-        
-        .help-button:hover {{
-            background-color: {COLOR_SCHEME["secondary"]};
-            transform: scale(1.1);
-        }}
-        
-        /* Guided tour tooltips */
-        .guided-tooltip {{
-            position: absolute;
-            background-color: {COLOR_SCHEME["primary"]};
-            color: white;
-            padding: 15px;
+            flex-direction: column;
+            height: 70vh;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 9999;
-            width: 300px;
+            overflow: hidden;
         }}
         
-        .guided-tooltip::after {{
-            content: "";
-            position: absolute;
-            border-width: 8px;
-            border-style: solid;
+        .chat-messages {{
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background-color: #f8f9fa;
         }}
         
-        .guided-tooltip.top::after {{
-            top: 100%;
-            left: 50%;
-            margin-left: -8px;
-            border-color: {COLOR_SCHEME["primary"]} transparent transparent transparent;
-        }}
-        
-        .guided-tooltip.bottom::after {{
-            bottom: 100%;
-            left: 50%;
-            margin-left: -8px;
-            border-color: transparent transparent {COLOR_SCHEME["primary"]} transparent;
-        }}
-        
-        .guided-tooltip.left::after {{
-            top: 50%;
-            left: 100%;
-            margin-top: -8px;
-            border-color: transparent transparent transparent {COLOR_SCHEME["primary"]};
-        }}
-        
-        .guided-tooltip.right::after {{
-            top: 50%;
-            right: 100%;
-            margin-top: -8px;
-            border-color: transparent {COLOR_SCHEME["primary"]} transparent transparent;
-        }}
-        
-        .guided-tooltip .title {{
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 1.1rem;
-        }}
-        
-        .guided-tooltip .content {{
-            margin-bottom: 12px;
-            font-size: 0.9rem;
-        }}
-        
-        .guided-tooltip .buttons {{
+        .chat-input {{
             display: flex;
-            justify-content: space-between;
-        }}
-        
-        .guided-tooltip .button {{
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: none;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }}
-        
-        .guided-tooltip .button-next {{
+            padding: 8px;
             background-color: white;
-            color: {COLOR_SCHEME["primary"]};
+            border-top: 1px solid #e2e8f0;
         }}
         
-        .guided-tooltip .button-skip {{
-            background-color: transparent;
-            color: white;
-            text-decoration: underline;
-        }}
-        
-        /* Mobile responsiveness improvements */
-        @media (max-width: 768px) {{
-            .metric-container {{
-                padding: 0.75rem;
-            }}
-            
-            .metric-value {{
-                font-size: 1.5rem;
-            }}
-            
-            .campaign-card {{
-                padding: 12px;
-            }}
-            
-            .campaign-card .title {{
-                font-size: 14px;
-            }}
-            
-            .enhanced-metric {{
-                padding: 0.75rem;
-            }}
-            
-            .enhanced-metric .value {{
-                font-size: 1.5rem;
-            }}
-        }}
-        
-        /* Keyboard shortcut indicators */
-        .keyboard-shortcut {{
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background-color: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            font-family: monospace;
-            font-size: 0.8rem;
-            margin-left: 5px;
-        }}
-        
-        /* Table of contents */
-        .toc {{
-            background-color: {COLOR_SCHEME["background"]};
+        .message {{
+            max-width: 80%;
+            margin-bottom: 12px;
+            padding: 10px 14px;
             border-radius: 8px;
-            padding: 15px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
+            position: relative;
         }}
         
-        .toc-title {{
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: {COLOR_SCHEME["primary"]};
+        .message.user {{
+            background-color: {COLOR_SCHEME["primary"]};
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
         }}
         
-        .toc ul {{
-            list-style-type: none;
-            padding-left: 15px;
-            margin-bottom: 0;
-        }}
-        
-        .toc li {{
-            margin-bottom: 5px;
-        }}
-        
-        .toc a {{
-            color: {COLOR_SCHEME["primary"]};
-            text-decoration: none;
-        }}
-        
-        .toc a:hover {{
-            text-decoration: underline;
-        }}
-        
-        /* Animated chart containers */
-        .animated-chart {{
-            transition: all 0.3s ease-in-out;
-        }}
-        
-        .animated-chart:hover {{
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-        }}
-        
-        /* Accessible focus indicators */
-        button:focus, a:focus, input:focus, select:focus, textarea:focus {{
-            outline: 2px solid {COLOR_SCHEME["primary"]};
-            outline-offset: 2px;
+        .message.assistant {{
+            background-color: #e2e8f0;
+            border-bottom-left-radius: 0;
         }}
         
         /* Form validation indicators */
@@ -1084,6 +932,35 @@ def load_custom_css():
         
         .validation-success {{
             color: {COLOR_SCHEME["positive"]};
+        }}
+        
+        /* Make dataframe more compact */
+        .stDataFrame table {{
+            font-size: 0.9rem;
+        }}
+        
+        .stDataFrame [data-testid="StyledDataFrameDataCell"] {{
+            padding: 6px 8px !important;
+        }}
+        
+        /* Fix for overlapping text */
+        .row-widget.stButton {{
+            margin-bottom: 12px;
+        }}
+        
+        /* Improve spacing in columns */
+        [data-testid="column"] {{
+            padding: 0.5rem;
+        }}
+        
+        /* Make plotly charts more compact */
+        .stPlotlyChart {{
+            margin-bottom: 1rem;
+        }}
+        
+        /* Fix expander padding */
+        .streamlit-expanderContent {{
+            padding: 0.5rem 1rem;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -1325,32 +1202,218 @@ def validate_campaign_form(form_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     
     return len(errors) == 0, errors
 
-def display_help_button():
-    """Display a floating help button."""
-    help_html = """
-    <div class="help-button" onclick="showHelp()">?</div>
-    <script>
-    function showHelp() {
-        // Implement guided help functionality
-        const helpEvent = new CustomEvent('showHelp');
-        window.dispatchEvent(helpEvent);
-    }
-    </script>
+# =============================================================================
+# Export Functions
+# =============================================================================
+
+def to_excel(df: pd.DataFrame):
     """
-    st.markdown(help_html, unsafe_allow_html=True)
+    Convert dataframe to Excel file in memory and return for download
+    """
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name='Campaigns', index=False)
+    
+    # Format the Excel sheet
+    workbook = writer.book
+    worksheet = writer.sheets['Campaigns']
+    
+    # Add formats
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'valign': 'top',
+        'fg_color': '#D7E4BC',
+        'border': 1
+    })
+    
+    currency_format = workbook.add_format({'num_format': '$#,##0.00'})
+    percent_format = workbook.add_format({'num_format': '0.00%'})
+    date_format = workbook.add_format({'num_format': 'mm/dd/yyyy'})
+    
+    # Apply header format
+    for col_num, value in enumerate(df.columns.values):
+        worksheet.write(0, col_num, value, header_format)
+    
+    # Apply column formats
+    for i, col in enumerate(df.columns):
+        column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+        worksheet.set_column(i, i, column_width)
+        
+        # Apply specific formats based on column name
+        if col in ['ad_spend', 'revenue', 'profit', 'product_cost', 'selling_price', 'shipping_cost', 'amazon_fees']:
+            worksheet.set_column(i, i, None, currency_format)
+        elif col in ['acos', 'ctr', 'conversion_rate', 'profit_margin']:
+            worksheet.set_column(i, i, None, percent_format)
+        elif col in ['start_date', 'end_date']:
+            worksheet.set_column(i, i, None, date_format)
+    
+    writer.close()
+    output.seek(0)
+    return output
+
+def create_campaign_pdf(campaign_data: Dict[str, Any], analyzer) -> bytes:
+    """Create a PDF report for a campaign."""
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Set fonts
+    pdf.set_font("Arial", "B", 16)
+    
+    # Header
+    pdf.cell(190, 10, "Campaign Report", ln=True, align="C")
+    pdf.cell(190, 10, campaign_data['campaign_name'], ln=True, align="C")
+    pdf.line(10, 30, 200, 30)
+    pdf.ln(5)
+    
+    # Campaign basics
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(190, 10, "Campaign Information", ln=True)
+    pdf.set_font("Arial", "", 10)
+    
+    pdf.cell(60, 6, "Product:", border=0)
+    pdf.cell(130, 6, campaign_data['product_name'], ln=True, border=0)
+    
+    pdf.cell(60, 6, "Channel:", border=0)
+    pdf.cell(130, 6, campaign_data['channel'], ln=True, border=0)
+    
+    pdf.cell(60, 6, "Category:", border=0)
+    pdf.cell(130, 6, campaign_data['category'], ln=True, border=0)
+    
+    pdf.cell(60, 6, "Date Range:", border=0)
+    pdf.cell(130, 6, f"{campaign_data['start_date']} to {campaign_data['end_date']}", ln=True, border=0)
+    
+    pdf.ln(5)
+    
+    # Performance metrics
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(190, 10, "Performance Metrics", ln=True)
+    pdf.set_font("Arial", "", 10)
+    
+    metrics = [
+        ("Ad Spend", f"${campaign_data['ad_spend']:,.2f}"),
+        ("Impressions", f"{campaign_data['impressions']:,}"),
+        ("Clicks", f"{campaign_data['clicks']:,}"),
+        ("Conversions", f"{campaign_data['conversions']:,}"),
+        ("Revenue", f"${campaign_data['revenue']:,.2f}"),
+        ("ROAS", f"{campaign_data['roas']:.2f}x"),
+        ("ACoS", f"{campaign_data['acos']:.2f}%"),
+        ("Target ACoS", f"{campaign_data['target_acos']:.2f}%"),
+        ("Conversion Rate", f"{campaign_data['conversion_rate']:.2f}%"),
+        ("CTR", f"{campaign_data['ctr']:.2f}%"),
+        ("Avg. CPC", f"${campaign_data['avg_cpc']:.2f}"),
+    ]
+    
+    for i, (label, value) in enumerate(metrics):
+        # Create a two-column layout with 2 metrics per row
+        if i % 2 == 0:
+            pdf.cell(40, 6, label, border=0)
+            pdf.cell(50, 6, value, border=0)
+        else:
+            pdf.cell(40, 6, label, border=0)
+            pdf.cell(50, 6, value, ln=True, border=0)
+    
+    # Add a line break if we ended on an odd item
+    if len(metrics) % 2 != 0:
+        pdf.ln()
+    
+    pdf.ln(5)
+    
+    # Economics
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(190, 10, "Economics", ln=True)
+    pdf.set_font("Arial", "", 10)
+    
+    economics = [
+        ("Product Cost", f"${campaign_data['product_cost']:,.2f}"),
+        ("Selling Price", f"${campaign_data['selling_price']:,.2f}"),
+        ("Shipping Cost", f"${campaign_data['shipping_cost']:,.2f}"),
+        ("Platform Fees", f"${campaign_data['amazon_fees']:,.2f}"),
+        ("Profit", f"${campaign_data['profit']:,.2f}"),
+        ("Profit Margin", f"{campaign_data['profit_margin']:.2f}%"),
+    ]
+    
+    for i, (label, value) in enumerate(economics):
+        if i % 2 == 0:
+            pdf.cell(40, 6, label, border=0)
+            pdf.cell(50, 6, value, border=0)
+        else:
+            pdf.cell(40, 6, label, border=0)
+            pdf.cell(50, 6, value, ln=True, border=0)
+    
+    if len(economics) % 2 != 0:
+        pdf.ln()
+    
+    pdf.ln(5)
+    
+    # Assessment
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(190, 10, "Performance Assessment", ln=True)
+    pdf.set_font("Arial", "", 10)
+    
+    # Determine assessment
+    if campaign_data['roas'] >= 4:
+        assessment = "Excellent"
+    elif campaign_data['roas'] >= 3:
+        assessment = "Good"
+    elif campaign_data['roas'] >= 2:
+        assessment = "Average"
+    else:
+        assessment = "Poor"
+    
+    pdf.multi_cell(190, 6, f"Campaign Performance: {assessment}", border=0)
+    pdf.multi_cell(190, 6, f"Performance Score: {campaign_data['performance_score']:.1f}/100", border=0)
+    
+    # Calculate channel averages for comparison
+    channel_data = analyzer.campaigns[analyzer.campaigns['channel'] == campaign_data['channel']]
+    if not channel_data.empty:
+        avg_roas = channel_data['roas'].mean()
+        avg_acos = channel_data['acos'].mean()
+        avg_conv_rate = channel_data['conversion_rate'].mean()
+        
+        pdf.ln(5)
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(190, 10, f"Comparison to {campaign_data['channel']} Average", ln=True)
+        pdf.set_font("Arial", "", 10)
+        
+        comparisons = [
+            ("ROAS", f"{campaign_data['roas']:.2f}x", f"{avg_roas:.2f}x"),
+            ("ACoS", f"{campaign_data['acos']:.2f}%", f"{avg_acos:.2f}%"),
+            ("Conversion Rate", f"{campaign_data['conversion_rate']:.2f}%", f"{avg_conv_rate:.2f}%"),
+        ]
+        
+        for label, value, avg in comparisons:
+            pdf.cell(40, 6, label, border=0)
+            pdf.cell(50, 6, value, border=0)
+            pdf.cell(50, 6, f"Avg: {avg}", ln=True, border=0)
+    
+    # Notes
+    if campaign_data.get('notes'):
+        pdf.ln(5)
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(190, 10, "Campaign Notes", ln=True)
+        pdf.set_font("Arial", "", 10)
+        pdf.multi_cell(190, 6, campaign_data['notes'], border=0)
+    
+    # Footer
+    pdf.set_y(-15)
+    pdf.set_font("Arial", "I", 8)
+    pdf.cell(0, 10, f"ViveROI Analytics | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", align="C")
+    
+    return pdf.output(dest='S').encode('latin1')
 
 # --- AI ASSISTANT FUNCTIONS ---
 def check_openai_api_key():
     """Check if OpenAI API key is available and valid."""
-    api_key = st.secrets.get("openai_api_key", None)
-    
-    if not api_key:
-        st.session_state.api_key_status = "missing"
-        logger.warning("OpenAI API key not found in secrets")
-        return False
-    
-    # Verify the API key is valid with a simple test request
     try:
+        api_key = st.secrets["openai_api_key"]
+        
+        if not api_key:
+            st.session_state.api_key_status = "missing"
+            logger.warning("OpenAI API key not found in secrets")
+            return False
+        
+        # Verify the API key is valid with a simple test request
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
         payload = {
             "model": "gpt-4o", 
@@ -1374,24 +1437,21 @@ def check_openai_api_key():
             return False
     except Exception as e:
         st.session_state.api_key_status = "error"
-        logger.exception("Error checking OpenAI API key")
+        logger.exception(f"Error checking OpenAI API key: {str(e)}")
         return False
 
-def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1024):
+def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1500):
     """Call the OpenAI API with the given messages."""
     st.session_state.is_loading = True
-    api_key = st.secrets.get("openai_api_key", None)
-    
-    # If API key is missing, generate a simulated response
-    if not api_key:
-        logger.warning("OpenAI API key not found in secrets, using simulated response")
-        # Add a slight delay to simulate API call
-        time.sleep(1.5)
-        st.session_state.is_loading = False
-        return generate_simulated_response(messages)
-    
-    # If API key is available, make the actual API call
     try:
+        api_key = st.secrets.get("openai_api_key", None)
+        
+        if not api_key:
+            logger.warning("OpenAI API key not found in secrets, using simulated response")
+            time.sleep(1.5)
+            st.session_state.is_loading = False
+            return generate_simulated_response(messages)
+        
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
         payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
         response = requests.post(
@@ -1417,7 +1477,7 @@ def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1024):
         st.session_state.is_loading = False
         return "Error: Could not connect to the AI service. Please check your internet connection and try again."
     except Exception as e:
-        logger.exception("Error calling OpenAI API")
+        logger.exception(f"Error calling OpenAI API: {str(e)}")
         st.session_state.is_loading = False
         return f"Error: The AI assistant encountered an unexpected problem. Please try again later or contact support at {SUPPORT_EMAIL} if the issue persists."
 
@@ -1476,6 +1536,22 @@ Recommendations to improve conversion:
 
 A 0.5% improvement in Meta Ads conversion rate could increase revenue by approximately $7,500 monthly."""
 
+    elif "medical device" in user_message.lower() or "healthcare" in user_message.lower():
+        return """For medical device marketing, particularly in your product categories:
+
+1. Focus on educational content that explains product benefits and proper usage
+2. Leverage testimonials and case studies to build trust with healthcare professionals and patients
+3. Implement product comparison campaigns highlighting your unique features versus competitors
+4. Consider targeting specific conditions related to your products (e.g., mobility limitations, chronic pain)
+
+For healthcare PPC specifically:
+- Use medical terminology alongside layman's terms in your keyword strategy
+- Ensure compliance with all advertising regulations for medical devices
+- Include healthcare professional targeting alongside patient/caregiver audiences
+- Build landing pages with detailed product specifications and validation data
+
+The best-performing medical device categories currently are Mobility Aids (6.3x ROAS) and Pain Management (4.69x ROAS)."""
+
     else:
         return """Based on your campaign performance data, I've identified several optimization opportunities:
 
@@ -1503,7 +1579,8 @@ def get_ai_campaign_insights(campaign_data: pd.DataFrame, specific_campaign: Opt
         return "No campaign data available for analysis. Please add campaigns first."
     
     # Create system prompt with context
-    system_prompt = "You are an expert marketing analyst for Vive Health, specializing in e-commerce PPC campaigns and marketing ROI analysis."
+    system_prompt = """You are an expert marketing analyst for Vive Health, specializing in e-commerce PPC campaigns 
+    and marketing ROI analysis for medical devices. Provide detailed, actionable insights based on the campaign data."""
     
     # Add summary of all campaigns
     system_prompt += "\n\n## Campaign Performance Summary:\n"
@@ -1568,9 +1645,13 @@ def get_ai_campaign_insights(campaign_data: pd.DataFrame, specific_campaign: Opt
         system_prompt += f"ACoS: {campaign['acos']:.2f}% vs. {channel_avg['acos']:.2f}% average\n"
         system_prompt += f"Conversion Rate: {campaign['conversion_rate']:.2f}% vs. {channel_avg['conversion_rate']:.2f}% average\n"
         
-        user_prompt = f"Please analyze this {campaign['channel']} campaign for {campaign['product_name']} and provide specific recommendations to improve its performance. Focus on optimizing ROAS, ACoS, and profit margin. What specific actions should we take? Include expected impact of your recommendations in percentages or dollar terms when possible."
+        user_prompt = f"""Please analyze this {campaign['channel']} campaign for {campaign['product_name']} and provide specific recommendations to improve its performance. 
+        Focus on optimizing ROAS, ACoS, and profit margin. What specific actions should we take? Include expected impact of your 
+        recommendations in percentages or dollar terms when possible. Be concise, actionable, and specific to the medical device industry."""
     else:
-        user_prompt = "Please analyze our overall marketing campaign performance across channels. What are the top 3-5 recommendations to optimize our marketing spend and improve ROI? Provide specific, actionable insights based on the data. Include expected impact of recommendations in percentages or dollar terms when possible."
+        user_prompt = """Please analyze our overall marketing campaign performance across channels. What are the top 3-5 recommendations to 
+        optimize our marketing spend and improve ROI? Provide specific, actionable insights based on the data. Include expected impact 
+        of recommendations in percentages or dollar terms when possible. Be concise and focus on specific actions we should take."""
     
     # Create messages array for API call
     messages = [
@@ -1585,6 +1666,39 @@ def get_ai_campaign_insights(campaign_data: pd.DataFrame, specific_campaign: Opt
     except Exception as e:
         logger.exception("Error getting AI insights")
         return f"Error generating insights: {str(e)}\n\nPlease try again later or contact support at {SUPPORT_EMAIL}."
+
+def get_ai_medical_device_chat_response(messages_history):
+    """Get AI responses for the medical device marketing assistant chat."""
+    # Prepare system message with medical device marketing context
+    system_message = f"""You are an expert marketing consultant specializing in medical devices and healthcare marketing. 
+    Your role is to help a quality manager at a medical device company with marketing strategy, PPC advertising, 
+    and campaign optimization.
+
+    You have deep knowledge of various medical device categories including:
+    {', '.join(MEDICAL_DEVICE_CATEGORIES)}
+
+    You understand the unique challenges of medical device marketing:
+    - Regulatory constraints (FDA, HIPAA, etc.)
+    - Complex buyer journey with multiple stakeholders
+    - Balance between technical specifications and user benefits
+    - Importance of education and clinical evidence
+    - Targeting both healthcare professionals and end users
+    
+    Provide specific, actionable advice tailored to medical device marketing. Use your knowledge of PPC platforms, 
+    healthcare keywords, and medical device marketing best practices to give detailed recommendations.
+    
+    Current date: {datetime.now().strftime('%Y-%m-%d')}
+
+    Be helpful, specific, and actionable in your responses. Focus specifically on medical device marketing rather than 
+    general marketing advice where possible."""
+    
+    # Prepare all messages including system and history
+    all_messages = [{"role": "system", "content": system_message}]
+    all_messages.extend(messages_history)
+    
+    # Get response from OpenAI
+    response = call_openai_api(all_messages, max_tokens=1500)
+    return response
 
 # =============================================================================
 # Data Management Class
@@ -2209,6 +2323,10 @@ if 'wizard_data' not in st.session_state:
 if 'api_key_status' not in st.session_state:
     check_openai_api_key()
 
+# Chat history for the medical devices marketing assistant
+if 'chat_messages' not in st.session_state:
+    st.session_state.chat_messages = []
+
 # =============================================================================
 # UI Component Functions
 # =============================================================================
@@ -2220,8 +2338,7 @@ def display_header():
     with col1:
         st.markdown(f"""
         <div style="text-align: center; padding: 10px">
-            <h1 style="font-size: 32px; margin: 0; color: {COLOR_SCHEME["primary"]};">📊</h1>
-            <p style="margin: 0; font-weight: 600; color: {COLOR_SCHEME["secondary"]};">ViveROI</p>
+            <h1 style="font-size: 28px; margin: 0; color: {COLOR_SCHEME["primary"]};">ViveROI</h1>
         </div>
         """, unsafe_allow_html=True)
     
@@ -3048,8 +3165,6 @@ def create_campaign_wizard() -> bool:
                 - Referral Fee: 15% (most categories)
                 - FBA Fees: Varies by size/weight
                 - Storage Fees: Monthly + Long-term
-                
-                [Amazon Fee Calculator Link](https://sellercentral.amazon.com/hz/fba/profitabilitycalculator)
                 """)
             elif channel == "Vive Website":
                 st.markdown("""
@@ -3384,7 +3499,7 @@ def create_campaign_wizard() -> bool:
         """, unsafe_allow_html=True)
         
         # AI-powered insights if API is available
-        if 'api_key_status' in st.session_state and st.session_state.api_key_status == "valid":
+        if st.session_state.api_key_status == "valid":
             # Make a temporary df for AI analysis
             temp_df = pd.DataFrame([data])
             temp_df['roas'] = roas
@@ -3413,7 +3528,7 @@ def create_campaign_wizard() -> bool:
                 st.rerun()
         
         with col3:
-            if st.button("💾 Save Campaign", type="primary"):
+            if st.button("Save Campaign", type="primary"):
                 # Set loading state
                 st.session_state.is_loading = True
                 
@@ -3553,6 +3668,31 @@ def display_campaigns_table(df: pd.DataFrame):
         hide_index=True
     )
     
+    # Add export options
+    st.markdown("### Export Options")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        excel_data = to_excel(filtered_df)
+        st.download_button(
+            label="Download Excel Report",
+            data=excel_data,
+            file_name=f"campaign_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    
+    with col2:
+        # Convert to CSV for download
+        csv = filtered_df.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()
+        
+        st.download_button(
+            label="Download CSV Data",
+            data=csv,
+            file_name=f"campaign_data_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv"
+        )
+    
     # Add campaign actions below table
     st.markdown("### Campaign Actions")
     col1, col2, col3 = st.columns(3)
@@ -3624,6 +3764,30 @@ def display_campaign_details(campaign_uid: str):
     with col2:
         st.title(campaign['campaign_name'])
         st.caption(f"Campaign for {campaign['product_name']} on {campaign['channel']}")
+    
+    # Export options
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        pdf_report = create_campaign_pdf(campaign, analyzer)
+        st.download_button(
+            label="Download PDF Report",
+            data=pdf_report,
+            file_name=f"{campaign['campaign_name']}_report.pdf",
+            mime="application/pdf"
+        )
+    
+    with col2:
+        # Export single campaign as Excel
+        campaign_df = pd.DataFrame([campaign])
+        excel_data = to_excel(campaign_df)
+        
+        st.download_button(
+            label="Export to Excel",
+            data=excel_data,
+            file_name=f"{campaign['campaign_name']}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
     
     # Campaign details
     st.markdown("## Campaign Details")
@@ -4397,13 +4561,13 @@ def display_campaign_details(campaign_uid: str):
     # AI-powered insights
     st.markdown("## AI-Powered Insights")
     
-    if 'api_key_status' in st.session_state and st.session_state.api_key_status == "valid":
+    if st.session_state.api_key_status == "valid":
         insights = get_ai_campaign_insights(analyzer.campaigns, campaign['campaign_name'])
         st.markdown(insights)
     else:
         st.info("""
         AI-powered campaign recommendations require an OpenAI API key. 
-        Please add your API key in the app settings to enable this feature.
+        Please ensure your API key is correctly set in the Streamlit secrets.
         """)
     
     # Campaign actions
@@ -5000,7 +5164,7 @@ def display_channel_analysis():
     st.subheader("Channel Recommendations")
     
     # Get AI insights if available
-    if 'api_key_status' in st.session_state and st.session_state.api_key_status == "valid":
+    if st.session_state.api_key_status == "valid":
         insights = get_ai_campaign_insights(analyzer.campaigns)
         st.markdown(insights)
     else:
@@ -5054,10 +5218,10 @@ def display_insights_page():
         return
     
     # Check API key status
-    if 'api_key_status' not in st.session_state or st.session_state.api_key_status != "valid":
+    if st.session_state.api_key_status != "valid":
         st.warning("""
         AI-powered insights require an OpenAI API key. 
-        Please add your API key in the app settings to enable this feature.
+        Please check your Streamlit secrets to ensure your API key is correctly set.
         """)
         
         st.markdown("""
@@ -5171,11 +5335,12 @@ def display_insights_page():
             st.info("Generating budget optimization insights... This may take a few seconds.")
         
         # Custom prompt for budget optimization
-        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis."
+        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis for medical devices."
         user_prompt = """
-        Based on the campaign data, provide specific budget optimization recommendations. 
+        Based on the campaign data, provide specific budget optimization recommendations for a medical device company. 
         Include suggested budget allocations across channels, expected ROAS impact, and justification.
         Present your recommendations in a structured format with concrete numbers and percentages.
+        Focus on optimizing marketing spend for healthcare and medical device products.
         """
         
         messages = [
@@ -5196,12 +5361,12 @@ def display_insights_page():
             st.info("Generating channel strategy insights... This may take a few seconds.")
         
         # Custom prompt for channel strategy
-        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis."
+        system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis for medical devices."
         user_prompt = """
-        Based on the campaign data, provide a detailed channel strategy analysis.
-        Compare the strengths and weaknesses of each channel, identify which product categories perform best on each channel,
+        Based on the campaign data, provide a detailed channel strategy analysis for medical device marketing.
+        Compare the strengths and weaknesses of each channel, identify which medical device categories perform best on each channel,
         and recommend how to optimize the channel mix for maximum ROI.
-        Include specific strategy recommendations for each major channel.
+        Include specific strategy recommendations for each major channel considering healthcare advertising regulations and best practices.
         """
         
         messages = [
@@ -5224,10 +5389,12 @@ def display_insights_page():
         # Custom prompt for product recommendations
         system_prompt = "You are an expert marketing analyst specializing in e-commerce PPC campaigns and marketing ROI analysis for Vive Health, a medical device company."
         user_prompt = """
-        Based on the campaign data, provide product-specific marketing recommendations.
-        Identify which products have the highest ROI potential, which need optimization,
-        and suggest specific advertising strategies for different product categories.
+        Based on the campaign data, provide specific medical device product marketing recommendations.
+        Identify which medical device products have the highest ROI potential, which need optimization,
+        and suggest specific advertising strategies for different healthcare product categories.
         Consider profit margins, conversion rates, and channel performance in your analysis.
+        Provide concrete recommendations tailored to medical device marketing, taking into account 
+        healthcare regulations and customer demographics for medical products.
         """
         
         messages = [
@@ -5240,6 +5407,100 @@ def display_insights_page():
         
         with insights_placeholder:
             st.markdown(insights)
+
+def display_medical_device_chat():
+    """Display a specialized AI chat interface for medical device marketing questions."""
+    st.title("Medical Device Marketing Assistant")
+    
+    st.markdown("""
+    This AI assistant specializes in medical device marketing strategy and PPC campaign optimization. 
+    Ask questions about marketing healthcare products, targeting healthcare professionals or patients, 
+    optimizing ad campaigns for specific device categories, or anything related to medical device marketing.
+    """)
+    
+    # Initialize chat messages if not already done
+    if 'chat_messages' not in st.session_state:
+        st.session_state.chat_messages = []
+    
+    # Create a container for chat messages
+    chat_container = st.container()
+    
+    # Input for new messages
+    with st.form(key="chat_form", clear_on_submit=True):
+        col1, col2 = st.columns([5, 1])
+        
+        with col1:
+            user_input = st.text_area("Your message:", key="chat_input", height=100)
+        
+        with col2:
+            submit_button = st.form_submit_button("Send")
+    
+    # Clear chat button
+    if st.button("Clear Chat History"):
+        st.session_state.chat_messages = []
+        st.rerun()
+    
+    # Process input and generate response
+    if submit_button and user_input:
+        # Add user message to chat history
+        st.session_state.chat_messages.append({"role": "user", "content": user_input})
+        
+        # Get AI response
+        with st.spinner("Generating response..."):
+            # Check if API key is valid
+            if st.session_state.api_key_status == "valid":
+                ai_response = get_ai_medical_device_chat_response(st.session_state.chat_messages)
+            else:
+                ai_response = "API key is not configured or invalid. Please check your Streamlit secrets to ensure your OpenAI API key is correctly set."
+        
+        # Add AI response to chat history
+        st.session_state.chat_messages.append({"role": "assistant", "content": ai_response})
+        
+        # Force a rerun to display the updated messages
+        st.rerun()
+    
+    # Display chat messages
+    with chat_container:
+        for message in st.session_state.chat_messages:
+            if message["role"] == "user":
+                st.markdown(f"""
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <div style="background-color: {COLOR_SCHEME['primary']}; color: white; padding: 10px 15px; 
+                    border-radius: 15px 15px 0 15px; max-width: 80%; margin-left: auto;">
+                        {message["content"]}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                    <div style="background-color: #f0f2f6; padding: 10px 15px; 
+                    border-radius: 15px 15px 15px 0; max-width: 80%;">
+                        {message["content"]}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Sample questions if chat is empty
+    if not st.session_state.chat_messages:
+        st.markdown("### Sample Questions to Ask:")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            - What are the best marketing channels for mobility aids?
+            - How can we optimize our Amazon PPC campaigns for medical devices?
+            - What regulatory considerations should we keep in mind for medical device marketing?
+            - How can we improve conversion rates for healthcare products?
+            """)
+        
+        with col2:
+            st.markdown("""
+            - What are effective targeting strategies for healthcare professionals?
+            - How should we structure ad campaigns for different medical device categories?
+            - What are typical ROAS benchmarks for medical device PPC campaigns?
+            - How can we improve our product listings for medical devices?
+            """)
 
 def display_settings_page():
     """Display application settings page."""
@@ -5305,15 +5566,10 @@ def display_settings_page():
         
         # Save default values
         if st.button("Save Default Values"):
+            global DEFAULT_CHANNELS, DEFAULT_CATEGORIES
             DEFAULT_CHANNELS = default_channels if default_channels else ["Amazon", "Vive Website"]
             DEFAULT_CATEGORIES = default_categories if default_categories else ["Mobility", "Pain Relief"]
             st.success("Default values saved successfully")
-        
-        # Reset first visit flag
-        if st.session_state.app_mode == "Advanced":
-            if st.button("Reset Guided Tour"):
-                st.session_state.first_visit = True
-                st.success("Guided tour will be shown on next app load")
     
     with tab2:
         st.subheader("Data Import/Export")
@@ -5328,6 +5584,16 @@ def display_settings_page():
                 file_name="viveroi_campaigns.json",
                 mime="application/json",
                 help="Download all campaign data as a JSON file for backup or transfer"
+            )
+            
+            # Excel export
+            excel_data = to_excel(analyzer.campaigns)
+            st.download_button(
+                label="Export All Campaigns to Excel",
+                data=excel_data,
+                file_name="viveroi_campaigns.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                help="Download all campaign data as an Excel file"
             )
         else:
             st.info("No campaigns available to export. Add campaigns first.")
@@ -5369,7 +5635,7 @@ def display_settings_page():
             with col1:
                 if st.button("Load Example Campaigns", key="load_examples"):
                     # Clear existing campaigns if requested
-                    if st.session_state.app_mode == "Advanced" and st.checkbox("Clear existing campaigns first"):
+                    if st.checkbox("Clear existing campaigns first"):
                         analyzer.campaigns = pd.DataFrame(columns=CAMPAIGN_COLUMNS)
                     
                     # Add examples
@@ -5389,7 +5655,7 @@ def display_settings_page():
                     st.rerun()
     
     with tab3:
-        st.subheader("API Configuration")
+        st.subheader("API Status")
         
         # Check OpenAI API key status
         api_status_msg = ""
@@ -5413,52 +5679,40 @@ def display_settings_page():
         <p style="color: {api_status_color}; font-weight: 500;">{api_status_msg}</p>
         """, unsafe_allow_html=True)
         
-        # Explain API key usage
+        # Option to refresh API key status
+        if st.button("Check API Key Status"):
+            check_openai_api_key()
+            st.rerun()
+        
         st.markdown("""
         ### OpenAI API Integration
         
-        This application uses the OpenAI API to provide AI-powered marketing insights and recommendations.
-        An API key is required to access these features.
+        This application uses the OpenAI API to provide AI-powered marketing insights and recommendations
+        for medical device marketing. The API key should be configured in your Streamlit secrets.toml file.
         
-        **Why use the OpenAI API?**
-        - Generate detailed marketing insights and recommendations
-        - Analyze campaign performance across channels
-        - Get AI-powered optimization suggestions
-        - Benefit from natural language explanations of complex data
+        If the API key is not valid or missing, you can still use the application's core features, but
+        AI-powered insights will not be available.
         
-        **How to get an API key:**
-        1. Go to [OpenAI API](https://platform.openai.com/signup)
-        2. Create an account or sign in
-        3. Navigate to API keys section
-        4. Create a new secret key
-        5. Copy and paste the key below
+        **API Features:**
+        - Generate detailed marketing insights and recommendations for medical devices
+        - Analyze campaign performance across different healthcare categories
+        - Get AI-powered optimization suggestions for medical device marketing
+        - Ask specific questions in the Medical Device Marketing Assistant chat
         
-        Your API key is stored securely in the app's session state and is not shared with any third parties.
+        The API integration is configured to use GPT-4o for optimal performance.
         """)
         
-        # Add note about secrets management for deployed apps
         st.info("""
-        **Note:** For a deployed application, the API key would be stored in a secure environment variable 
-        or secrets management system, not entered manually by users.
+        **Note for Administrators:** 
+        
+        The OpenAI API key is stored in the Streamlit secrets.toml file. To configure it:
+        
+        1. Create or edit your `.streamlit/secrets.toml` file
+        2. Add the following line: `openai_api_key = "your-api-key-here"`
+        3. Restart the Streamlit application
+        
+        This is a secure way to store your API key without exposing it in the code.
         """)
-        
-        # API key input
-        api_key = st.text_input(
-            "OpenAI API Key",
-            type="password",
-            help="Enter your OpenAI API key to enable AI-powered features"
-        )
-        
-        if st.button("Save API Key"):
-            if api_key:
-                # In a real deployed app, this would be stored in a secure way
-                # For this demo, we'll simulate validation
-                st.success("API key saved successfully!")
-                st.session_state.api_key_status = "valid"
-                check_openai_api_key()
-                st.rerun()
-            else:
-                st.error("Please enter a valid API key")
 
 def setup_sidebar():
     """Set up and display the sidebar navigation."""
@@ -5478,6 +5732,7 @@ def setup_sidebar():
             ("Campaigns", "file-text", "campaigns"),
             ("Channel Analysis", "bar-chart-2", "channel_analysis"),
             ("Insights", "lightbulb", "insights"),
+            ("MD Marketing Assistant", "message-circle", "md_assistant"),
             ("Settings", "settings", "settings")
         ]
         
@@ -5487,7 +5742,7 @@ def setup_sidebar():
             text_color = COLOR_SCHEME["text_light"] if st.session_state.view != view_name else "white"
             
             if st.sidebar.button(
-                f":{icon}: {option_name}", 
+                f"{option_name}", 
                 key=f"nav_{view_name}",
                 use_container_width=True,
                 type="secondary" if st.session_state.view != view_name else "primary"
@@ -5535,7 +5790,7 @@ def setup_sidebar():
         st.markdown("### About")
         st.markdown(f"""
         <div style="font-size: 0.85rem; color: {COLOR_SCHEME['text_light']}; opacity: 0.8; margin-top: 20px;">
-            <p>ViveROI Analytics helps Vive Health's e-commerce team analyze and optimize marketing spend across channels.</p>
+            <p>ViveROI Analytics helps analyze and optimize marketing spend across channels for medical devices.</p>
             <p style="margin-top: 10px;">Need help? Contact:</p>
             <p>{SUPPORT_EMAIL}</p>
         </div>
@@ -5577,6 +5832,10 @@ def main():
     elif st.session_state.view == "insights":
         display_header()
         display_insights_page()
+        
+    elif st.session_state.view == "md_assistant":
+        display_header()
+        display_medical_device_chat()
     
     elif st.session_state.view == "settings":
         display_header()
@@ -5602,28 +5861,6 @@ def main():
         if st.button("Return to Dashboard"):
             st.session_state.view = "dashboard"
             st.rerun()
-    
-    # Display help button
-    if st.session_state.app_mode == "Advanced":
-        display_help_button()
-    
-    # Show guided tour on first visit
-    if st.session_state.first_visit and st.session_state.app_mode == "Advanced":
-        st.markdown("""
-        <script>
-            // Simplified guided tour - in a real app this would be more sophisticated
-            setTimeout(function() {
-                alert("Welcome to ViveROI Analytics! This is a guided tour placeholder.");
-                
-                // Mark tour as seen
-                const tourEvent = new CustomEvent('tourComplete');
-                window.dispatchEvent(tourEvent);
-            }, 1000);
-        </script>
-        """, unsafe_allow_html=True)
-        
-        # Reset first visit flag
-        st.session_state.first_visit = False
 
 if __name__ == "__main__":
     main()
