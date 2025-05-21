@@ -298,12 +298,12 @@ def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1500):
     st.session_state.is_loading = True
     
     try:
-        # Check if API key is configured
-        if 'OPENAI_API_KEY' in os.environ:
-            api_key = os.environ['OPENAI_API_KEY']
+        # Check if API key is configured in Streamlit secrets
+        if 'openai_api_key' in st.secrets:
+            api_key = st.secrets['openai_api_key']
         else:
             # For demo/testing without a real API key
-            logger.warning("OpenAI API key not found, using simulated response")
+            logger.warning("OpenAI API key not found in Streamlit secrets, using simulated response")
             time.sleep(1.5)
             st.session_state.is_loading = False
             return generate_simulated_response(messages)
