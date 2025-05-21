@@ -26,7 +26,40 @@ logger = logging.getLogger("vive_roi")
 
 # App constants
 APP_VERSION = "1.0.0"
-SUPPORT_EMAIL = "support@vivemedical.com"
+SUPPORT_EMAIL = "alexander.popoff@vivehealth.com"
+
+# Define color scheme
+COLOR_SCHEME = {
+    "primary": "#00a3e0",     # Vive blue
+    "secondary": "#6cc24a",   # Vive green
+    "tertiary": "#f7941d",    # Vive orange
+    "positive": "#6cc24a",    # Green for positive metrics
+    "warning": "#f7941d",     # Orange for warning metrics
+    "negative": "#d9534f",    # Red for negative metrics
+    "background": "#f8f9fa",  # Light background
+    "text": "#333333"         # Dark text
+}
+
+# Define default channels and categories
+DEFAULT_CHANNELS = [
+    "Amazon PPC", 
+    "Amazon DSP", 
+    "Vive Website", 
+    "Google Ads", 
+    "Walmart", 
+    "eBay", 
+    "Paid Social"
+]
+
+DEFAULT_CATEGORIES = [
+    "Mobility", 
+    "Pain Relief", 
+    "Bathroom Safety", 
+    "Sleep & Comfort", 
+    "Fitness & Recovery", 
+    "Daily Living Aids",
+    "Respiratory Care"
+]
 
 # Configure Streamlit page
 st.set_page_config(
@@ -228,6 +261,10 @@ if 'settings' not in st.session_state:
         'theme_color': 'vive',  # Default theme
         'show_performance_score': True  # Whether to show performance scores
     }
+
+# Initialize OpenAI API connection status
+if 'openai_api_connected' not in st.session_state:
+    st.session_state.openai_api_connected = False
     
 # ============================================================================
 # Utility Functions
@@ -363,6 +400,358 @@ def to_excel(df: pd.DataFrame):
     output.seek(0)
     return output
 
+# ============================================================================
+# API Integration Functions
+# ============================================================================
+
+def test_openai_connection() -> bool:
+    """Test connection to OpenAI API."""
+    try:
+        # Check if API key is in streamlit secrets
+        if 'openai_api_key' in st.secrets:
+            api_key = st.secrets['openai_api_key']
+            
+            # Simple test request
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "gpt-3.5-turbo", 
+                "messages": [{"role": "user", "content": "Test"}],
+                "max_tokens": 5
+            }
+            
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                logger.info("Successfully connected to OpenAI API")
+                return True
+            else:
+                logger.error(f"Failed to connect to OpenAI API: {response.status_code}")
+                return False
+        else:
+            logger.warning(f"OpenAI API key not found in streamlit secrets. Please contact {SUPPORT_EMAIL}")
+            return False
+    except Exception as e:
+        logger.error(f"Error testing OpenAI connection: {str(e)}")
+        return False
+
+def call_openai_api(messages, model=None, max_tokens=800):
+    """Call OpenAI API with messages."""
+    try:
+        if model is None:
+            model = st.session_state.settings.get('ai_model', 'gpt-4o')
+        
+        api_key = st.secrets.get('openai_api_key', '')
+        if not api_key:
+            logger.warning(f"OpenAI API key not found. Please contact {SUPPORT_EMAIL}")
+            return f"AI tools not currently available. Please contact {SUPPORT_EMAIL} to resolve this issue."
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.7
+        }
+        
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()["choices"][0]["message"]["content"]
+        else:
+            logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+            return f"Error: AI assistant encountered a problem (HTTP {response.status_code}). Please contact {SUPPORT_EMAIL} to resolve this issue."
+    
+    except Exception as e:
+        logger.exception(f"Error calling OpenAI API: {str(e)}")
+        return f"Error: The AI assistant encountered an unexpected problem. Please contact {SUPPORT_EMAIL} to resolve this issue."
+
+def get_campaign_recommendations(plan_data):
+    """Generate AI-powered campaign recommendations based on product and goals."""
+    try:
+        # Create system prompt with context
+        system_prompt = """You are an expert medical device marketing strategist specializing in Amazon PPC campaign planning for Vive Health.
+        Provide detailed, actionable recommendations for campaign structure, targeting, and optimization.
+        Focus on advanced strategies specific to Vive Health's medical device portfolio. Assume the user has experience with Amazon PPC basics
+        and needs more advanced insights. Your recommendations should be specific to the particular medical device category involved.
+        
+        Vive Health's product categories include mobility aids, pain relief devices, bathroom safety equipment, sleep & comfort products,
+        fitness & recovery items, daily living aids, and respiratory care devices. Each category has unique customer needs, search behaviors,
+        and regulatory considerations on Amazon.
+        
+        Ask clarifying questions if specific product information would help you provide more targeted advice. Focus on advanced techniques that
+        go beyond standard practices.
+        """
+        
+        # Create user prompt with plan data
+        user_prompt = f"""
+        I need recommendations for a Vive Health marketing campaign with the following details:
+        
+        Product: {plan_data['product']['name']} (Category: {plan_data['product']['category']})
+        Price: ${plan_data['product']['price']:.2f}
+        Cost: ${plan_data['product']['cost']:.2f}
+        Profit Margin: {plan_data['product']['profit_margin']:.2f}%
+        
+        Budget: ${plan_data['campaign']['budget']:.2f}
+        Duration: {plan_data['campaign']['duration']} days
+        Primary Goal: {plan_data['campaign']['primary_goal']}
+        Target Audience: {', '.join(plan_data['campaign']['target_audience'])}
+        
+        Competition Level: {plan_data['market']['competition_level']}
+        Seasonality: {plan_data['market']['seasonality']}
+        
+        Please provide detailed, actionable recommendations for:
+        1. Advanced channel and budget allocation strategy
+        2. Sophisticated keyword strategy specific to this medical device
+        3. Bidding strategy optimization beyond basic ACoS targets
+        4. Advanced campaign structure and targeting approaches
+        5. Detailed creative recommendations specific to Vive Health's brand and this product
+        
+        Focus on advanced techniques that experienced marketers might not be implementing. Include relevant
+        compliance considerations for medical devices in this category.
+        """
+        
+        # Create messages for API call
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        # Get AI response
+        return call_openai_api(messages, max_tokens=1200)
+    except Exception as e:
+        logger.error(f"Error getting campaign recommendations: {str(e)}")
+        return f"Error generating campaign recommendations. Please contact {SUPPORT_EMAIL} for assistance."
+
+def display_help_page():
+    """Display condensed help and documentation page."""
+    st.title("Help & Documentation")
+    
+    st.markdown("""
+    ## ViveROI Marketing Analytics Dashboard
+    
+    This dashboard helps track, analyze, and optimize medical device marketing campaigns across
+    multiple channels with a focus on Amazon advertising.
+    """)
+    
+    # Create tabs for different help sections
+    help_tabs = st.tabs([
+        "Getting Started", 
+        "Campaign Management", 
+        "Analytics & AI Features",
+        "FAQs"
+    ])
+    
+    # Getting Started tab
+    with help_tabs[0]:
+        st.markdown("""
+        ### Getting Started
+        
+        #### Adding Campaigns
+        
+        1. Click **Add New Campaign** from the dashboard
+        2. Fill in the campaign details
+        3. Save the campaign to see performance metrics
+        
+        #### Importing Campaign Data
+        
+        1. Go to the sidebar
+        2. Upload your CSV or Excel file
+        3. Review and confirm import
+        
+        #### Using Example Data
+        
+        Click **Add Example Data** in the sidebar to explore with sample data.
+        """)
+    
+    # Campaign Management tab
+    with help_tabs[1]:
+        st.markdown("""
+        ### Campaign Management
+        
+        - **Add Campaign**: Create new campaigns with detailed metrics
+        - **View All Campaigns**: Search, filter, and manage campaigns
+        - **Campaign Details**: View performance metrics, profit calculations, and AI insights
+        - **Campaign Planner**: Create data-driven campaign plans with budget allocation
+        
+        The dashboard automatically calculates ROAS, ACoS, profit margins, and other key metrics.
+        """)
+        
+    # Analytics & AI Features tab
+    with help_tabs[2]:
+        st.markdown("""
+        ### Analytics & AI Features
+        
+        - **Dashboard Analytics**: Channel comparisons, top campaigns, category analysis
+        - **Campaign Insights**: AI-powered performance analysis and recommendations
+        - **Amazon Marketing Assistant**: Expert advice for Amazon PPC and listing optimization
+        - **Campaign Planner**: AI recommendations for new campaigns
+        
+        The AI features are specifically tailored for medical device marketing with a focus on
+        Amazon Advertising and Vive Health's product categories.
+        """)
+    
+    # FAQs tab
+    with help_tabs[3]:
+        st.markdown("""
+        ### Frequently Asked Questions
+        
+        **Q: How is my data stored?**  
+        A: All data is stored in your local Streamlit session.
+        
+        **Q: What AI model is used?**  
+        A: OpenAI's models provide the AI features. The default is GPT-4o.
+        
+        **Q: How can I export my campaign data?**  
+        A: Use the "Download Excel Report" or "Download CSV Data" buttons.
+        
+        **Q: What's a good ACoS target for Vive Health products?**  
+        A: Typically 15-25% for established products, 25-35% for newer products.
+        
+        **Q: AI features not working?**  
+        A: Contact {SUPPORT_EMAIL} for assistance.
+        """)
+    
+    # Add a back button
+    if st.button("← Back to Dashboard"):
+        st.session_state.view = "dashboard"
+        st.rerun()
+
+def get_historical_insights(historical_data):
+    """Generate AI-powered insights based on historical campaign data."""
+    try:
+        # Create system prompt with context
+        system_prompt = """You are an expert medical device marketing strategist specializing in e-commerce for Vive Health.
+        Analyze the historical campaign data for this product category and provide specific, advanced insights and recommendations.
+        Focus on extracting actionable learnings from past campaigns that can be applied to future ones, going beyond common sense or 
+        basic marketing principles.
+        
+        Assume the user has experience with fundamental marketing concepts and needs sophisticated insights specific to their medical 
+        device category on Amazon. Ask clarifying questions about the product if additional details would help provide more targeted advice.
+        
+        Your recommendations should be specific to Vive Health's medical device categories and Amazon's marketplace environment.
+        """
+        
+        # Create user prompt with historical data
+        user_prompt = f"""
+        Please analyze the historical campaign data for {historical_data['category']} products and provide advanced insights:
+        
+        **Category Metrics:**
+        - Average Conversion Rate: {historical_data['avg_metrics']['conversion_rate']:.2f}%
+        - Average CTR: {historical_data['avg_metrics']['ctr']:.2f}%
+        - Average ACoS: {historical_data['avg_metrics']['acos']:.2f}%
+        - Average ROAS: {historical_data['avg_metrics']['roas']:.2f}x
+        - Average CPC: ${historical_data['avg_metrics']['cpc']:.2f}
+        
+        **Top Performing Campaign:**
+        - Name: {historical_data['top_campaign']['name']}
+        - Channel: {historical_data['top_campaign']['channel']}
+        - ROAS: {historical_data['top_campaign']['roas']:.2f}x
+        - ACoS: {historical_data['top_campaign']['acos']:.2f}%
+        - Conversion Rate: {historical_data['top_campaign']['conversion_rate']:.2f}%
+        
+        Based on this data from {historical_data['campaign_count']} campaigns in the {historical_data['category']} category, please provide:
+        
+        1. Advanced factors that made the top campaign successful beyond basic optimizations
+        2. Sophisticated recommendations for future campaigns that go beyond common practices
+        3. Target metrics and advanced bidding strategies based on historical performance
+        4. Category-specific insights for {historical_data['category']} products that competitors might miss
+        5. Advanced optimization techniques for Vive Health's listings in this category
+        
+        I have experience with basic campaign optimization. Please focus on advanced strategies and 
+        ask me clarifying questions if you need more information about our specific product within this category.
+        """
+        
+        # Create messages for API call
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        # Get AI response
+        return call_openai_api(messages, model=st.session_state.settings['ai_model'], max_tokens=1000)
+    except Exception as e:
+        logger.error(f"Error getting historical insights: {str(e)}")
+        return f"Error generating historical insights. Please contact {SUPPORT_EMAIL} for assistance."
+
+def get_product_specific_insights(product_analysis):
+    """Generate AI-powered insights specific to an individual product."""
+    try:
+        # Create system prompt with context
+        system_prompt = """You are an expert Amazon marketing specialist focusing on Vive Health's medical device portfolio.
+        Analyze the performance data for this specific product across all campaigns and provide detailed, advanced insights and recommendations.
+        Focus on concrete, sophisticated advice that leverages the unique attributes of this Vive Health product.
+        
+        Assume the user has experience with Amazon advertising basics and needs more advanced, product-specific strategies. Ask clarifying
+        questions about the product if additional details would help you provide more targeted advice.
+        
+        Your expertise should cover advanced Amazon PPC strategies, sophisticated keyword optimization, advanced listing enhancements,
+        competitive positioning, and compliance considerations specific to medical devices in Vive Health's product categories.
+        """
+        
+        # Create user prompt with product data
+        user_prompt = f"""
+        Please analyze the performance data for our Vive Health {product_analysis['product']['name']} and provide advanced product-specific recommendations:
+        
+        **Product Details:**
+        - Name: {product_analysis['product']['name']}
+        - Category: {product_analysis['product']['category']}
+        - Price: ${product_analysis['product']['price']:.2f}
+        - Cost: ${product_analysis['product']['cost']:.2f}
+        - Profit Margin: {product_analysis['product']['profit_margin']:.2f}%
+        
+        **Overall Performance:**
+        - Total Ad Spend: ${product_analysis['performance']['total_spend']:.2f}
+        - Total Revenue: ${product_analysis['performance']['total_revenue']:.2f}
+        - Total Profit: ${product_analysis['performance']['total_profit']:.2f}
+        - Overall ROAS: {product_analysis['performance']['overall_roas']:.2f}x
+        - Overall ACoS: {product_analysis['performance']['overall_acos']:.2f}%
+        - Average Conversion Rate: {product_analysis['performance']['avg_conversion_rate']:.2f}%
+        
+        **Channel Performance:**
+        {', '.join([f"{c['channel']}: ROAS {c['roas']:.2f}x, ACoS {c['acos']:.2f}%" for c in product_analysis['channel_performance']])}
+        
+        Based on this data for our {product_analysis['product']['name']}, please provide:
+        
+        1. Advanced optimization strategies for keywords, listing content, and targeting beyond basic recommendations
+        2. Sophisticated channel strategy beyond simple budget allocation
+        3. Advanced bidding techniques tailored specifically to this product's performance metrics
+        4. Competitive positioning opportunities in the {product_analysis['product']['category']} category
+        5. Advanced conversion rate optimization techniques specific to this medical device
+        
+        I'm familiar with basic optimization techniques. Please focus on advanced strategies that could give us an edge,
+        and feel free to ask clarifying questions about the product if that would help improve your recommendations.
+        """
+        
+        # Create messages for API call
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        # Get AI response
+        return call_openai_api(messages, model=st.session_state.settings['ai_model'], max_tokens=1000)
+    except Exception as e:
+        logger.error(f"Error getting product-specific insights: {str(e)}")
+        return f"Error generating product insights. Please contact {SUPPORT_EMAIL} for assistance."
+
 def display_settings_page():
     """Display the settings page for the dashboard."""
     st.title("Settings")
@@ -418,13 +807,9 @@ def display_settings_page():
             st.success("✅ Connected to OpenAI API")
         else:
             st.error("❌ Not connected to OpenAI API")
-            st.markdown("""
-            To enable AI features, add your OpenAI API key to Streamlit secrets.
-            
-            Create a `.streamlit/secrets.toml` file with:
-            ```
-            openai_api_key = "your-api-key-here"
-            ```
+            st.markdown(f"""
+            OpenAI API key is required for AI features but not found or not valid.
+            Please contact {SUPPORT_EMAIL} for assistance.
             """)
         
         # AI model selection
@@ -451,7 +836,7 @@ def display_settings_page():
                 if is_connected:
                     st.success("Successfully connected to OpenAI API!")
                 else:
-                    st.error("Failed to connect to OpenAI API. Please check your API key.")
+                    st.error(f"Failed to connect to OpenAI API. Please contact {SUPPORT_EMAIL} for assistance.")
     
     # Import/Export Settings
     with tabs[2]:
@@ -541,24 +926,64 @@ def display_settings_page():
             Developed for quality managers and marketing teams to optimize PPC campaigns and maximize ROI.
             """)
         
-        st.markdown("""
+        st.markdown(f"""
         ### Features
         
         - Campaign performance tracking and analysis
-        - AI-powered marketing insights
-        - Amazon marketing assistant
+        - AI-powered marketing insights for medical devices
+        - Amazon marketing assistant specialized for Vive Health products
         - Channel and category performance comparisons
         - Profit and ROI calculations
         
         ### Support
         
-        For questions or support, contact the support team.
+        For questions or support, contact {SUPPORT_EMAIL}
         """)
     
     # Add a back button
     if st.button("← Back to Dashboard"):
         st.session_state.view = "dashboard"
         st.rerun()
+
+def get_amazon_chat_response(messages_history):
+    """Get AI responses for the Amazon marketing assistant chat."""
+    # Prepare system message with Amazon marketing and medical device context
+    system_message = f"""You are an expert Amazon marketing consultant specializing in medical devices for Vive Health.
+    You help the quality manager at Vive Health optimize their PPC campaigns and product listings.
+    
+    Vive Health sells medical devices in categories including mobility aids, pain relief devices, bathroom safety equipment,
+    sleep & comfort products, fitness & recovery items, daily living aids, and respiratory care devices.
+    
+    You understand the unique challenges of medical device marketing on Amazon:
+    - Regulatory constraints (FDA, Amazon policies, etc.)
+    - Balancing technical specifications with user benefits
+    - Healthcare professional vs. end-user targeting
+    - Competitive landscape in the medical device space
+    - Importance of compliance with Amazon's terms for medical devices
+    
+    Provide specific, actionable advanced advice tailored to medical device marketing on Amazon. Assume the user
+    has experience with basic Amazon marketing concepts and needs more sophisticated guidance.
+    
+    Your expertise covers:
+    - Advanced Amazon PPC campaign strategies (Sponsored Products, Sponsored Brands, Sponsored Display)
+    - Sophisticated keyword and ASIN targeting beyond basic approaches
+    - Advanced listing optimization techniques for medical devices 
+    - A+ Content optimization specific to medical devices
+    - Review management within compliance guidelines
+    - Competitive positioning against other medical device sellers
+    
+    Ask clarifying questions about specific products if that would help provide more targeted advice.
+    Be direct and focus on practical, advanced strategies rather than general principles the user likely
+    already knows. Provide specific examples relevant to Vive Health products when possible.
+    
+    Current date: {datetime.datetime.now().strftime('%Y-%m-%d')}"""
+    
+    # Prepare all messages including system and history
+    all_messages = [{"role": "system", "content": system_message}]
+    all_messages.extend(messages_history)
+    
+    # Get response from OpenAI
+    return call_openai_api(all_messages, max_tokens=1500)
 
 def analyze_imported_file(file_data):
     """Analyze an imported file and provide AI insights about the data quality and content."""
@@ -643,45 +1068,15 @@ def analyze_imported_file(file_data):
 
 def get_import_recommendations(file_analysis):
     """Generate AI-powered recommendations for the imported data."""
-    if not st.session_state.get('openai_api_connected', False):
-        # Return simple recommendations if AI is not available
-        recommendations = "File import analysis complete. "
-        
-        if file_analysis['row_count'] == 0:
-            recommendations += "No data was found in the file. Please check the file format."
-        else:
-            recommendations += f"Successfully analyzed {file_analysis['row_count']} campaigns. "
-            
-            # Check for missing important columns
-            missing_columns = []
-            for col in ['campaign_name', 'ad_spend', 'revenue']:
-                if col not in file_analysis['columns']:
-                    missing_columns.append(col)
-            
-            if missing_columns:
-                recommendations += f"Warning: Missing required columns: {', '.join(missing_columns)}. "
-            
-            # Add metrics if available
-            if 'metrics' in file_analysis and file_analysis['metrics']:
-                metrics = file_analysis['metrics']
-                if 'overall_roas' in metrics:
-                    roas = metrics['overall_roas']
-                    if roas > 4:
-                        recommendations += f"Campaigns show good overall ROAS ({roas:.2f}x). "
-                    else:
-                        recommendations += f"Overall ROAS ({roas:.2f}x) could be improved. "
-        
-        return recommendations
-    
-    # If AI is available, use it for more detailed recommendations
     try:
         # Create system prompt with context
-        system_prompt = """You are an expert marketing analyst specializing in PPC campaign analysis for medical devices.
-        Provide brief, actionable insights about the data being imported based on the file analysis."""
+        system_prompt = """You are an expert marketing analyst specializing in PPC campaign analysis for Vive Health's medical devices.
+        Provide detailed, actionable insights about the data being imported based on the file analysis.
+        Focus on specific patterns, opportunities, and potential issues in the data that might not be immediately obvious."""
         
         # Add file analysis
         prompt = f"""
-        Here's an analysis of imported marketing campaign data:
+        Here's an analysis of imported marketing campaign data for Vive Health medical devices:
         
         File contains {file_analysis['row_count']} campaigns with columns: {', '.join(file_analysis['columns'])}.
         
@@ -713,12 +1108,14 @@ def get_import_recommendations(file_analysis):
         
         prompt += """
         
-        Based on this analysis, provide:
-        1. A brief assessment of the data quality (2-3 sentences)
-        2. 2-3 key observations about the campaign performance (if metrics are available)
-        3. 1-2 specific recommendations for what to analyze first
+        Based on this analysis, please provide:
+        1. A detailed assessment of the data quality and any critical issues that need addressing
+        2. Specific observations about campaign performance metrics (if available)
+        3. Advanced recommendations for what to analyze first based on potential opportunities
+        4. Any patterns or anomalies that should be investigated
         
-        Keep your response under 200 words and focus on insights relevant to medical device marketing.
+        Focus on insights relevant to Vive Health's medical device marketing on Amazon.
+        Provide specific, actionable recommendations rather than general advice.
         """
         
         # Create messages for API call
@@ -728,255 +1125,10 @@ def get_import_recommendations(file_analysis):
         ]
         
         # Get AI response
-        response = call_openai_api(messages, model=st.session_state.settings['ai_model'], max_tokens=300)
-        return response
-    
+        return call_openai_api(messages, max_tokens=800)
     except Exception as e:
         logger.error(f"Error getting import recommendations: {str(e)}")
-        return f"File import complete. {file_analysis['row_count']} campaigns analyzed. Check the data for completeness before proceeding with analysis."
-        
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        st.session_state.is_loading = False
-        
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        else:
-            logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
-            return f"Error: AI assistant encountered a problem (HTTP {response.status_code}). Please try again later."
-            
-    except Exception as e:
-        logger.exception(f"Error calling OpenAI API: {str(e)}")
-        st.session_state.is_loading = False
-        return f"Error: The AI assistant encountered an unexpected problem. Please try again later."
-
-def generate_simulated_response(messages):
-    """Generate a simulated response for demonstration when API key is missing."""
-    # Extract the latest user message
-    user_message = "Unknown query"
-    for msg in reversed(messages):
-        if msg["role"] == "user":
-            user_message = msg["content"]
-            break
-    
-    # Generate response based on keywords in the user message
-    if "roi" in user_message.lower() or "return on investment" in user_message.lower():
-        return """Based on the campaign data, I recommend optimizing your ad spend on Amazon PPC for mobility products which currently show the highest ROAS at 6.3x.
-
-Consider:
-1. Increasing budget allocation by 15-20% for top-performing Amazon campaigns
-2. Reviewing keyword performance for TENS units to identify high-converting search terms
-3. Testing higher bids on top-performing keywords to maintain position and visibility
-
-The data indicates Amazon campaigns are outperforming website PPC by approximately 25% in terms of ROAS."""
-    
-    elif "acos" in user_message.lower():
-        return """Your ACoS performance varies significantly across channels:
-- Amazon PPC campaigns are averaging 15-21% ACoS, which is better than your target
-- Website PPC campaigns are showing higher ACoS (25.12%), slightly above target
-
-Consider optimizing the Bathroom Safety campaign by:
-* Implementing negative keywords to reduce wasted spend
-* Refining keyword match types to more exact matching
-* Testing product image and description improvements to increase conversion rate
-
-A 10% reduction in ACoS for the Bathroom Safety campaign could increase your profit margin by approximately 7.5%."""
-    
-    elif "keyword" in user_message.lower() or "targeting" in user_message.lower():
-        return """For medical device PPC keyword targeting, I recommend:
-
-1. Use a mix of precise medical terminology and layperson terms (e.g., both "orthopedic supports" and "back brace")
-2. Include symptom-based keywords (e.g., "pain relief," "mobility assistance")
-3. Implement negative keywords for non-commercial search terms
-4. For your mobility products, focus on specific use cases like "getting in and out of bath"
-
-Your highest-converting keywords currently appear to be specific product attributes like "adjustable," "lightweight," and "portable" combined with the product category."""
-    
-    elif "medical device" in user_message.lower() or "healthcare" in user_message.lower():
-        return """For medical device marketing, particularly in your product categories:
-
-1. Focus on educational content that explains product benefits and proper usage
-2. Leverage customer testimonials (while being careful with medical claims - always include appropriate disclaimers)
-3. Highlight your product certifications and compliance to build trust
-4. Consider targeting specific conditions related to your products (e.g., mobility limitations, chronic pain)
-
-For Amazon specifically:
-- Ensure product descriptions clearly state indications for use
-- Include detailed specification measurements relevant to medical needs
-- Use A+ content to explain how the product works
-- Consider bundling complementary medical devices to increase average order value
-
-The best-performing medical device categories currently are Mobility Aids (6.3x ROAS) and Pain Management (4.69x ROAS)."""
-    
-    elif "amazon listing" in user_message.lower() or "product listing" in user_message.lower():
-        return """Based on your Amazon listings for medical devices, here are my recommendations:
-
-1. **Title Optimization**: Your current titles are keyword-stuffed and difficult to read. Structure them as: [Brand] + [Product Type] + [2-3 Key Features] + [Size/Variant]
-
-2. **Enhanced Brand Content**: Add comparison charts between your device models, usage diagrams, and detailed specification tables.
-
-3. **Secondary Images**: Include infographics highlighting key measurements, weight capacity, and specific medical benefits. Show the product from multiple angles and in different usage scenarios.
-
-4. **Bullet Points**: Lead with benefits before features. For example, instead of "Adjustable height 32-38 inches" say "Customizable comfort with adjustable height (32-38 inches) for users of all statures."
-
-5. **Search Terms**: For medical devices, include both technical terms healthcare professionals might use and simpler terms patients would search for.
-
-Note: Remember to review all medical claims for compliance with Amazon's policies and healthcare regulations before implementation."""
-    
-    else:
-        return """Based on your medical device marketing campaign performance data, I've identified several optimization opportunities:
-
-1. Amazon PPC campaigns are your strongest performers with ROAS of 4.69-6.30x
-2. The Pain Relief category shows the highest conversion rate at 5.00%
-3. Bathroom Safety products have potential but need optimization
-
-Recommended actions:
-- Shift 15% of budget from lower-performing channels to Amazon PPC
-- Improve product listings for Bathroom Safety with more detailed specifications and better imagery
-- Test different bid strategies for your top-performing keywords
-- Implement product targeting ads for complementary medical devices
-
-These adjustments could improve your overall marketing ROI by approximately 18-22% based on current performance metrics.
-
-Remember to ensure all marketing claims remain compliant with medical device regulations."""
-
-def get_ai_campaign_insights(campaign_data: pd.DataFrame, specific_campaign: Optional[str] = None):
-    """Get AI-powered insights for marketing campaigns."""
-    if campaign_data.empty:
-        return "No campaign data available for analysis. Please add campaigns first."
-    
-    # Create system prompt with context
-    system_prompt = """You are an expert marketing analyst for Vive Health, specializing in e-commerce PPC campaigns 
-    and marketing ROI analysis for medical devices. Provide detailed, actionable insights based on the campaign data."""
-    
-    # Add summary of all campaigns
-    system_prompt += "\n\n## Campaign Performance Summary:\n"
-    
-    # Overall metrics
-    total_spend = campaign_data['ad_spend'].sum()
-    total_revenue = campaign_data['revenue'].sum()
-    total_roas = safe_divide(total_revenue, total_spend)
-    avg_acos = safe_divide(campaign_data['ad_spend'].sum() * 100, campaign_data['revenue'].sum())
-    
-    system_prompt += f"Total Ad Spend: ${total_spend:,.2f}\n"
-    system_prompt += f"Total Revenue: ${total_revenue:,.2f}\n"
-    system_prompt += f"Overall ROAS: {total_roas:.2f}x\n"
-    system_prompt += f"Overall ACoS: {avg_acos:.2f}%\n\n"
-    
-    # Channel performance
-    system_prompt += "## Channel Performance:\n"
-    channel_perf = campaign_data.groupby('channel').agg({
-        'ad_spend': 'sum',
-        'revenue': 'sum',
-        'conversions': 'sum',
-        'clicks': 'sum'
-    }).reset_index()
-    
-    for _, row in channel_perf.iterrows():
-        channel_roas = safe_divide(row['revenue'], row['ad_spend'])
-        channel_acos = safe_divide(row['ad_spend'] * 100, row['revenue'])
-        channel_conv_rate = safe_divide(row['conversions'] * 100, row['clicks'])
-        
-        system_prompt += f"{row['channel']}:\n"
-        system_prompt += f" - Spend: ${row['ad_spend']:,.2f}\n"
-        system_prompt += f" - Revenue: ${row['revenue']:,.2f}\n"
-        system_prompt += f" - ROAS: {channel_roas:.2f}x\n"
-        system_prompt += f" - ACoS: {channel_acos:.2f}%\n"
-        system_prompt += f" - Conversion Rate: {channel_conv_rate:.2f}%\n\n"
-    
-    # If specific campaign is requested, add detailed info
-    if specific_campaign and specific_campaign in campaign_data['campaign_name'].values:
-        campaign = campaign_data[campaign_data['campaign_name'] == specific_campaign].iloc[0]
-        
-        system_prompt += f"## Specific Campaign Analysis: {specific_campaign}\n"
-        system_prompt += f"Channel: {campaign['channel']}\n"
-        system_prompt += f"Category: {campaign['category']}\n"
-        system_prompt += f"Product: {campaign['product_name']}\n"
-        system_prompt += f"Ad Spend: ${campaign['ad_spend']:,.2f}\n"
-        system_prompt += f"Revenue: ${campaign['revenue']:,.2f}\n"
-        system_prompt += f"ROAS: {campaign['roas']:.2f}x\n"
-        system_prompt += f"ACoS: {campaign['acos']:.2f}%\n"
-        system_prompt += f"Target ACoS: {campaign['target_acos']:.2f}%\n"
-        system_prompt += f"Conversion Rate: {campaign['conversion_rate']:.2f}%\n"
-        
-        if 'ctr' in campaign:
-            system_prompt += f"CTR: {campaign['ctr']:.2f}%\n"
-        else:
-            calculated_ctr = safe_divide(campaign['clicks'] * 100, campaign['impressions'])
-            system_prompt += f"CTR: {calculated_ctr:.2f}%\n"
-            
-        system_prompt += f"Product Cost: ${campaign['product_cost']:.2f}\n"
-        system_prompt += f"Selling Price: ${campaign['selling_price']:.2f}\n"
-        system_prompt += f"Profit Margin: {campaign['profit_margin']:.2f}%\n"
-        system_prompt += f"Notes: {campaign['notes']}\n"
-        
-        # Compare to average for channel
-        channel_avg = campaign_data[campaign_data['channel'] == campaign['channel']].mean()
-        system_prompt += f"\nComparison to {campaign['channel']} Average:\n"
-        system_prompt += f"ROAS: {campaign['roas']:.2f}x vs. {channel_avg['roas']:.2f}x average\n"
-        system_prompt += f"ACoS: {campaign['acos']:.2f}% vs. {channel_avg['acos']:.2f}% average\n"
-        system_prompt += f"Conversion Rate: {campaign['conversion_rate']:.2f}% vs. {channel_avg['conversion_rate']:.2f}% average\n"
-        
-        user_prompt = f"""Please analyze this {campaign['channel']} campaign for {campaign['product_name']} and provide specific recommendations to improve its performance.
-        Focus on optimizing ROAS, ACoS, and profit margin. What specific actions should we take? Include expected impact of your
-        recommendations in percentages or dollar terms when possible. Be concise, actionable, and specific to the medical device industry. 
-        Remember to include gentle reminders about regulatory compliance where relevant."""
-    else:
-        user_prompt = """Please analyze our overall marketing campaign performance across channels. What are the top 3-5 recommendations to
-        optimize our marketing spend and improve ROI? Provide specific, actionable insights based on the data. Include expected impact
-        of recommendations in percentages or dollar terms when possible. Be concise and focus on specific actions we should take.
-        Remember to include gentle reminders about regulatory compliance for medical device marketing where relevant."""
-    
-    # Create messages array for API call
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
-    
-    # Call the API
-    try:
-        response = call_openai_api(messages)
-        return response
-    except Exception as e:
-        logger.exception("Error getting AI insights")
-        return f"Error generating insights: {str(e)}\n\nPlease try again later."
-
-def get_amazon_chat_response(messages_history):
-    """Get AI responses for the Amazon marketing assistant chat."""
-    # Prepare system message with Amazon marketing and medical device context
-    system_message = f"""You are an expert Amazon marketing consultant specializing in medical devices.
-    You help the quality manager at a medical device company optimize their PPC campaigns and product listings.
-    
-    You understand the unique challenges of medical device marketing on Amazon:
-    - Regulatory constraints (FDA, Amazon policies, etc.)
-    - Balancing technical specifications with user benefits
-    - Healthcare professional vs. end-user targeting
-    - Importance of compliance with Amazon's terms
-    
-    Provide specific, actionable advice tailored to medical device marketing on Amazon. Your expertise covers:
-    - Amazon PPC campaign optimization (Sponsored Products, Sponsored Brands, Sponsored Display)
-    - Keyword and ASIN targeting strategies
-    - Listing optimization for medical devices
-    - A+ Content best practices for healthcare products
-    - Review management within compliance guidelines
-    - Amazon's medical device policies and requirements
-    
-    Be helpful, specific, and actionable in your responses. Focus on Amazon-specific strategies for medical devices.
-    Provide gentle reminders about regulatory compliance where relevant, but don't overemphasize them.
-    Current date: {datetime.datetime.now().strftime('%Y-%m-%d')}"""
-    
-    # Prepare all messages including system and history
-    all_messages = [{"role": "system", "content": system_message}]
-    all_messages.extend(messages_history)
-    
-    # Get response from OpenAI
-    response = call_openai_api(all_messages, max_tokens=1500)
-    return response
+        return f"File import complete. {file_analysis['row_count']} campaigns analyzed. For AI-powered analysis, please contact {SUPPORT_EMAIL}."
 
 # ============================================================================
 # Data Management Class
@@ -1235,9 +1387,6 @@ class MarketingAnalyzer:
                 'channels': [],
                 'error': str(e)
             }
-
-# Initialize analyzer
-analyzer = MarketingAnalyzer()
 
 # ============================================================================
 # UI Components - Dashboard
@@ -2143,1199 +2292,3 @@ def display_campaign_details(campaign_uid: str):
     
     conversion_funnel.update_layout(
         title="Conversion Funnel",
-        height=400
-    )
-    
-    st.plotly_chart(conversion_funnel, use_container_width=True)
-    
-    # Get AI insights for this campaign
-    st.markdown("## AI Analysis")
-    
-    with st.spinner("Generating AI insights..."):
-        insights = get_ai_campaign_insights(analyzer.campaigns, campaign['campaign_name'])
-        st.markdown(insights)
-    
-    # Action buttons
-    st.markdown("## Actions")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("Edit Campaign"):
-            st.session_state.view = "edit_campaign"
-            st.rerun()
-            
-    with col2:
-        if st.button("Delete Campaign"):
-            if analyzer.delete_campaign(campaign_uid):
-                show_toast("Campaign deleted successfully", "success")
-                st.session_state.view = "all_campaigns"
-                st.rerun()
-            else:
-                st.error("Failed to delete campaign")
-                
-    with col3:
-        if st.button("Back to All Campaigns"):
-            st.session_state.view = "all_campaigns"
-            st.rerun()
-
-# ============================================================================
-# UI Components - AI Assistants
-# ============================================================================
-
-def display_amazon_assistant():
-    """Display the Amazon marketing assistant chat interface."""
-    st.title("Amazon Marketing Assistant")
-    
-    # Show API connection status
-    if not st.session_state.get('openai_api_connected', False):
-        st.warning("""
-        ⚠️ OpenAI API connection not detected. The assistant will use simulated responses.
-        
-        To enable full AI capabilities, please add your OpenAI API key to Streamlit secrets.
-        """)
-    else:
-        st.success("✅ Connected to OpenAI API")
-    
-    st.markdown("""
-    This AI-powered assistant specializes in Amazon marketing for medical devices. Ask questions about:
-    
-    - Amazon PPC campaign optimization
-    - ACOS, ROAS, and bidding strategies
-    - Keyword and product targeting
-    - Listing optimization for medical devices
-    - A+ Content best practices
-    - Amazon's medical device policies
-    """)
-    
-    # Display message history
-    messages = st.session_state.amazon_chat_messages
-    
-    if messages:
-        for message in messages:
-            if message["role"] == "user":
-                st.chat_message("user").markdown(message["content"])
-            else:
-                st.chat_message("assistant").markdown(message["content"])
-    
-    # Chat input
-    prompt = st.chat_input("Ask about Amazon marketing for medical devices...")
-    
-    if prompt:
-        # Add user message to chat history
-        st.session_state.amazon_chat_messages.append({"role": "user", "content": prompt})
-        
-        # Display user message
-        st.chat_message("user").markdown(prompt)
-        
-        # Get AI response
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                response = get_amazon_chat_response(st.session_state.amazon_chat_messages)
-                st.markdown(response)
-                st.session_state.amazon_chat_messages.append({"role": "assistant", "content": response})
-    
-    # Add a back button
-    if st.button("← Back to Dashboard", key="back_from_assistant"):
-        st.session_state.view = "dashboard"
-        st.rerun()
-
-def display_campaign_planner():
-    """Display the campaign planner with AI recommendations."""
-    st.title("Campaign Planner & Budget Optimizer")
-    
-    # Tabs for different planning modes
-    planner_tabs = st.tabs(["Create New Campaign", "Learn From Past Campaigns", "Product-Specific Analysis"])
-    
-    # Tab 1: Create New Campaign (Forward-looking)
-    with planner_tabs[0]:
-        st.markdown("""
-        This tool helps you plan new marketing campaigns by providing AI-powered recommendations 
-        for budget allocation, campaign duration, and bidding strategy based on your product details and goals.
-        """)
-        
-        # Show API connection status
-        if not st.session_state.get('openai_api_connected', False):
-            st.warning("""
-            ⚠️ OpenAI API connection not detected. 
-            
-            To enable full AI recommendations, please add your OpenAI API key to Streamlit secrets.
-            Basic recommendations will be provided, but they won't be as detailed or customized.
-            """)
-        
-        # Create form to collect campaign planning information
-        with st.form("campaign_planner_form"):
-            st.subheader("Product & Campaign Details")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                product_name = st.text_input("Product Name", help="Name of the product to advertise")
-                product_category = st.selectbox("Product Category", DEFAULT_CATEGORIES, help="Category of the product")
-                product_price = st.number_input("Product Price ($)", min_value=0.01, value=99.99, step=10.0, help="Selling price of the product")
-                product_cost = st.number_input("Product Cost ($)", min_value=0.01, value=45.0, step=5.0, help="Cost to produce or acquire the product")
-                fee_percent = st.slider("Marketplace Fees (%)", min_value=5, max_value=40, value=15, help="Percentage of selling price taken by marketplace fees")
-            
-            with col2:
-                # Campaign goals
-                st.markdown("### Campaign Goals")
-                total_budget = st.number_input("Total Budget ($)", min_value=100.0, value=5000.0, step=500.0, help="Total budget available for the campaign")
-                target_roas = st.number_input("Target ROAS", min_value=1.0, value=3.0, step=0.5, help="Target Return on Ad Spend")
-                campaign_duration = st.slider("Campaign Duration (days)", min_value=7, max_value=90, value=30, help="How long to run the campaign")
-                primary_goal = st.selectbox("Primary Goal", [
-                    "Maximize sales volume", 
-                    "Maximize profit", 
-                    "Increase brand awareness",
-                    "Launch new product", 
-                    "Improve ranking/visibility"
-                ], help="Primary goal of this advertising campaign")
-                
-                st.markdown("### Market & Competition")
-                competition_level = st.select_slider("Competition Level", options=["Low", "Medium", "High"], value="Medium", help="Level of competition for this product category")
-                seasonality = st.select_slider("Seasonality", options=["Low", "Medium", "High"], value="Low", help="How seasonal is demand for this product")
-            
-            # Channel selection and priorities
-            st.subheader("Channel Selection")
-            st.markdown("Select which channels to include and their priority (higher = more budget allocation)")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                amazon_ppc_importance = st.slider("Amazon PPC", min_value=0, max_value=10, value=10, help="Importance of Amazon PPC (Sponsored Products)")
-                amazon_dsp_importance = st.slider("Amazon DSP", min_value=0, max_value=10, value=5, help="Importance of Amazon DSP (Display ads)")
-                
-            with col2:
-                google_ads_importance = st.slider("Google Ads", min_value=0, max_value=10, value=3, help="Importance of Google Search ads")
-                social_ads_importance = st.slider("Social Media Ads", min_value=0, max_value=10, value=2, help="Importance of social media advertising")
-                
-            with col3:
-                walmart_importance = st.slider("Walmart Ads", min_value=0, max_value=10, value=2, help="Importance of Walmart advertising")
-                website_importance = st.slider("Direct Website", min_value=0, max_value=10, value=3, help="Importance of advertising to your website")
-            
-            # Special considerations for medical devices
-            st.subheader("Medical Device Specifics")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                target_audience = st.multiselect("Target Audience", [
-                    "Healthcare Professionals", 
-                    "Patients/End-users", 
-                    "Caregivers",
-                    "Healthcare Facilities",
-                    "Insurance Providers"
-                ], default=["Patients/End-users"], help="Who are the primary targets for this campaign")
-                
-                fda_cleared = st.checkbox("FDA Cleared/Approved", value=True, help="Is this product FDA cleared or approved?")
-                
-            with col2:
-                medical_keywords = st.text_area("Key Medical Terms", help="Important medical terms or conditions related to this product (comma separated)", placeholder="arthritis, mobility, joint pain, etc.")
-                insurance_coverage = st.checkbox("Insurance Eligible", value=False, help="Is this product eligible for insurance coverage?")
-            
-            # Additional notes
-            notes = st.text_area("Additional Notes", help="Any other relevant information about the campaign")
-            
-            # Submit button
-            submitted = st.form_submit_button("Generate Campaign Recommendations")
-            
-            if submitted:
-                with st.spinner("Analyzing data and generating recommendations..."):
-                    # Calculate some basic metrics
-                    profit_margin = ((product_price - product_cost - (product_price * fee_percent / 100)) / product_price) * 100
-                    breakeven_acos = profit_margin
-                    suggested_acos = breakeven_acos * 0.8  # Target 80% of breakeven as a conservative approach
-                    
-                    # Collect all input data
-                    plan_data = {
-                        "product": {
-                            "name": product_name,
-                            "category": product_category,
-                            "price": product_price,
-                            "cost": product_cost,
-                            "fee_percent": fee_percent,
-                            "profit_margin": profit_margin,
-                            "breakeven_acos": breakeven_acos
-                        },
-                        "campaign": {
-                            "budget": total_budget,
-                            "target_roas": target_roas,
-                            "duration": campaign_duration,
-                            "primary_goal": primary_goal,
-                            "target_audience": target_audience,
-                            "medical_keywords": medical_keywords,
-                            "fda_cleared": fda_cleared,
-                            "insurance_coverage": insurance_coverage
-                        },
-                        "market": {
-                            "competition_level": competition_level,
-                            "seasonality": seasonality
-                        },
-                        "channels": {
-                            "amazon_ppc": amazon_ppc_importance,
-                            "amazon_dsp": amazon_dsp_importance,
-                            "google_ads": google_ads_importance,
-                            "social_ads": social_ads_importance,
-                            "walmart": walmart_importance,
-                            "website": website_importance
-                        }
-                    }
-                    
-                    # Add historical data if we have it
-                    if not analyzer.campaigns.empty:
-                        # Check if we have data for this product category
-                        category_data = analyzer.campaigns[analyzer.campaigns['category'] == product_category]
-                        if not category_data.empty:
-                            # Get average metrics for this category
-                            plan_data['historical'] = {
-                                'category': {
-                                    'avg_conversion_rate': category_data['conversion_rate'].mean(),
-                                    'avg_ctr': category_data['ctr'].mean(),
-                                    'avg_acos': category_data['acos'].mean(),
-                                    'avg_roas': category_data['roas'].mean(),
-                                    'campaign_count': len(category_data)
-                                }
-                            }
-                    
-                    # Get AI-powered recommendations
-                    recommendations = get_campaign_recommendations(plan_data)
-                    
-                    # Display recommendations
-                    st.success("Recommendations generated successfully!")
-                    
-                    # Display the recommendations in an organized way
-                    st.markdown("## Campaign Recommendations")
-                    
-                    # Budget allocation
-                    st.markdown("### 📊 Budget Allocation")
-                    
-                    # Calculate budget allocation based on channel importance
-                    total_importance = sum([v for v in plan_data["channels"].values() if v > 0])
-                    budget_allocation = {}
-                    
-                    # Only include channels with importance > 0
-                    for channel, importance in plan_data["channels"].items():
-                        if importance > 0:
-                            channel_name = channel.replace("_", " ").title()
-                            budget_allocation[channel_name] = (importance / total_importance) * total_budget
-                    
-                    # Create a DataFrame for the budget allocation
-                    budget_df = pd.DataFrame({
-                        "Channel": budget_allocation.keys(),
-                        "Budget": budget_allocation.values()
-                    })
-                    
-                    # Create a pie chart for budget allocation
-                    fig = px.pie(
-                        budget_df, 
-                        values="Budget", 
-                        names="Channel", 
-                        title=f"Budget Allocation (Total: ${total_budget:,.2f})",
-                        color_discrete_sequence=px.colors.qualitative.Pastel
-                    )
-                    fig.update_traces(textposition='inside', textinfo='percent+label')
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Show budget table
-                    budget_df["Budget"] = budget_df["Budget"].apply(lambda x: f"${x:,.2f}")
-                    budget_df["Percentage"] = budget_df["Channel"].apply(lambda x: f"{plan_data['channels'][x.lower().replace(' ', '_')] / total_importance * 100:.1f}%")
-                    st.table(budget_df)
-                    
-                    # Campaign timeline recommendation
-                    st.markdown("### 📅 Campaign Timeline")
-                    
-                    # Calculate daily budgets
-                    daily_budget = total_budget / campaign_duration
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Campaign Duration", f"{campaign_duration} days")
-                        st.metric("Start Date", (datetime.datetime.now()).strftime('%Y-%m-%d'))
-                        st.metric("End Date", (datetime.datetime.now() + datetime.timedelta(days=campaign_duration)).strftime('%Y-%m-%d'))
-                    
-                    with col2:
-                        st.metric("Daily Budget", f"${daily_budget:.2f}")
-                        st.metric("Budget Pacing", "Even distribution" if seasonality == "Low" else "Variable pacing")
-                        st.metric("Recommended Review Frequency", "Weekly" if competition_level == "High" else "Bi-weekly")
-                    
-                    # Bidding strategy
-                    st.markdown("### 💰 Bidding Strategy")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.metric("Target ACoS", f"{suggested_acos:.1f}%")
-                        st.metric("Breakeven ACoS", f"{breakeven_acos:.1f}%")
-                        
-                    with col2:
-                        st.metric("Initial Bid Strategy", "Aggressive" if primary_goal == "Launch new product" or primary_goal == "Increase brand awareness" else "Conservative")
-                        st.metric("Bid Adjustment Frequency", "Daily" if competition_level == "High" else "Weekly")
-                        
-                    with col3:
-                        st.metric("Target ROAS", f"{target_roas:.1f}x")
-                        # Use historical data if available
-                        if 'historical' in plan_data and 'category' in plan_data['historical']:
-                            expected_conv = plan_data['historical']['category']['avg_conversion_rate']
-                            st.metric("Expected Conversion Rate", f"{expected_conv:.2f}%", 
-                                    help="Based on historical data for this category")
-                        else:
-                            st.metric("Expected Conversion Rate", "2.5-4.0%" if competition_level == "High" else "3.5-5.5%")
-                    
-                    # Show the detailed AI recommendations
-                    st.markdown("### 🤖 AI Recommendations")
-                    st.markdown(recommendations)
-                    
-                    # Campaign projection
-                    st.markdown("### 📈 Campaign Projection")
-                    
-                    # Create a basic projection
-                    days = list(range(1, campaign_duration + 1))
-                    
-                    # Simple projection model - this would be more sophisticated in real application
-                    # Start with lower performance that gradually improves
-                    projected_roas = [max(1.0, target_roas * (0.5 + 0.5 * (d / campaign_duration))) for d in days]
-                    
-                    # Create the projection chart
-                    projection_df = pd.DataFrame({
-                        "Day": days,
-                        "Projected ROAS": projected_roas
-                    })
-                    
-                    fig = px.line(
-                        projection_df, 
-                        x="Day", 
-                        y="Projected ROAS",
-                        title="Projected Campaign Performance",
-                        labels={"Day": "Campaign Day", "Projected ROAS": "Projected ROAS"}
-                    )
-                    
-                    # Add target ROAS line
-                    fig.add_hline(
-                        y=target_roas, 
-                        line_dash="dash", 
-                        line_color="green",
-                        annotation_text=f"Target ROAS: {target_roas}x", 
-                        annotation_position="bottom right"
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Conversion projection
-                    daily_spend = total_budget / campaign_duration
-                    
-                    # Estimate metrics - use historical data if available
-                    if 'historical' in plan_data and 'category' in plan_data['historical']:
-                        hist_data = plan_data['historical']['category']
-                        avg_conv_rate = hist_data['avg_conversion_rate'] / 100
-                        # Use historical CTR to estimate clicks from impressions
-                        avg_ctr = hist_data['avg_ctr'] / 100
-                        # Calculate average CPC from historical data
-                        avg_cpc = 1.1  # Fallback value
-                        if 'avg_cpc' in hist_data:
-                            avg_cpc = hist_data['avg_cpc']
-                            
-                        st.info(f"Using historical data from {hist_data['campaign_count']} campaigns in the {product_category} category to improve projections")
-                    else:
-                        # Fallback to estimates based on competition level
-                        avg_cpc = 1.25 if competition_level == "High" else (0.95 if competition_level == "Medium" else 0.75)
-                        avg_conv_rate = 0.035  # 3.5% conversion rate
-                    
-                    est_clicks_per_day = daily_spend / avg_cpc
-                    est_daily_conversions = est_clicks_per_day * avg_conv_rate
-                    est_total_conversions = est_daily_conversions * campaign_duration
-                    est_total_revenue = est_total_conversions * product_price
-                    est_total_profit = est_total_conversions * (product_price - product_cost - (product_price * fee_percent / 100))
-                    est_roi = (est_total_profit / total_budget) * 100
-                    
-                    # Display estimated campaign results
-                    st.markdown("### 📊 Estimated Campaign Results")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.metric("Estimated Conversions", f"{est_total_conversions:.0f}")
-                        st.metric("Estimated Revenue", f"${est_total_revenue:,.2f}")
-                        
-                    with col2:
-                        st.metric("Estimated ROAS", f"{est_total_revenue/total_budget:.2f}x")
-                        st.metric("Estimated ROI", f"{est_roi:.1f}%")
-                        
-                    with col3:
-                        st.metric("Estimated Profit", f"${est_total_profit:,.2f}")
-                        st.metric("Average CPC", f"${avg_cpc:.2f}")
-                    
-                    # Call-to-action
-                    st.success("Ready to implement this campaign plan? Use the Add Campaign feature to set up and track your new campaigns!")
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if st.button("Create New Campaign", key="create_from_plan"):
-                            st.session_state.view = "add_campaign"
-                            st.rerun()
-                    with col2:
-                        if st.button("Modify Plan", key="modify_plan"):
-                            st.info("Modify the values above and click 'Generate Campaign Recommendations' again.")
-    
-    # Tab 2: Learn From Past Campaigns (Analysis-based recommendations)
-    with planner_tabs[1]:
-        st.markdown("""
-        Analyze your past campaign performance to identify patterns and extract learnings that can inform your future campaigns.
-        This tool will analyze your historical data to provide insights specific to your product categories.
-        """)
-        
-        if analyzer.campaigns.empty:
-            st.warning("No historical campaign data available. Please add campaigns first.")
-        else:
-            # Get unique categories from campaigns
-            categories = sorted(analyzer.campaigns['category'].unique().tolist())
-            
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                selected_category = st.selectbox(
-                    "Select Product Category to Analyze",
-                    categories,
-                    help="Choose a product category to analyze historical performance"
-                )
-            
-            with col2:
-                min_campaigns = st.number_input(
-                    "Minimum Campaigns for Analysis",
-                    min_value=1,
-                    max_value=10,
-                    value=1,
-                    help="Minimum number of campaigns needed for reliable analysis"
-                )
-            
-            # Filter data by selected category
-            category_data = analyzer.campaigns[analyzer.campaigns['category'] == selected_category]
-            
-            if len(category_data) < min_campaigns:
-                st.warning(f"Insufficient data for {selected_category}. Need at least {min_campaigns} campaigns, but only have {len(category_data)}.")
-            else:
-                # Calculate category metrics
-                avg_conversion_rate = category_data['conversion_rate'].mean()
-                avg_ctr = category_data['ctr'].mean()
-                avg_acos = category_data['acos'].mean()
-                avg_roas = category_data['roas'].mean()
-                avg_cpc = category_data['avg_cpc'].mean()
-                
-                st.subheader(f"Historical Performance for {selected_category}")
-                
-                # Show metrics
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric("Avg. Conversion Rate", f"{avg_conversion_rate:.2f}%")
-                with col2:
-                    st.metric("Avg. CTR", f"{avg_ctr:.2f}%")
-                with col3:
-                    st.metric("Avg. ACoS", f"{avg_acos:.2f}%")
-                with col4:
-                    st.metric("Avg. ROAS", f"{avg_roas:.2f}x")
-                
-                # Analyze campaign performance
-                top_campaign = category_data.loc[category_data['roas'].idxmax()]
-                top_campaign_name = top_campaign['campaign_name']
-                top_campaign_roas = top_campaign['roas']
-                
-                # Display top performing campaign details
-                st.subheader("Best Performing Campaign Analysis")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"**Best Campaign:** {top_campaign_name}")
-                    st.markdown(f"**ROAS:** {top_campaign_roas:.2f}x")
-                    st.markdown(f"**Channel:** {top_campaign['channel']}")
-                    st.markdown(f"**Conversion Rate:** {top_campaign['conversion_rate']:.2f}%")
-                
-                with col2:
-                    st.markdown(f"**ACoS:** {top_campaign['acos']:.2f}%")
-                    st.markdown(f"**Ad Spend:** ${top_campaign['ad_spend']:.2f}")
-                    st.markdown(f"**CPC:** ${top_campaign['avg_cpc']:.2f}")
-                    st.markdown(f"**Profit Margin:** {top_campaign['profit_margin']:.2f}%")
-                
-                # Get AI-powered learnings
-                with st.spinner("Generating insights from historical data..."):
-                    # Prepare data for AI analysis
-                    historical_data = {
-                        "category": selected_category,
-                        "campaign_count": len(category_data),
-                        "avg_metrics": {
-                            "conversion_rate": avg_conversion_rate,
-                            "ctr": avg_ctr,
-                            "acos": avg_acos,
-                            "roas": avg_roas,
-                            "cpc": avg_cpc
-                        },
-                        "top_campaign": {
-                            "name": top_campaign_name,
-                            "channel": top_campaign['channel'],
-                            "roas": top_campaign_roas,
-                            "acos": top_campaign['acos'],
-                            "conversion_rate": top_campaign['conversion_rate'],
-                            "cpc": top_campaign['avg_cpc'],
-                            "profit_margin": top_campaign['profit_margin']
-                        },
-                        "campaigns": category_data.sort_values(by='roas', ascending=False).head(5).to_dict('records')
-                    }
-                    
-                    # Get AI insights
-                    insights = get_historical_insights(historical_data)
-                    
-                    # Display insights
-                    st.markdown("### 🔍 Historical Campaign Insights")
-                    st.markdown(insights)
-                
-                # Performance comparison across channels
-                channels = category_data['channel'].unique().tolist()
-                if len(channels) > 1:
-                    st.subheader("Channel Performance Comparison")
-                    
-                    # Prepare data for channel comparison
-                    channel_perf = category_data.groupby('channel').agg({
-                        'ad_spend': 'sum',
-                        'revenue': 'sum',
-                        'conversions': 'sum',
-                        'clicks': 'sum',
-                        'roas': 'mean',
-                        'acos': 'mean',
-                        'conversion_rate': 'mean'
-                    }).reset_index()
-                    
-                    # Create comparison chart
-                    fig = px.bar(
-                        channel_perf,
-                        x='channel',
-                        y=['roas', 'conversion_rate'],
-                        title=f"Channel Performance for {selected_category}",
-                        barmode='group',
-                        labels={'value': 'Value', 'channel': 'Channel', 'variable': 'Metric'}
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Display table with channel metrics
-                    channel_perf['roas'] = channel_perf['roas'].apply(lambda x: f"{x:.2f}x")
-                    channel_perf['acos'] = channel_perf['acos'].apply(lambda x: f"{x:.2f}%")
-                    channel_perf['conversion_rate'] = channel_perf['conversion_rate'].apply(lambda x: f"{x:.2f}%")
-                    st.table(channel_perf[['channel', 'roas', 'acos', 'conversion_rate']])
-                
-                # Show key learnings and recommendations
-                st.subheader("Key Learnings for Future Campaigns")
-                
-                # Extract best practices from top performing campaigns
-                # Use dummy data for now, but this would be AI-generated
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("**Recommended Targets:**")
-                    st.markdown(f"- Target ACoS: **{min(avg_acos * 0.9, top_campaign['acos']):.2f}%**")
-                    st.markdown(f"- Target ROAS: **{max(avg_roas * 1.1, top_campaign['roas']):.2f}x**")
-                    st.markdown(f"- Baseline Conversion Rate: **{avg_conversion_rate:.2f}%**")
-                
-                with col2:
-                    st.markdown("**Best Practices:**")
-                    if top_campaign['channel'] == 'Amazon PPC':
-                        st.markdown("- Focus on Amazon PPC for highest ROAS")
-                    st.markdown(f"- Optimal CPC around **${avg_cpc:.2f}**")
-                    st.markdown(f"- Top campaigns use *{top_campaign['channel']}*")
-                
-                # Create a new campaign based on learnings button
-                if st.button("Create New Campaign Based on Learnings"):
-                    # Store insights in session state to use in campaign creation
-                    st.session_state.historical_insights = {
-                        "category": selected_category,
-                        "target_acos": min(avg_acos * 0.9, top_campaign['acos']),
-                        "recommended_channel": top_campaign['channel'],
-                        "target_cpc": avg_cpc,
-                    }
-                    st.session_state.view = "add_campaign"
-                    st.rerun()
-    
-    # Tab 3: Product-Specific Analysis
-    with planner_tabs[2]:
-        st.markdown("""
-        Analyze performance for specific products across all campaigns. This tool helps you understand 
-        how individual products are performing and provides product-specific optimization recommendations.
-        """)
-        
-        if analyzer.campaigns.empty:
-            st.warning("No campaign data available. Please add campaigns first.")
-        else:
-            # Get unique products from campaigns
-            products = sorted(analyzer.campaigns['product_name'].unique().tolist())
-            
-            selected_product = st.selectbox(
-                "Select Product to Analyze",
-                products,
-                help="Choose a specific product to analyze performance across all campaigns"
-            )
-            
-            # Filter data for selected product
-            product_data = analyzer.campaigns[analyzer.campaigns['product_name'] == selected_product]
-            
-            if product_data.empty:
-                st.warning(f"No data available for {selected_product}.")
-            else:
-                # Calculate product metrics
-                total_spend = product_data['ad_spend'].sum()
-                total_revenue = product_data['revenue'].sum()
-                total_profit = product_data['profit'].sum()
-                overall_roas = safe_divide(total_revenue, total_spend)
-                overall_acos = safe_divide(total_spend * 100, total_revenue)
-                
-                # Get product details
-                category = product_data['category'].iloc[0]
-                avg_price = product_data['selling_price'].mean()
-                avg_cost = product_data['product_cost'].mean()
-                
-                # Display product overview
-                st.subheader(f"{selected_product} Performance Overview")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown(f"**Category:** {category}")
-                    st.markdown(f"**Average Price:** ${avg_price:.2f}")
-                    st.markdown(f"**Average Cost:** ${avg_cost:.2f}")
-                    st.markdown(f"**Profit Margin:** {safe_divide((avg_price - avg_cost) * 100, avg_price):.2f}%")
-                
-                with col2:
-                    st.markdown(f"**Campaigns:** {len(product_data)}")
-                    st.markdown(f"**Total Ad Spend:** ${total_spend:.2f}")
-                    st.markdown(f"**Total Revenue:** ${total_revenue:.2f}")
-                    st.markdown(f"**Total Profit:** ${total_profit:.2f}")
-                
-                # Display performance metrics
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    st.metric("Overall ROAS", f"{overall_roas:.2f}x")
-                
-                with col2:
-                    st.metric("Overall ACoS", f"{overall_acos:.2f}%")
-                
-                with col3:
-                    avg_conv_rate = product_data['conversion_rate'].mean()
-                    st.metric("Avg. Conversion Rate", f"{avg_conv_rate:.2f}%")
-                
-                with col4:
-                    avg_ctr = product_data['ctr'].mean()
-                    st.metric("Avg. CTR", f"{avg_ctr:.2f}%")
-                
-                # Campaign performance chart
-                st.subheader("Campaign Performance")
-                
-                # Create a bar chart showing ROAS by campaign
-                campaign_chart = px.bar(
-                    product_data,
-                    x='campaign_name',
-                    y='roas',
-                    color='channel',
-                    title=f"ROAS by Campaign for {selected_product}",
-                    labels={'roas': 'ROAS', 'campaign_name': 'Campaign'}
-                )
-                st.plotly_chart(campaign_chart, use_container_width=True)
-                
-                # Display campaign table
-                campaign_table = product_data[['campaign_name', 'channel', 'ad_spend', 'revenue', 'roas', 'acos', 'conversion_rate']].sort_values(by='roas', ascending=False)
-                # Format for display
-                campaign_table['ad_spend'] = campaign_table['ad_spend'].apply(lambda x: f"${x:.2f}")
-                campaign_table['revenue'] = campaign_table['revenue'].apply(lambda x: f"${x:.2f}")
-                campaign_table['roas'] = campaign_table['roas'].apply(lambda x: f"{x:.2f}x")
-                campaign_table['acos'] = campaign_table['acos'].apply(lambda x: f"{x:.2f}%")
-                campaign_table['conversion_rate'] = campaign_table['conversion_rate'].apply(lambda x: f"{x:.2f}%")
-                # Rename columns
-                campaign_table.columns = ['Campaign', 'Channel', 'Ad Spend', 'Revenue', 'ROAS', 'ACoS', 'Conv. Rate']
-                
-                st.table(campaign_table)
-                
-                # Channel performance comparison
-                st.subheader("Channel Performance")
-                
-                # Group by channel
-                channel_perf = product_data.groupby('channel').agg({
-                    'ad_spend': 'sum',
-                    'revenue': 'sum',
-                    'roas': 'mean',
-                    'acos': 'mean',
-                    'conversion_rate': 'mean'
-                }).reset_index()
-                
-                # Create channel comparison chart
-                channel_chart = px.pie(
-                    channel_perf,
-                    values='revenue',
-                    names='channel',
-                    title=f"Revenue by Channel for {selected_product}"
-                )
-                st.plotly_chart(channel_chart, use_container_width=True)
-                
-                # AI-powered product-specific insights
-                st.subheader("Product-Specific Recommendations")
-                
-                with st.spinner("Generating product-specific insights..."):
-                    # Prepare data for AI
-                    product_analysis = {
-                        "product": {
-                            "name": selected_product,
-                            "category": category,
-                            "price": avg_price,
-                            "cost": avg_cost,
-                            "profit_margin": safe_divide((avg_price - avg_cost) * 100, avg_price)
-                        },
-                        "performance": {
-                            "total_spend": total_spend,
-                            "total_revenue": total_revenue,
-                            "total_profit": total_profit,
-                            "overall_roas": overall_roas,
-                            "overall_acos": overall_acos,
-                            "avg_conversion_rate": avg_conv_rate,
-                            "avg_ctr": avg_ctr
-                        },
-                        "campaigns": product_data.to_dict('records'),
-                        "channel_performance": channel_perf.to_dict('records')
-                    }
-                    
-                    # Get AI insights
-                    product_insights = get_product_specific_insights(product_analysis)
-                    
-                    # Display insights
-                    st.markdown(product_insights)
-                
-                # Create new campaign button
-                if st.button("Create New Campaign for This Product"):
-                    # Store product details in session state
-                    st.session_state.product_details = {
-                        "name": selected_product,
-                        "category": category,
-                        "price": avg_price,
-                        "cost": avg_cost,
-                        "target_acos": min(overall_acos, product_data['acos'].min()) if not product_data.empty else 20
-                    }
-                    st.session_state.view = "add_campaign"
-                    st.rerun()
-    
-    # Add a back button
-    if st.button("← Back to Dashboard"):
-        st.session_state.view = "dashboard"
-        st.rerun()
-
-def get_historical_insights(historical_data):
-    """Generate AI-powered insights based on historical campaign data."""
-    if not st.session_state.get('openai_api_connected', False):
-        # Return simulated insights if AI is not available
-        return generate_simulated_historical_insights(historical_data)
-    
-    try:
-        # Create system prompt with context
-        system_prompt = """You are an expert medical device marketing strategist specializing in e-commerce marketing.
-        Analyze the historical campaign data for this product category and provide specific insights and recommendations.
-        Focus on extracting learnings from past campaigns that can be applied to future ones."""
-        
-        # Create user prompt with historical data
-        user_prompt = f"""
-        Please analyze the historical campaign data for {historical_data['category']} products and provide insights:
-        
-        **Category Metrics:**
-        - Average Conversion Rate: {historical_data['avg_metrics']['conversion_rate']:.2f}%
-        - Average CTR: {historical_data['avg_metrics']['ctr']:.2f}%
-        - Average ACoS: {historical_data['avg_metrics']['acos']:.2f}%
-        - Average ROAS: {historical_data['avg_metrics']['roas']:.2f}x
-        - Average CPC: ${historical_data['avg_metrics']['cpc']:.2f}
-        
-        **Top Performing Campaign:**
-        - Name: {historical_data['top_campaign']['name']}
-        - Channel: {historical_data['top_campaign']['channel']}
-        - ROAS: {historical_data['top_campaign']['roas']:.2f}x
-        - ACoS: {historical_data['top_campaign']['acos']:.2f}%
-        - Conversion Rate: {historical_data['top_campaign']['conversion_rate']:.2f}%
-        
-        Based on this data from {historical_data['campaign_count']} campaigns in the {historical_data['category']} category, please provide:
-        
-        1. Key factors that made the top campaign successful
-        2. Specific recommendations for future campaigns in this category
-        3. Target metrics to aim for based on historical performance
-        4. Any patterns or insights specific to this product category
-        5. Recommendations for channel selection and budget allocation
-        
-        Keep your response focused on actionable insights for medical device marketing in the {historical_data['category']} category.
-        Provide specific, detailed recommendations that would help achieve better results than the historical average.
-        """
-        
-        # Create messages for API call
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # Get AI response
-        response = call_openai_api(messages, model=st.session_state.settings['ai_model'], max_tokens=1000)
-        return response
-    except Exception as e:
-        logger.error(f"Error getting historical insights: {str(e)}")
-        return generate_simulated_historical_insights(historical_data)
-
-def generate_simulated_historical_insights(historical_data):
-    """Generate simulated historical insights when AI is not available."""
-    category = historical_data['category']
-    top_channel = historical_data['top_campaign']['channel']
-    top_roas = historical_data['top_campaign']['roas']
-    avg_roas = historical_data['avg_metrics']['roas']
-    
-    insights = f"""
-    ## Historical Insights for {category} Products
-    
-    ### Key Success Factors
-    
-    The top-performing campaign for {category} products achieved a ROAS of {top_roas:.2f}x on {top_channel}, which is {((top_roas/avg_roas)-1)*100:.0f}% better than the category average. This success appears to be driven by:
-    
-    1. **Effective Channel Selection**: {top_channel} consistently outperforms other channels for this category
-    2. **Optimal Conversion Rate**: The top campaign's conversion rate indicates well-targeted ads reaching relevant customers
-    3. **Efficient Bid Management**: Lower CPC while maintaining good ad position likely contributed to the strong ROAS
-    
-    ### Recommendations for Future Campaigns
-    
-    Based on historical performance, future {category} campaigns should:
-    
-    1. **Prioritize {top_channel}**: Allocate the majority of budget to this channel
-    2. **Target Conversion Rate**: Aim for at least {historical_data['top_campaign']['conversion_rate']:.2f}% conversion rate
-    3. **Set ACoS Target**: Keep ACoS below {historical_data['top_campaign']['acos']:.2f}%
-    4. **Bid Strategy**: Start with CPC around ${historical_data['avg_metrics']['cpc']:.2f} and optimize based on performance
-    
-    ### Category-Specific Insights
-    
-    For {category} products specifically:
-    
-    * Focus on product benefits and use cases in ad copy
-    * Include relevant medical terms and conditions in keywords
-    * Highlight any FDA clearance or medical certifications
-    * Consider seasonal factors if relevant for this product category
-    
-    Following these recommendations should help future campaigns achieve ROAS closer to the top-performing campaign rather than the category average.
-    """
-    
-    return insights
-
-def get_product_specific_insights(product_analysis):
-    """Generate AI-powered insights specific to an individual product."""
-    if not st.session_state.get('openai_api_connected', False):
-        # Return simulated insights if AI is not available
-        return generate_simulated_product_insights(product_analysis)
-    
-    try:
-        # Create system prompt with context
-        system_prompt = """You are an expert medical device marketing analyst specializing in e-commerce for healthcare products.
-        Analyze the performance data for this specific product across all campaigns and provide detailed, product-specific insights and recommendations.
-        Focus on concrete, actionable advice that leverages the unique attributes of this product."""
-        
-        # Create user prompt with product data
-        user_prompt = f"""
-        Please analyze the performance data for {product_analysis['product']['name']} and provide product-specific recommendations:
-        
-        **Product Details:**
-        - Name: {product_analysis['product']['name']}
-        - Category: {product_analysis['product']['category']}
-        - Price: ${product_analysis['product']['price']:.2f}
-        - Cost: ${product_analysis['product']['cost']:.2f}
-        - Profit Margin: {product_analysis['product']['profit_margin']:.2f}%
-        
-        **Overall Performance:**
-        - Total Ad Spend: ${product_analysis['performance']['total_spend']:.2f}
-        - Total Revenue: ${product_analysis['performance']['total_revenue']:.2f}
-        - Total Profit: ${product_analysis['performance']['total_profit']:.2f}
-        - Overall ROAS: {product_analysis['performance']['overall_roas']:.2f}x
-        - Overall ACoS: {product_analysis['performance']['overall_acos']:.2f}%
-        - Average Conversion Rate: {product_analysis['performance']['avg_conversion_rate']:.2f}%
-        
-        **Channel Performance:**
-        {', '.join([f"{c['channel']}: ROAS {c['roas']:.2f}x, ACoS {c['acos']:.2f}%" for c in product_analysis['channel_performance']])}
-        
-        Based on this data for {product_analysis['product']['name']}, please provide:
-        
-        1. Product-specific optimization recommendations for keywords, ad copy, and targeting
-        2. The best channel(s) for this specific product and why
-        3. Bidding strategy customized to this product's price point and margins
-        4. Any unique selling points or features to emphasize in marketing
-        5. Specific recommendations for improving conversion rate for this product
-        
-        Keep your response focused on concrete, actionable recommendations specific to this product.
-        Provide detailed, practical advice that would help achieve better marketing performance.
-        """
-        
-        # Create messages for API call
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # Get AI response
-        response = call_openai_api(messages, model=st.session_state.settings['ai_model'], max_tokens=1000)
-        return response
-    except Exception as e:
-        logger.error(f"Error getting product-specific insights: {str(e)}")
-        return generate_simulated_product_insights(product_analysis)
-
-def generate_simulated_product_insights(product_analysis):
-    """Generate simulated product-specific insights when AI is not available."""
-    product = product_analysis['product']['name']
-    category = product_analysis['product']['category']
-    price = product_analysis['product']['price']
-    margin = product_analysis['product']['profit_margin']
-    overall_roas = product_analysis['performance']['overall_roas']
-    
-    # Find best channel
-    best_channel = "Unknown"
-    best_roas = 0
-    for channel in product_analysis['channel_performance']:
-        if channel['roas'] > best_roas:
-            best_roas = channel['roas']
-            best_channel = channel['channel']
-    
-    insights = f"""
-    ## Optimization Recommendations for {product}
-    
-    ### Product-Specific Keyword Strategy
-    
-    For this {category} product at the ${price:.2f} price point:
-    
-    1. **Focus on Value-Based Keywords**: With a {margin:.0f}% profit margin, emphasize value and benefits rather than just price
-    2. **Include Specific Medical Terms**: Target keywords relating to specific conditions this {category} product addresses
-    3. **Long-tail Specificity**: Use longer, more specific keyword phrases that include product features unique to this model
-    4. **Competitor Comparisons**: Include keywords that compare this product to competitors (e.g., "best {category} for [specific use]")
-    
-    ### Channel Optimization
-    
-    **Recommended Primary Channel: {best_channel}**
-    
-    This channel has demonstrated the best performance with a ROAS of {best_roas:.2f}x. We recommend:
-    
-    * Allocating 60-70% of ad budget to {best_channel}
-    * Using more aggressive bidding on this channel given the proven performance
-    * Expanding keyword coverage on this channel specifically
-    
-    ### Conversion Rate Improvements
-    
-    To improve the current {product_analysis['performance']['avg_conversion_rate']:.2f}% conversion rate:
-    
-    1. **Enhanced Product Images**: Ensure all product angles and features are clearly visible
-    2. **Benefit-Focused Bullets**: Rewrite bullets to focus on specific benefits for this product
-    3. **Medical Credibility**: Emphasize any clinical studies, FDA clearance, or medical endorsements
-    4. **Targeted Audience**: Focus on the specific demographic most likely to purchase this product
-    
-    ### Bidding Strategy
-    
-    Based on the product's margin and performance:
-    
-    * **Target ACoS**: {margin * 0.7:.1f}% (70% of margin)
-    * **Initial CPC**: Start at the category average, then adjust based on performance
-    * **Bid Adjustments**: More aggressive bidding on proven converting keywords
-    
-    Following these product-specific recommendations should help improve the overall ROAS beyond the current {overall_roas:.2f}x level.
-    """
-    
-    return insights
-
-def main():
-    """Main application function."""
-    # Load custom CSS
-    st.markdown("""
-    <style>
-    .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    .stButton button {
-        background-color: #00a3e0;
-        color: white;
-        font-weight: 500;
-        border-radius: 5px;
-        border: none;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s;
-    }
-    .stButton button:hover {
-        background-color: #0082b3;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        transform: translateY(-2px);
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Sidebar
-    with st.sidebar:
-        st.markdown(f"""
-        <div style="text-align:center; margin-bottom: 20px;">
-            <h1 style="color: {COLOR_SCHEME['primary']};">ViveROI</h1>
-            <p style="color: white;">Medical Device Marketing Analytics</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("### Navigation")
-        
-        if st.button("📊 Dashboard", use_container_width=True):
-            st.session_state.view = "dashboard"
-            st.rerun()
-            
-        if st.button("📝 Campaign Planner", use_container_width=True):
-            st.session_state.view = "campaign_planner"
-            st.rerun()
-            
-        if st.button("➕ Add Campaign", use_container_width=True):
-            st.session_state.view = "add_campaign"
-            st.rerun()
-            
-        if st.button("📋 All Campaigns", use_container_width=True):
-            st.session_state.view = "all_campaigns"
-            st.rerun()
-            
-        if st.button("💬 Amazon Assistant", use_container_width=True):
-            st.session_state.view = "assistant"
-            st.rerun()
-            
-        if st.button("ℹ️ Help & Documentation", use_container_width=True):
-            st.session_state.view = "help"
-            st.rerun()
-            
-        if st.button("⚙️ Settings", use_container_width=True):
-            st.session_state.view = "settings"
-            st.rerun()
-        
-        st.markdown("---")
-        
-        # Data management
-        st.markdown("### Data Management")
-        
-        if st.button("Add Example Data", use_container_width=True):
-            num_added = analyzer.add_example_campaigns()
-            st.success(f"Added {num_added} example campaigns.")
-            st.rerun()
-            
-        # File uploader for importing data
-        uploaded_file = st.file_uploader("Import Campaign Data", type=["csv", "xlsx"])
-        
-        if uploaded_file is not None:
-            try:
-                with st.spinner("Importing and analyzing data..."):
-                    if uploaded_file.name.endswith('.csv'):
-                        data = pd.read_csv(uploaded_file)
-                    else:
-                        data = pd.read_excel(uploaded_file)
-                    
-                    if not data.empty:
-                        # Analyze the file first
-                        file_analysis = analyze_imported_file(data)
-                        
-                        # Get AI recommendations if available
-                        import_recommendations = get_import_recommendations(file_analysis)
-                        
-                        # Try to match columns or use reasonable defaults
-                        imported_count = 0
-                        for _, row in data.iterrows():
-                            try:
-                                # Extract required fields with error handling
-                                campaign_name = row.get('campaign_name', row.get('Campaign Name', 'Unknown Campaign'))
-                                product_name = row.get('product_name', row.get('Product Name', 'Unknown Product'))
-                                channel = row.get('channel', row.get('Channel', 'Amazon PPC'))
-                                category = row.get('category', row.get('Category', 'Mobility'))
-                                
-                                # Marketing metrics
-                                ad_spend = float(row.get('ad_spend', row.get('Ad Spend', row.get('Spend', 0))))
-                                clicks = int(row.get('clicks', row.get('Clicks', 0)))
-                                impressions = int(row.get('impressions', row.get('Impressions', 0)))
-                                conversions = int(row.get('conversions', row.get('Conversions', row.get('Orders', 0))))
-                                revenue = float(row.get('revenue', row.get('Revenue', row.get('Sales', 0))))
-                                
-                                # Product economics
-                                product_cost = float(row.get('product_cost', row.get('Product Cost', 0)))
-                                selling_price = float(row.get('selling_price', row.get('Selling Price', 0)))
-                                shipping_cost = float(row.get('shipping_cost', row.get('Shipping Cost', 0)))
-                                amazon_fees = float(row.get('amazon_fees', row.get('Amazon Fees', 0)))
-                                
-                                # Dates
-                                start_date = row.get('start_date', row.get('Start Date', datetime.datetime.now().strftime('%Y-%m-%d')))
-                                end_date = row.get('end_date', row.get('End Date', datetime.datetime.now().strftime('%Y-%m-%d')))
-                                
-                                # Target ACoS - use default if not available
-                                target_acos = float(row.get('target_acos', row.get('Target ACoS', 
-                                                            st.session_state.settings['default_target_acos'].get(channel, 25.0))))
-                                
-                                # Notes
-                                notes = row.get('notes', row.get('Notes', None))
-                                
-                                # Add the campaign
-                                success, _ = analyzer.add_campaign(
-                                    campaign_name, product_name, channel, category,
-                                    ad_spend, clicks, impressions, conversions, revenue,
-                                    start_date, end_date, product_cost, selling_price,
-                                    shipping_cost, amazon_fees, target_acos, notes
-                                )
-                                
-                                if success:
-                                    imported_count += 1
-                                    
-                            except Exception as e:
-                                logger.error(f"Error processing row: {str(e)}")
-                                continue
-                        
-                        # Show import results with AI insights
-                        st.success(f"Successfully imported {imported_count} campaigns!")
-                        
-                        with st.expander("View Import Analysis", expanded=True):
-                            st.markdown("### Import Analysis")
-                            st.markdown(import_recommendations)
-                            
-                            # Show metrics if available
-                            if 'metrics' in file_analysis and file_analysis['metrics']:
-                                metrics = file_analysis['metrics']
-                                if 'overall_roas' in metrics and 'overall_acos' in metrics:
-                                    col1, col2 = st.columns(2)
-                                    with col1:
-                                        st.metric("Overall ROAS", f"{metrics['overall_roas']:.2f}x")
-                                    with col2:
-                                        st.metric("Overall ACoS", f"{metrics['overall_acos']:.2f}%")
-                        
-                        st.rerun()
-                    else:
-                        st.error("Uploaded file contains no data.")
-            except Exception as e:
-                st.error(f"Error importing data: {str(e)}")
-                
-        st.markdown("---")
-        st.caption(f"ViveROI v{APP_VERSION}")
-        st.caption("© 2024 Vive Health")
-    
-    # Main content area based on current view
-    if st.session_state.view == "dashboard":
-        display_dashboard(analyzer.campaigns)
-        
-    elif st.session_state.view == "campaign_planner":
-        display_campaign_planner()
-        
-    elif st.session_state.view == "add_campaign":
-        add_campaign_form()
-        
-    elif st.session_state.view == "all_campaigns":
-        display_all_campaigns(analyzer.campaigns)
-        
-    elif st.session_state.view == "campaign_details":
-        if st.session_state.selected_campaign:
-            display_campaign_details(st.session_state.selected_campaign)
-        else:
-            st.error("No campaign selected.")
-            st.session_state.view = "all_campaigns"
-            st.rerun()
-            
-    elif st.session_state.view == "assistant":
-        display_amazon_assistant()
-    
-    elif st.session_state.view == "help":
-        display_help_page()
-        
-    elif st.session_state.view == "settings":
-        display_settings_page()
-        
-    else:
-        # Fallback to dashboard
-        display_dashboard(analyzer.campaigns)
-
-if __name__ == "__main__":
-    main()
