@@ -301,11 +301,13 @@ def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1500):
         # Check if API key is configured in Streamlit secrets
         if 'openai_api_key' in st.secrets:
             api_key = st.secrets['openai_api_key']
+            logger.info("OpenAI API key found in Streamlit secrets")
         else:
             # For demo/testing without a real API key
             logger.warning("OpenAI API key not found in Streamlit secrets, using simulated response")
             time.sleep(1.5)
             st.session_state.is_loading = False
+            st.warning("OpenAI API key not found. Using simulated responses. Please add your API key to Streamlit secrets.")
             return generate_simulated_response(messages)
             
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -315,6 +317,10 @@ def call_openai_api(messages, model="gpt-4o", temperature=0.7, max_tokens=1500):
             "temperature": temperature,
             "max_tokens": max_tokens
         }
+        
+        logger.info(f"Calling OpenAI API with model: {model}")
+        # Log the message count and structure without sensitive content
+        logger.info(f"Sending {len(messages)} messages to API")
         
         response = requests.post(
             "https://api.openai.com/v1/chat/completions",
@@ -1767,6 +1773,16 @@ def display_campaign_details(campaign_uid: str):
 def display_amazon_assistant():
     """Display the Amazon marketing assistant chat interface."""
     st.title("Amazon Marketing Assistant")
+    
+    # Show API connection status
+    if not st.session_state.get('openai_api_connected', False):
+        st.warning("""
+        ⚠️ OpenAI API connection not detected. The assistant will use simulated responses.
+        
+        To enable full AI capabilities, please add your OpenAI API key to Streamlit secrets.
+        """)
+    else:
+        st.success("✅ Connected to OpenAI API")
     
     st.markdown("""
     This AI-powered assistant specializes in Amazon marketing for medical devices. Ask questions about:
