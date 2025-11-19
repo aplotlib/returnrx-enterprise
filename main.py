@@ -22,11 +22,10 @@ st.markdown("""
     .stApp {
         background-color: #050505;
         background-image: 
-            radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-            radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
-            radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
-        background-size: 550px 550px, 350px 350px, 250px 250px;
-        background-position: 0 0, 40px 60px, 130px 270px;
+            linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+            url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop");
+        background-size: cover;
+        background-attachment: fixed;
         font-family: 'Roboto', sans-serif;
         color: #e0e0e0;
     }
@@ -36,38 +35,90 @@ st.markdown("""
         font-family: 'Orbitron', sans-serif;
         text-transform: uppercase;
         letter-spacing: 3px;
+        color: #00e5ff;
+        text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
     }
     
     h1 {
         background: -webkit-linear-gradient(#FFE81F, #D4AF37);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-shadow: 0px 0px 20px rgba(255, 232, 31, 0.5);
+        text-shadow: 0px 0px 20px rgba(255, 232, 31, 0.3);
         text-align: center;
         font-weight: 900;
-        font-size: 3rem !important;
-        margin-bottom: 0px;
+        font-size: 3.5rem !important;
+        padding-bottom: 20px;
     }
 
-    /* INTEL/SLIDE CARDS */
+    /* BUTTONS */
+    .stButton>button {
+        font-family: 'Orbitron', sans-serif;
+        background: rgba(0, 20, 40, 0.8) !important;
+        color: #00e5ff !important;
+        border: 1px solid #00e5ff !important;
+        padding: 15px 25px;
+        font-weight: bold;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        width: 100%;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px) scale(1.02);
+        background: #00e5ff !important;
+        color: #000 !important;
+        box-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+    }
+
+    /* SIDEBAR */
+    [data-testid="stSidebar"] {
+        background-color: rgba(5, 5, 10, 0.95);
+        border-right: 1px solid #333;
+    }
+
+    /* HUD */
+    .hud-container {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        background: rgba(0,0,0,0.8);
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .metric-box {
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        min-width: 120px;
+    }
+    .metric-label { color: #888; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 5px; }
+    .metric-value { color: #FFE81F; font-size: 1.8rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 232, 31, 0.5); }
+    
+    /* INTEL VIEWER */
     .intel-viewer {
-        background: rgba(16, 20, 24, 0.98);
-        border: 2px solid #00e5ff;
-        box-shadow: 0 0 25px rgba(0, 229, 255, 0.15);
-        border-radius: 12px;
+        background: rgba(16, 20, 24, 0.95);
+        border: 1px solid #00e5ff;
+        box-shadow: inset 0 0 50px rgba(0, 229, 255, 0.1);
+        border-radius: 4px;
         padding: 40px;
-        min-height: 600px;
+        min-height: 500px;
         position: relative;
     }
-
-    .intel-header {
-        color: #00e5ff;
+    
+    .intel-viewer::before {
+        content: "TOP SECRET // VIVE HEALTH // QUALITY DIV";
+        position: absolute;
+        top: 10px;
+        left: 20px;
         font-family: 'Orbitron', sans-serif;
-        border-bottom: 2px solid #00e5ff;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-        font-size: 1.5rem;
-        text-align: center;
+        font-size: 0.7rem;
+        color: rgba(0, 229, 255, 0.5);
     }
 
     .slide-content {
@@ -75,56 +126,13 @@ st.markdown("""
         line-height: 1.8;
         white-space: pre-wrap; 
         font-family: 'Roboto', sans-serif;
-    }
-
-    /* BUTTONS */
-    .stButton>button {
-        font-family: 'Orbitron', sans-serif;
-        background: linear-gradient(45deg, #00e5ff, #2979ff) !important;
-        color: #000 !important;
-        border: none;
-        padding: 15px 25px;
-        font-weight: bold;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        border-radius: 4px;
-        box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-        width: 100%;
+        color: #ccc;
     }
     
-    .stButton>button:hover {
-        transform: translateY(-2px) scale(1.01);
-        box-shadow: 0 0 30px rgba(0, 229, 255, 0.8);
-        color: white !important;
+    .slide-content strong {
+        color: #fff;
+        font-weight: 700;
     }
-
-    /* SIDEBAR */
-    [data-testid="stSidebar"] {
-        background-color: rgba(10, 10, 15, 0.95);
-        border-right: 1px solid #333;
-    }
-
-    /* HUD */
-    .hud-container {
-        display: flex;
-        justify-content: space-around;
-        background: rgba(0,0,0,0.9);
-        border-bottom: 2px solid #FFE81F;
-        padding: 15px;
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        backdrop-filter: blur(5px);
-        margin-bottom: 30px;
-    }
-    
-    .metric-box {
-        text-align: center;
-        font-family: 'Orbitron', sans-serif;
-    }
-    .metric-label { color: #888; font-size: 0.7rem; letter-spacing: 2px; }
-    .metric-value { color: #FFE81F; font-size: 1.5rem; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,123 +143,101 @@ st.markdown("""
 TRIVIA_DB = [
     # --- VIVE HISTORY & STRATEGY ---
     {
-        "q": "Vive Health was founded in 2014. How many distribution centers does it strategically operate across the US?",
+        "q": "Vive Health operates how many strategic distribution centers across the US to ensure 1-2 day delivery?",
         "options": ["Four", "Two", "One", "Six"],
         "correct": "Four",
-        "feedback": "Correct! Four centers allow 1-2 business day delivery across the entire US."
+        "feedback": "Correct! This infrastructure allows for rapid replacement of defects."
     },
     {
-        "q": "Which of the following is a core 'Strategic Advantage' of Vive Health regarding manufacturing?",
-        "options": ["Owns its own Manufacturing Facility", "Outsources to random bidders", "Dropshipping only", "3D Prints everything in-house"],
-        "correct": "Owns its own Manufacturing Facility",
-        "feedback": "Correct. Owning manufacturing allows for 'Military Grade Standard' quality control."
+        "q": "What is the core advantage of Vive Health owning its own manufacturing facility?",
+        "options": ["'Military Grade Standard' Quality Control", "Cheaper Labor", "Avoiding Tariffs", "None of the above"],
+        "correct": "'Military Grade Standard' Quality Control",
+        "feedback": "Correct. Ownership allows for direct oversight and 'Military Grade' standards."
     },
     {
-        "q": "Vive Health's goal for Amazon FBA Return Rate is </= 7.50%. In Oct 2025, the rate was slashed to:",
+        "q": "In Oct 2025, the FBA Return Rate was slashed to what percentage, exceeding the 7.50% goal?",
         "options": ["5.54%", "10.2%", "2.1%", "0%"],
         "correct": "5.54%",
-        "feedback": "Correct. The FBA return rate was slashed to 5.54%, exceeding the goal."
-    },
-    {
-        "q": "What is the estimated size of the Class I Equivalent Medical Device market in the EU & UK (our new TAM)?",
-        "options": ["$22B - $37B", "$5B - $10B", "$100B+", "$1B - $2B"],
-        "correct": "$22B - $37B",
-        "feedback": "Correct. Obtaining the CE Mark unlocks this massive market, increasing our reach by 153%."
+        "feedback": "Correct. A massive win for the quality team, down from higher averages."
     },
     # --- TEAM & CULTURE ---
     {
-        "q": "Who leads Product Testing at the Naples Office and is a retired PhD Chemist?",
+        "q": "Who is the Retired PhD Chemist leading product testing at the Naples Office?",
         "options": ["Jim Ahearn", "Carolina Silva", "Annie", "Jason"],
         "correct": "Jim Ahearn",
         "feedback": "Correct. Jim leads research and testing."
     },
     {
-        "q": "Who is the QC Manager in China managing ~25 inspectors?",
+        "q": "Who manages the team of ~25 QC Inspectors on the ground in China?",
         "options": ["Annie", "Jessica", "Luis", "Tom"],
         "correct": "Annie",
-        "feedback": "Correct. Annie contracts inspectors and reviews data in China."
+        "feedback": "Correct. Annie is the QC Manager in China."
     },
     {
-        "q": "Which Core Value states: 'We take full responsibility for our actions, results, and success. No excuses'?",
-        "options": ["Extreme Ownership", "Growth Mindset", "Best Ideas Rise", "Data & System Driven"],
+        "q": "Which Core Value states: 'We take full responsibility... No excuses'?",
+        "options": ["Extreme Ownership", "Growth Mindset", "Best Ideas Rise", "Data Driven"],
         "correct": "Extreme Ownership",
-        "feedback": "Correct. 'External obstacles are just hurdles, not roadblocks.'"
+        "feedback": "Correct. We own the mission, not just the task."
     },
     # --- QUALITY TOOLS ---
     {
-        "q": "In the Project Charter, what captures the problem in the form of a measurement?",
+        "q": "In a Project Charter, what section captures the issue in the form of a measurement?",
         "options": ["Problem Statement", "Business Case", "Goal Statement", "Timeline"],
         "correct": "Problem Statement",
-        "feedback": "Correct. The Problem Statement defines *what* is wrong in measurable terms."
+        "feedback": "Correct. You can't fix what you can't measure."
     },
     {
-        "q": "According to the Kano Model, features that customers do not expect but love (the 'Wow' factor) are called:",
+        "q": "According to the Kano Model, features that customers don't expect but love are called:",
         "options": ["Delighters/Excitement Attributes", "Basic Needs", "Performance Attributes", "Threshold Attributes"],
         "correct": "Delighters/Excitement Attributes",
-        "feedback": "Correct. Like Bluetooth speakers or Gucci logos (though those might not add value!)."
+        "feedback": "Correct. Like the 'Bluetooth speakers' example (though check if they add value!)."
     },
     {
-        "q": "What tool is used to trace a problem (like 'discomfort') to sources like Man, Machine, Method, Material?",
+        "q": "Which tool helps move from 'What' is wrong to 'Why' it is happening (Root Cause)?",
         "options": ["Fishbone Diagram (Ishikawa)", "Pareto Chart", "Scatter Plot", "Control Chart"],
         "correct": "Fishbone Diagram (Ishikawa)",
-        "feedback": "Correct. It helps move from 'What' is wrong to 'Why' it is happening."
+        "feedback": "Correct. It traces problems to Man, Machine, Material, Method, etc."
     },
     {
-        "q": "In FMEA, what three factors are multiplied to get the Risk Priority Number (RPN)?",
+        "q": "In FMEA, what is the formula for the Risk Priority Number (RPN)?",
         "options": ["Severity x Occurrence x Detection", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
         "correct": "Severity x Occurrence x Detection",
-        "feedback": "Correct. S x O x D = RPN."
+        "feedback": "Correct. S x O x D = RPN. High RPNs get fixed first."
     },
-    # --- REGULATORY & LEADERSHIP ---
+    # --- TARIFFS & COSTS ---
     {
-        "q": "What is the 'Comfort Trap' in strategic planning?",
-        "options": ["Focusing on activities you control instead of competitive outcomes.", "Buying expensive office chairs.", "Staying in old markets.", "Ignoring safety regulations."],
-        "correct": "Focusing on activities you control instead of competitive outcomes.",
-        "feedback": "Correct. Real strategy requires specifying a competitive outcome you don't control."
-    },
-    {
-        "q": "Design Controls (21 CFR 820.30) apply to ALL Class II and III devices, but only select Class I devices. Which Class I device requires it?",
-        "options": ["Devices automated with computer software", "Tongue Depressors", "Elastic Bandages", "Reading Glasses"],
-        "correct": "Devices automated with computer software",
-        "feedback": "Correct. Software-driven Class I devices require Design Controls."
+        "q": "In the TariffSight model, what defines the 'Landed Cost'?",
+        "options": ["Production + Tariffs + Shipping + Storage + Fees", "MSRP - Profit", "Just Manufacturing Cost", "Shipping Cost only"],
+        "correct": "Production + Tariffs + Shipping + Storage + Fees",
+        "feedback": "Correct. Landed cost includes every expense to get the product to the warehouse."
     },
     {
-        "q": "What is the difference between Verification and Validation?",
-        "options": ["Verification = Built it Right (Specs); Validation = Built the Right Thing (User Needs)", "Verification = User Needs; Validation = Specs", "They are the same", "Validation is for marketing"],
-        "correct": "Verification = Built it Right (Specs); Validation = Built the Right Thing (User Needs)",
-        "feedback": "Correct! Verification is internal (lab tests); Validation is external (user tests)."
+        "q": "What is 'Verification' vs 'Validation'?",
+        "options": ["Verification = Built it Right; Validation = Built the Right Thing", "Verification = User Testing; Validation = Lab Testing", "They are the same", "Verification is optional"],
+        "correct": "Verification = Built it Right; Validation = Built the Right Thing",
+        "feedback": "Correct. Verification checks specs. Validation checks user needs."
     }
 ]
 
-# --- FULL DOCUMENT CONTENT (Reconstructed from your PDFs) ---
 SLIDE_DECKS = {
     "leadership": {
-        "title": "Quality Leadership Presentation 11/2025",
+        "title": "Quality Leadership Presentation (Nov 2025)",
         "slides": [
-            "**TITLE:** QUALITY APPROVED\nVive Health - November 2025\n\n---\n\n**VIVE'S QUALITY TEAM**\n\n* **Carolina Silva (Quality Analyst):** Analyzes trends, Biomedical Engineer w/ Data Analytics skill set.\n* **Annie (QC Manager China):** Contracts ~25 inspectors, manages reports/data.\n* **Jim Ahearn (Research & Testing):** Retired PhD Chemist, leads testing in Naples.\n* **Luis Hidalgo (CS Troubleshooting):** Biomedical Engineer, trains support agents.\n* **Jason (QC at MPF):** Leads MPF inspection team (~7 inspectors).\n* **Jessica Marshall (Regulatory Affairs):** Leads ISO 13485 & EU Market Access.",
-            "**AGENDA**\n\n1. **Strategic Value:** Our 'Why' - Quality as a market differentiator and revenue generator.\n2. **Performance Review:** The 'What' - A data-driven look at core metrics.\n3. **Process & Proactivity:** The 'How' - Systems for finding, fixing, and preventing issues.",
-            "**WINS: QUALITY AS REVENUE GENERATOR**\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Revenue:** Developed memory foam seat cushion to generate revenue/offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom analytics apps with $0 software budget.",
-            "**GLOBAL MARKET EXPANSION**\n\n* **Class I Market:** EU/UK market size is ~$22B-$37B.\n* **Impact:** 153% increase in market reach (population) and 75% increase in market value.\n* **Goal:** CE Mark submission estimated Nov 2025.",
-            "**STRATEGY & PHILOSOPHY**\n\n* **Lifecycle Management:**\n   - *Concept:* Regulatory landscape & Risk analysis.\n   - *Launch:* Factory audits & V&V testing.\n   - *Post-Market:* Root Cause Analysis & CI.\n* **Core Metrics:**\n   - FBA Return Rate: 5.54% (Goal < 7.50%) - EXCEEDING.\n   - B2B Return Rate: 2.29% (Goal < 2.00%) - NEEDS FOCUS.\n   - ISO 13485: 42.5% Complete.",
-            "**PERFORMANCE: VoC**\n\n* **Metric:** 77.61% of Listings have 'Good/Excellent' NCX categorization.\n* **Goal:** 85%.\n* **Loop:** Find (Situation) -> Fix (Task/Action) -> Follow-Up (Result).",
-            "**CASE STUDY: POST-OP SHOE**\n\n* **Situation:** High return rate (20-40%) due to 'size' complaints.\n* **Action:** Deep analysis against competitors. Found our shoes were 5-11% larger than market leader.\n* **Result:** Data-driven resizing in progress.",
-            "**CASE STUDY: PACKAGING MISTAKE**\n\n* **Problem:** Changed to shrink wrap to save FBA fees.\n* **Cost:** Hurt B2B sales perception (net negative).\n* **Solution:** Decisions now require cross-department sign-off (Product + Sales + Quality).",
-            "**ACTIVE PROJECTS**\n\n* **CE for EU/UK:** Project Health: Good.\n* **ISO 13485:** Project Health: Fair (Switched consultants).\n* **Return Rate Reduction:** Project Health: Stable.\n* **Packaging Optimization:** Project Health: Stable.",
-            "**MILITARY LEADERSHIP MODEL**\n\n* **Command by Directive:** Low autonomy, micromanagement (High cognitive burden on leader).\n* **Command by Plan:** Mid autonomy.\n* **Command by Intent:** High autonomy. Give goals/constraints, let team decide at point of action. (Goal state).",
-            "**EXECUTION TOOLS**\n\n* **Genchi Genbutsu:** 'Go and See' (Visit the source/warehouse).\n* **Kaizen:** Continuous small improvements.\n* **Extreme Ownership:** We own the mission, not just the task.\n* **RACI Matrix:** Defining roles (Responsible, Accountable, Consulted, Informed)."
+            "**MISSION BRIEFING: QUALITY APPROVED**\n\n**THE SQUAD:**\n* **Carolina Silva:** Quality Analyst (Data/Biomedical).\n* **Annie:** QC Manager China (~25 Inspectors).\n* **Jim Ahearn:** Research & Testing (PhD Chemist).\n* **Luis Hidalgo:** CS Troubleshooting Specialist.\n* **Jason:** QC Lead at MPF (~7 Inspectors).\n* **Jessica Marshall:** Regulatory Affairs (ISO 13485).",
+            "**THE OBJECTIVE: REVENUE GENERATION**\n\nQuality is not just a cost center. It is a revenue generator.\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Direct Revenue:** Developed memory foam seat cushion to offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom apps for free.",
+            "**STATUS REPORT: METRICS**\n\n* **FBA Return Rate:** 5.54% (Goal < 7.50%) - [EXCEEDING]\n* **B2B Return Rate:** 2.29% (Goal < 2.00%) - [NEEDS FOCUS]\n* **ISO 13485:** 42.5% Implementation Complete.\n* **VoC Health:** 77.61% Listings 'Good/Excellent'.",
+            "**TACTICAL WIN: POST-OP SHOE**\n\n**Situation:** Returns were 20-40% due to 'size' complaints.\n**Action:** Analyzed competitors. Found our shoes were 5-11% larger than market leader.\n**Result:** Data-driven resizing initiated.\n\n*Lesson: Don't accept the status quo.*",
+            "**CAUTIONARY TALE: THE PACKAGING MISTAKE**\n\n**Problem:** Switched to shrink wrap to save Amazon FBA fees.\n**Blowback:** Damaged B2B sales perception. Net negative for company.\n**Solution:** Cross-department sign-offs required. Don't optimize one metric at the expense of the whole."
         ]
     },
     "product_dev": {
         "title": "Product Dev Quality Strategies",
         "slides": [
-            "**INTRODUCTION**\n\n'How things start is how they'll go...' - FDA Postmarket Branch.\n\n**Small Changes, Big Impacts:**\n* Project Charter\n* Risk Assessment\n* Affinity Diagrams\n* Kano Analysis",
-            "**PROJECT CHARTER**\n\nA living document outlining:\n* **Problem Statement:** The problem in measurement form.\n* **Business Case:** Why are we doing this?\n* **Goal Statement:** The target.\n* **Scope:** What is IN and OUT.\n* **Team:** Who is participating.",
-            "**PROJECT RISK ASSESSMENT**\n\nEvaluate risks by:\n* **Probability:** Low/Med/High score (1-3).\n* **Impact:** Low/Med/High score (1-2).\n* **PI Score:** Probability x Impact.\n* *Example Risk:* Scope Creep (Probability 3 x Impact 2 = Score 6).",
-            "**VOICE OF CUSTOMER (VoC)**\n\n* **Fishbone Diagram:** Trace 'discomfort' to Man, Machine, Material, Method, Environment.\n* **Kano Analysis:** \n   - *Basic Needs:* Must be there (Breathable fabric).\n   - *Performance:* More is better (Padding).\n   - *Delighters:* Wow factor (Bluetooth?). Don't waste money on things customers don't care about.",
-            "**FMEA (FAILURE MODE & EFFECTS ANALYSIS)**\n\n* **Formula:** Severity (S) x Occurrence (O) x Detection (D) = RPN.\n* **Goal:** Solve problems on the whiteboard, not via returns.\n* **Example:** Gel pad leak. S(9) x O(4) x D(7) = RPN 252. Prioritize mitigation immediately.",
-            "**HOUSE OF QUALITY (LITE)**\n\nA translation map connecting:\n* **Customer 'Whats':** 'Brace must be comfortable.'\n* **Engineering 'Hows':** 'Fabric Air Permeability > 100 CFM.'\n\nPrevents the 'Lost in Translation' gap between Marketing and Engineering.",
-            "**VERIFICATION VS VALIDATION**\n\n* **Verification:** 'Did we build it RIGHT?' (Does it meet specs? Lab testing).\n* **Validation:** 'Did we build the RIGHT THING?' (Does it solve the user's problem? User testing).\n\n*Remember: Reactive = Problem Solving. Proactive = Problem Prevention.*",
-            "**FDA DESIGN CONTROLS**\n\nRequired for Class II/III and **Software-Automated Class I** devices.\n\n*Why?* 44% of recalls could be prevented by design controls.\n*Key Elements:* Design Inputs, Outputs, Reviews, Verification, Validation, Transfer, Changes, History File (DHF)."
+            "**STRATEGY: START RIGHT**\n\n'How things start is how they'll go...'\n\n**The Toolkit:**\n1. Project Charter\n2. Risk Assessment\n3. Affinity Diagrams\n4. Kano Analysis\n5. FMEA",
+            "**TOOL 1: PROJECT CHARTER**\n\nA living document. Defines:\n* **Problem Statement:** What is wrong (measured)?\n* **Business Case:** Why do we care?\n* **Goal:** What is the target?\n* **Scope:** What is IN and OUT?\n* **Team:** Who is fighting this battle?",
+            "**TOOL 2: FMEA (Risk Analysis)**\n\n**Failure Mode & Effects Analysis**\n\nFormula: **Severity (S) x Occurrence (O) x Detection (D) = RPN**\n\n*Example:* Gel pad leak.\nS(9) x O(4) x D(7) = RPN 252.\n\n*Action:* Fix high RPNs on the whiteboard before you cut steel.",
+            "**TOOL 3: KANO MODEL**\n\nPrioritize features:\n* **Basic Needs:** Must have (Breathable fabric).\n* **Performance:** More is better (Padding thickness).\n* **Delighters:** The 'Wow' factor (Bluetooth?).\n\n*Warning:* Don't waste budget on Delighters if Basic Needs aren't met.",
+            "**VERIFICATION VS VALIDATION**\n\n* **Verification:** 'Did we build it RIGHT?' (Does it meet the specs? Lab Test).\n* **Validation:** 'Did we build the RIGHT THING?' (Does it solve the problem? User Test).\n\n*Goal:* Shift from Reactive Problem Solving to Proactive Prevention."
         ]
     }
 }
@@ -274,7 +260,7 @@ if 'questions_asked' not in st.session_state:
 if 'q_queue' not in st.session_state:
     st.session_state.q_queue = []
 if 'mode' not in st.session_state:
-    st.session_state.mode = 'CAMPAIGN' # CAMPAIGN, TRAINING, BOXING
+    st.session_state.mode = 'CAMPAIGN' 
 if 'slide_index' not in st.session_state:
     st.session_state.slide_index = 0
 if 'current_deck' not in st.session_state:
@@ -282,39 +268,41 @@ if 'current_deck' not in st.session_state:
 if 'mission_status' not in st.session_state:
     st.session_state.mission_status = 'ONGOING'
 
-# --- SCORE SYNC LOGIC ---
+# --- ROBUST SCORE SYNC LOGIC ---
+# This captures the score passed from the JS games via URL parameters
 if 'score' in st.query_params:
     try:
         incoming_score = int(st.query_params['score'])
         
-        # HANDLING MISSION FAILURE (DEATH)
-        if incoming_score == 0:
-            st.session_state.mission_status = 'FAILED'
-            st.session_state.game_state = 'GAMEOVER'
-        
-        # HANDLING SUCCESSFUL ROUND
-        elif st.session_state.game_state in ['GAME', 'BOXING_GAME']:
-            st.session_state.game_score += incoming_score
-            st.session_state.game_state = 'TRIVIA'
-            
-            # Prepare questions for this round
-            available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
-            if len(available) < 3:
-                st.session_state.questions_asked = [] 
-                available = TRIVIA_DB
-            st.session_state.q_queue = random.sample(available, 3)
-            for q in st.session_state.q_queue:
-                st.session_state.questions_asked.append(q)
-    except:
-        pass
+        # Handle Game Loop Logic
+        if st.session_state.game_state in ['GAME', 'BOXING_GAME']:
+            if incoming_score == 0:
+                # Death Condition
+                st.session_state.mission_status = 'FAILED'
+                st.session_state.game_state = 'GAMEOVER'
+            else:
+                # Success Condition
+                st.session_state.game_score += incoming_score
+                st.session_state.game_state = 'TRIVIA'
+                
+                # Prepare questions for the upcoming trivia round
+                available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
+                if len(available) < 3: 
+                    st.session_state.questions_asked = [] 
+                    available = TRIVIA_DB
+                st.session_state.q_queue = random.sample(available, 3)
+                
+    except Exception as e:
+        st.error(f"Comms Error: {e}")
     finally:
+        # Clear params to prevent state loops
         st.query_params.clear()
 
 # ==============================================================================
-# 4. SPACE SHOOTER (FIXED)
+# 4. GAME MODULES (HTML/JS)
 # ==============================================================================
 def get_space_shooter_html(round_num):
-    difficulty = round_num * 0.6
+    difficulty = round_num * 0.8
     
     return f"""
     <!DOCTYPE html>
@@ -322,16 +310,15 @@ def get_space_shooter_html(round_num):
     <head>
     <style>
         body {{ margin: 0; overflow: hidden; background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Orbitron', monospace; }}
-        canvas {{ border: 2px solid #00e5ff; box-shadow: 0 0 30px #00e5ff; background: rgba(0,0,0,0.9); cursor: none; }}
-        #overlay {{ position: absolute; color: #00e5ff; text-align: center; font-size: 24px; pointer-events: none; text-shadow: 0 0 10px #00e5ff; }}
+        canvas {{ border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.4); background: rgba(0,0,0,0.85); cursor: none; border-radius: 8px; }}
+        #overlay {{ position: absolute; color: #00e5ff; text-align: center; font-size: 24px; pointer-events: none; text-shadow: 0 0 10px #00e5ff; z-index: 10; }}
     </style>
     </head>
     <body>
     <div id="overlay">
-        <h2>SECTOR {round_num}</h2>
-        <p>MISSION: PROTECT HULL INTEGRITY</p>
-        <p style="color:#ff0055">WARNING: ASTEROIDS DETECTED</p>
-        <p style="font-size: 16px; color: #FFE81F; margin-top:20px;">CLICK TO ENGAGE</p>
+        <h2 style="margin:0; font-size: 40px;">SECTOR {round_num}</h2>
+        <p style="letter-spacing: 2px;">PROTECT THE SUPPLY CHAIN</p>
+        <p style="color:#ff0055; font-weight:bold;">CLICK TO ENGAGE</p>
     </div>
     <canvas id="gameCanvas" width="800" height="500"></canvas>
     <script>
@@ -348,17 +335,11 @@ def get_space_shooter_html(round_num):
         let bullets = [];
         let enemies = [];
         let particles = [];
-        let stars = [];
-
-        for(let i=0; i<100; i++) {{
-            stars.push({{ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: Math.random() * 3 }});
-        }}
         
+        // Input Handling
         canvas.addEventListener('mousemove', (e) => {{
             const rect = canvas.getBoundingClientRect();
             player.x = e.clientX - rect.left;
-            if(player.x < 0) player.x = 0;
-            if(player.x > canvas.width) player.x = canvas.width;
         }});
         
         canvas.addEventListener('mousedown', () => {{
@@ -375,10 +356,12 @@ def get_space_shooter_html(round_num):
         function spawnEnemy() {{
             if(!gameActive) return;
             const rand = Math.random();
-            if(rand > 0.75) {{
-                enemies.push({{x: Math.random() * (canvas.width - 50), y: -50, width: 50, height: 50, speed: 2 + ({difficulty}*0.5), type: 'ASTEROID', hp: 4, color: '#888888'}});
+            if(rand > 0.70) {{
+                // Asteroid (Process Failure)
+                enemies.push({{x: Math.random() * (canvas.width - 50), y: -50, width: 50, height: 50, speed: 2 + ({difficulty}*0.5), type: 'ASTEROID', hp: 3, color: '#888888', label: 'RISK'}});
             }} else {{
-                enemies.push({{x: Math.random() * (canvas.width - 30), y: -30, width: 30, height: 30, speed: 4 + ({difficulty}), type: 'DEFECT', hp: 1, color: '#ff0055'}});
+                // Defect (Fast)
+                enemies.push({{x: Math.random() * (canvas.width - 30), y: -30, width: 30, height: 30, speed: 4 + ({difficulty}), type: 'DEFECT', hp: 1, color: '#ff0055', label: 'DEFECT'}});
             }}
         }}
 
@@ -390,6 +373,7 @@ def get_space_shooter_html(round_num):
 
         function endGame() {{
             gameActive = false;
+            // Send score back to Streamlit
             window.parent.location.search = '?score=' + score;
         }}
 
@@ -397,69 +381,81 @@ def get_space_shooter_html(round_num):
             if(!gameActive) return;
             requestAnimationFrame(gameLoop);
             
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
+            // Clear
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = '#fff';
-            stars.forEach(s => {{
-                s.y += s.speed; if(s.y > canvas.height) s.y = 0; ctx.fillRect(s.x, s.y, s.size, s.size);
-            }});
-            
+            // Player
             ctx.fillStyle = player.color;
             ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 15, player.y + 40); ctx.lineTo(player.x + 15, player.y + 40); ctx.fill();
             
+            // Bullets
             ctx.fillStyle = '#FFE81F';
             for(let i = bullets.length - 1; i >= 0; i--) {{
-                let b = bullets[i]; b.y -= b.speed; ctx.fillRect(b.x - 2, b.y, 4, 15); if(b.y < 0) bullets.splice(i, 1);
+                let b = bullets[i]; b.y -= b.speed; ctx.fillRect(b.x - 2, b.y, 4, 15); 
+                if(b.y < 0) bullets.splice(i, 1);
             }}
             
+            // Enemies
             for(let i = enemies.length - 1; i >= 0; i--) {{
                 let e = enemies[i]; e.y += e.speed;
                 ctx.fillStyle = e.color;
-                if(e.type === 'ASTEROID') {{ ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill(); }} else {{ ctx.fillRect(e.x, e.y, e.width, e.height); }}
+                if(e.type === 'ASTEROID') {{ 
+                    ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill(); 
+                }} else {{ 
+                    ctx.fillRect(e.x, e.y, e.width, e.height); 
+                }}
                 
+                // Collision with Player
                 if(Math.abs(player.x - (e.x + e.width/2)) < 30 && Math.abs(player.y - e.y) < 30) {{
-                    hull -= (e.type === 'ASTEROID' ? 50 : 20);
+                    hull -= (e.type === 'ASTEROID' ? 40 : 20);
                     createExplosion(e.x, e.y, '#ffaa00', 20);
                     enemies.splice(i, 1);
-                    
                     if(hull <= 0) {{
                         gameActive = false;
                         window.parent.location.search = '?score=0'; 
                     }}
                 }}
                 
+                // Collision with Bullets
                 for(let j = bullets.length - 1; j >= 0; j--) {{
                     let b = bullets[j];
                     if(b.x > e.x - 10 && b.x < e.x + e.width + 10 && b.y < e.y + e.height && b.y > e.y) {{
-                        e.hp--; bullets.splice(j, 1); createExplosion(b.x, b.y, '#fff', 3);
-                        if(e.hp <= 0) {{ score += (e.type === 'ASTEROID' ? 250 : 100); createExplosion(e.x, e.y, e.color, 15); enemies.splice(i, 1); }}
+                        e.hp--; bullets.splice(j, 1); 
+                        createExplosion(b.x, b.y, '#fff', 5);
+                        if(e.hp <= 0) {{ 
+                            score += (e.type === 'ASTEROID' ? 250 : 100); 
+                            createExplosion(e.x, e.y, e.color, 15); 
+                            enemies.splice(i, 1); 
+                        }}
                         break;
                     }}
                 }}
                 if(e.y > canvas.height) enemies.splice(i, 1);
             }}
             
+            // Particles
             for(let i = particles.length - 1; i >= 0; i--) {{
-                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); if(p.life <= 0) particles.splice(i, 1);
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); 
+                if(p.life <= 0) particles.splice(i, 1);
             }}
             
-            ctx.fillStyle = '#00e5ff'; ctx.font = '20px Orbitron'; ctx.fillText('SCORE: ' + score, 20, 30);
+            // HUD
+            ctx.fillStyle = '#00e5ff'; ctx.font = '20px Orbitron'; ctx.fillText('ROI: $' + score, 20, 30);
             ctx.fillStyle = hull < 30 ? '#ff0055' : '#00ff00'; ctx.fillText('HULL: ' + hull + '%', 20, 60);
-            ctx.fillStyle = '#fff'; ctx.fillText('TIME: ' + timeLeft, 700, 30);
+            ctx.fillStyle = '#fff'; ctx.fillText('T-MINUS: ' + timeLeft, 650, 30);
         }}
 
         function createExplosion(x, y, color, count) {{
-            for(let i = 0; i < count; i++) {{ particles.push({{ x: x, y: y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, life: 10 + Math.random() * 20, color: color }}); }}
+            for(let i = 0; i < count; i++) {{ 
+                particles.push({{ x: x, y: y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, life: 10 + Math.random() * 10, color: color }}); 
+            }}
         }}
     </script>
     </body>
     </html>
     """
 
-# ==============================================================================
-# 5. BOXING MODULE
-# ==============================================================================
 def get_boxing_html(round_num):
     return f"""
     <!DOCTYPE html>
@@ -467,16 +463,16 @@ def get_boxing_html(round_num):
     <head>
     <style>
         body {{ margin: 0; overflow: hidden; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Press Start 2P', cursive; }}
-        canvas {{ border: 4px solid #FFD700; box-shadow: 0 0 30px #FFD700; background: linear-gradient(to bottom, #000 0%, #222 100%); }}
+        canvas {{ border: 4px solid #FFD700; box-shadow: 0 0 30px #FFD700; background: linear-gradient(to bottom, #202020 0%, #000 100%); }}
         #overlay {{ position: absolute; color: #FFD700; text-align: center; font-size: 20px; pointer-events: none; text-shadow: 2px 2px #000; width: 100%; }}
     </style>
     </head>
     <body>
     <div id="overlay">
         <h2>ROUND {round_num}</h2>
-        <p>VS. THE AUDITOR</p>
-        <p style="font-size:12px; color:#aaa;">KEYS: [A] JAB | [S] HAYMAKER | [D] BLOCK</p>
-        <p style="color:#00e5ff; margin-top:20px;">CLICK TO START FIGHT</p>
+        <p>OPPONENT: THE AUDITOR</p>
+        <p style="font-size:12px; color:#aaa; margin-top:20px;">KEYS: [A] JAB | [S] HAYMAKER | [D] BLOCK</p>
+        <p style="color:#00e5ff; margin-top:20px;">CLICK TO FIGHT</p>
     </div>
     <canvas id="gameCanvas" width="600" height="400"></canvas>
     <script>
@@ -565,13 +561,20 @@ def get_boxing_html(round_num):
             requestAnimationFrame(gameLoop);
             drawRect(0, 0, 600, 400, '#222');
             
+            // Draw Ring Floor
+            drawRect(0, 300, 600, 100, '#333');
+            
+            // CPU
             let cpuColor = cpuAction === 'BLOCK' ? '#555' : (cpuAction === 'PUNCH' ? '#ff0000' : '#ff00ff');
             drawRect(250, 100, 100, 200, cpuColor); // Body
             drawRect(270, 60, 60, 40, cpuColor); // Head
             
+            // Player Gloves
             if(action === 'JAB') drawRect(280, 150, 40, 40, '#00e5ff');
             else if(action === 'HAYMAKER') drawRect(320, 120, 50, 50, '#00e5ff');
-            else if(action === 'BLOCK') drawRect(250, 300, 100, 20, '#00e5ff');
+            else if(action === 'BLOCK') {{
+                ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 5; ctx.strokeRect(200, 200, 200, 150); // Shield visual
+            }}
             else {{ drawRect(200, 350, 50, 50, '#00e5ff'); drawRect(350, 350, 50, 50, '#00e5ff'); }}
 
             ctx.font = '16px monospace'; ctx.fillStyle = '#fff';
@@ -587,12 +590,21 @@ def get_boxing_html(round_num):
     """
 
 # ==============================================================================
-# 6. UI COMPONENTS
+# 5. UI COMPONENTS
 # ==============================================================================
 
 def show_sidebar():
     with st.sidebar:
-        st.markdown("### MISSION CONTROL")
+        st.markdown("### 🛰️ MISSION CONTROL")
+        
+        # Mission Status Visual
+        status_color = "#00ff00" if st.session_state.mission_status == "ONGOING" else "#ff0055"
+        st.markdown(f"""
+        <div style="border: 1px solid {status_color}; padding: 10px; border-radius: 5px; text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.5);">
+            <div style="font-size: 0.8rem; color: #888;">STATUS</div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: {status_color};">{st.session_state.mission_status}</div>
+        </div>
+        """, unsafe_allow_html=True)
         
         if st.button("🏠 MAIN MENU"):
             st.session_state.game_state = 'MENU'
@@ -601,14 +613,14 @@ def show_sidebar():
         st.markdown("---")
         
         st.markdown("### PROTOCOLS")
-        if st.button("⚔️ SPACE CAMPAIGN"):
+        if st.button("🚀 SPACE CAMPAIGN"):
             st.session_state.mode = 'CAMPAIGN'
             st.session_state.game_state = 'INTEL'
             st.rerun()
             
         if st.button("🥊 BOXING GYM"):
             st.session_state.mode = 'BOXING'
-            st.session_state.game_state = 'INTEL'
+            st.session_state.game_state = 'INTEL' # Re-use intel briefing logic
             st.rerun()
             
         if st.button("🎓 OFFICER EXAM"):
@@ -624,7 +636,7 @@ def show_sidebar():
             st.rerun()
             
         st.markdown("---")
-        st.caption("Quality Wars v3.0")
+        st.caption("Quality Wars v3.1 | ROI Edition")
 
 def show_menu():
     st.markdown("# QUALITY WARS")
@@ -635,35 +647,28 @@ def show_menu():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
-        <div style="background:rgba(0,0,0,0.5); padding:20px; border:1px solid #333; border-radius:10px; margin-bottom:20px; text-align:center;">
-            <p><strong>INCOMING TRANSMISSION:</strong></p>
-            <p>Quality Control is not enough. We need Quality Assurance. Choose your training simulation below.</p>
+        <div style="background:rgba(0,20,40,0.6); padding:25px; border:1px solid #00e5ff; border-radius:10px; margin-bottom:30px; text-align:center; box-shadow: 0 0 20px rgba(0,229,255,0.2);">
+            <p style="font-size: 1.2rem; color: #fff;"><strong>INCOMING TRANSMISSION:</strong></p>
+            <p style="color: #ccc;">The Quality Control systems are failing. We need Proactive Quality Assurance. Choose your simulation module.</p>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("⚔️ SPACE CAMPAIGN (ARCADE)", key="btn_camp"):
+        if st.button("🚀 START SPACE CAMPAIGN (ARCADE)", key="btn_camp"):
             st.session_state.mode = 'CAMPAIGN'
             st.session_state.game_state = 'INTEL'
             st.rerun()
             
-        if st.button("🥊 BOXING GYM (FIGHT)", key="btn_box"):
+        if st.button("🥊 ENTER BOXING GYM (FIGHT)", key="btn_box"):
             st.session_state.mode = 'BOXING'
             st.session_state.game_state = 'INTEL'
             st.rerun()
             
-        if st.button("🎓 OFFICER EXAM (QUIZ ONLY)", key="btn_exam"):
-            st.session_state.mode = 'TRAINING'
-            st.session_state.game_state = 'TRIVIA'
-            available = TRIVIA_DB.copy()
-            st.session_state.q_queue = random.sample(available, 3)
-            st.rerun()
-            
-        if st.button("📂 MISSION INTEL (PRESENTATIONS)", key="btn_intel"):
+        if st.button("📂 OPEN INTEL VIEWER (PRESENTATIONS)", key="btn_intel"):
             st.session_state.game_state = 'VIEWER'
             st.rerun()
 
 def show_viewer():
-    st.markdown("## 📂 MISSION INTEL VIEWER")
+    st.markdown("## 📂 CLASSIFIED INTEL VIEWER")
     c1, c2 = st.columns([3, 1])
     with c1:
         deck_choice = st.selectbox("SELECT DATA TAPE:", 
@@ -680,11 +685,12 @@ def show_viewer():
     
     st.markdown(f"""
     <div class="intel-viewer">
-        <div class="intel-header">{deck['title']} | SLIDE {st.session_state.slide_index + 1}/{total_slides}</div>
+        <h3 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">{deck['title']} // PAGE {st.session_state.slide_index + 1}</h3>
         <div class="slide-content">{deck['slides'][st.session_state.slide_index]}</div>
     </div>
     """, unsafe_allow_html=True)
     
+    st.write("")
     c1, c2, c3 = st.columns([1, 4, 1])
     with c1:
         if st.button("◀ PREV"):
@@ -700,21 +706,30 @@ def show_viewer():
 def show_intel_briefing():
     if st.session_state.mode == 'CAMPAIGN':
         title = f"SECTOR {st.session_state.current_round} BRIEFING"
-        msg1 = "OBJECTIVE: Survive asteroid field. Eliminate defects."
-        msg2 = "THREAT: Heavy Asteroids detected. Avoid impact."
-        btn = "INITIATE LAUNCH"
+        msg1 = "**OBJECTIVE:** Survive the asteroid field. Shoot down Process Defects."
+        msg2 = "**THREAT LEVEL:** HIGH. Avoid hull impact at all costs."
+        btn = "INITIATE LAUNCH SEQUENCE"
     else:
         title = f"ROUND {st.session_state.current_round} WEIGH-IN"
-        msg1 = "OBJECTIVE: Defeat The Auditor. Use Jabs [A] and Haymakers [S]."
-        msg2 = "THREAT: The Auditor ignores excuses. Block [D] to survive."
-        btn = "ENTER RING"
+        msg1 = "**OBJECTIVE:** Defeat The Auditor. Use Jabs [A] and Haymakers [S]."
+        msg2 = "**STRATEGY:** The Auditor does not accept excuses. Block [D] to survive."
+        btn = "STEP INTO THE RING"
 
     st.markdown(f"## {title}")
+    
+    st.markdown("""
+    <div style="background: rgba(0,0,0,0.6); padding: 20px; border-left: 5px solid #FFE81F; margin-bottom: 20px;">
+        <p style="font-family: 'Orbitron'; color: #FFE81F; font-size: 1.2rem;">COMMANDER'S NOTE:</p>
+        <p>Review the Intel if you are unsure of the protocols. Failure is not an option.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
     with col1: st.info(msg1)
-    with col2: st.warning(msg2)
-        
-    if st.button(btn):
+    with col2: st.error(msg2)
+    
+    st.write("")
+    if st.button(btn, type="primary"):
         st.session_state.game_state = 'GAME' if st.session_state.mode == 'CAMPAIGN' else 'BOXING_GAME'
         st.rerun()
 
@@ -730,25 +745,30 @@ def show_trivia_round():
     with st.form("quiz_form"):
         score_delta = 0
         for i, q in enumerate(st.session_state.q_queue):
-            st.markdown(f"**{i+1}. {q['q']}**")
+            st.markdown(f"##### {i+1}. {q['q']}")
+            
+            # Randomized options
             opts = q['options'].copy()
-            # Randomized seed ensures shuffle is consistent during this render but random per question
             random.seed(q['q'] + str(st.session_state.current_round))
             random.shuffle(opts)
             random.seed()
             
-            choice = st.radio(f"Options for {i}", opts, key=f"q{i}", index=None, label_visibility="collapsed")
+            choice = st.radio(f"select_{i}", opts, key=f"q{i}", index=None, label_visibility="collapsed")
+            
+            if choice:
+                if choice == q['correct']:
+                    score_delta += 1
+                    st.success(f"Correct! {q['feedback']}")
+                else:
+                    st.error(f"Incorrect. The answer was: {q['correct']}")
+            
             st.markdown("---")
-            if choice == q['correct']:
-                score_delta += 1
         
         if st.form_submit_button("SUBMIT ANSWERS"):
             st.session_state.trivia_score += score_delta
+            
             if score_delta == 3:
                 st.balloons()
-                st.success("PERFECT SCORE!")
-            else:
-                st.info(f"RESULTS: {score_delta}/3 CORRECT.")
             
             time.sleep(2)
             
@@ -769,20 +789,20 @@ def show_trivia_round():
                 st.rerun()
 
 def show_gameover():
-    
     # Handling Mission Failed (Death) vs Mission Complete
     if st.session_state.mission_status == 'FAILED':
         st.markdown("# 💀 MISSION FAILED")
         st.markdown("""
         <div style="text-align:center; padding:40px; border:2px solid #ff0055; border-radius:10px; background:rgba(0,0,0,0.8);">
-            <h1 style="color:#ff0055; font-size:40px !important; margin:0;">HULL BREACHED / KNOCKED OUT</h1>
-            <p>Your vessel has been destroyed by defects. You must restart training.</p>
+            <h1 style="color:#ff0055; font-size:40px !important; margin:0;">CRITICAL SYSTEM FAILURE</h1>
+            <p>Your department has been shut down due to excessive defects.</p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        if st.button("RESET MISSION (TRY AGAIN)", type="primary"):
+        if st.button("RESET SIMULATION", type="primary"):
             for k in ['current_round', 'trivia_score', 'game_score']: st.session_state[k] = 0
+            st.session_state.current_round = 1
             st.session_state.questions_asked = []
             st.session_state.mission_status = 'ONGOING'
             st.session_state.game_state = 'MENU'
@@ -798,17 +818,17 @@ def show_gameover():
     if st.session_state.mode == 'TRAINING':
         final_score = trivia_pct
     else:
-        final_score = (trivia_pct * 0.90) + (game_pct * 0.10)
+        final_score = (trivia_pct * 0.60) + (game_pct * 0.40)
     
     # Rank
-    if final_score >= 90: rank, color = "JEDI MASTER", "#00ff00"
+    if final_score >= 90: rank, color = "QUALITY MASTER", "#00ff00"
     elif final_score >= 70: rank, color = "QUALITY KNIGHT", "#00e5ff"
-    else: rank, color = "PADAWAN LEARNER", "#ff0055"
+    else: rank, color = "INTERN", "#ff0055"
     
     st.markdown(f"""
     <div style="text-align:center; padding:40px; border:2px solid {color}; border-radius:10px; background:rgba(0,0,0,0.8);">
         <h1 style="color:{color}; font-size:80px !important; margin:0;">{final_score:.1f}%</h1>
-        <h2 style="color:{color}; letter-spacing:5px;">{rank}</h2>
+        <h2 style="color:{color}; letter-spacing:5px; font-family:'Orbitron';">{rank}</h2>
     </div>
     """, unsafe_allow_html=True)
     
@@ -818,11 +838,11 @@ def show_gameover():
         st.progress(trivia_pct/100)
     with c2:
         if st.session_state.mode != 'TRAINING':
-            st.write(f"**COMBAT:** {st.session_state.game_score} PTS")
+            st.write(f"**PERFORMANCE:** {st.session_state.game_score} PTS")
             st.progress(game_pct/100)
 
     st.markdown("---")
-    if st.button("RESTART MISSION"):
+    if st.button("START NEW CAMPAIGN"):
         for k in ['current_round', 'trivia_score', 'game_score']: st.session_state[k] = 0
         st.session_state.current_round = 1
         st.session_state.questions_asked = []
@@ -831,7 +851,7 @@ def show_gameover():
         st.rerun()
 
 # ==============================================================================
-# 7. MAIN CONTROLLER
+# 6. MAIN CONTROLLER
 # ==============================================================================
 
 show_sidebar()
@@ -841,7 +861,7 @@ if st.session_state.game_state not in ['MENU', 'GAMEOVER', 'VIEWER']:
     st.markdown(f"""
     <div class="hud-container">
         <div class="metric-box"><div class="metric-label">ROUND</div><div class="metric-value">{st.session_state.current_round}/{st.session_state.total_rounds}</div></div>
-        <div class="metric-box"><div class="metric-label">XP</div><div class="metric-value">{st.session_state.game_score}</div></div>
+        <div class="metric-box"><div class="metric-label">ROI SCORE</div><div class="metric-value">${st.session_state.game_score}</div></div>
         <div class="metric-box"><div class="metric-label">INTEL</div><div class="metric-value">{st.session_state.trivia_score}</div></div>
     </div>
     """, unsafe_allow_html=True)
