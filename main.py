@@ -7,213 +7,279 @@ import time
 # 1. CONFIGURATION & ASSETS
 # ==============================================================================
 st.set_page_config(
-    page_title="Quality Wars: Executive Demo",
+    page_title="Quality Wars: Return of the ROI",
     page_icon="⚔️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# CUSTOM CSS: EXECUTIVE DASHBOARD THEME
+# CUSTOM CSS: STARRY WARS THEME & ANIMATIONS
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
 
-    /* MAIN THEME - DARK MATTER */
+    /* COSMIC BACKGROUND ANIMATION */
+    @keyframes move-twink-back {
+        from {background-position:0 0;}
+        to {background-position:-10000px 5000px;}
+    }
+    @keyframes twinkle {
+        0% {opacity: 0.3;}
+        50% {opacity: 1;}
+        100% {opacity: 0.3;}
+    }
+
     .stApp {
-        background-color: #050505;
+        background-color: #000;
         background-image: 
             radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
             radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
             radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
         background-size: 550px 550px, 350px 350px, 250px 250px;
         background-position: 0 0, 40px 60px, 130px 270px;
-        font-family: 'Roboto', sans-serif;
+        font-family: 'Rajdhani', sans-serif;
         color: #e0e0e0;
     }
 
-    /* TYPOGRAPHY - NEON GOLD & BLUE */
-    h1, h2, h3, h4 {
-        font-family: 'Orbitron', sans-serif;
+    /* TYPOGRAPHY */
+    h1, h2, h3 {
+        font-family: 'Orbitron', sans-serif !important;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 10px;
+        letter-spacing: 3px;
     }
     
     h1 {
-        background: -webkit-linear-gradient(#FFE81F, #D4AF37);
+        background: linear-gradient(180deg, #FFE81F 0%, #9B870C 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-shadow: 0px 0px 25px rgba(255, 232, 31, 0.6);
+        text-shadow: 0px 0px 20px rgba(255, 232, 31, 0.5);
         text-align: center;
         font-weight: 900;
-        font-size: 3.5rem !important;
-        padding: 20px 0;
+        font-size: 4rem !important;
+        padding: 30px 0;
+        margin-bottom: 0;
     }
 
-    /* UI ELEMENTS */
-    .intel-viewer {
-        background: rgba(16, 20, 24, 0.95);
-        border: 1px solid #00e5ff;
-        box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
-        border-radius: 8px;
-        padding: 40px;
-        min-height: 550px;
-        position: relative;
-    }
+    h2 { color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
 
-    .intel-header {
-        color: #00e5ff;
-        font-family: 'Orbitron', sans-serif;
-        border-bottom: 2px solid #00e5ff;
-        padding-bottom: 15px;
+    /* UI CARDS */
+    .intel-viewer, .mission-card {
+        background: rgba(16, 20, 24, 0.9);
+        border: 1px solid #333;
+        border-left: 5px solid #FFE81F;
+        box-shadow: 0 0 30px rgba(0,0,0, 0.8);
+        border-radius: 4px;
+        padding: 30px;
         margin-bottom: 20px;
-        font-size: 1.6rem;
-        text-align: center;
     }
     
-    .slide-content {
-        font-size: 1.2rem;
-        line-height: 1.8;
-        white-space: pre-wrap; 
-        color: #cfcfcf;
+    .mission-card:hover {
+        border-color: #00e5ff;
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
     }
 
-    /* BUTTONS - HOLOGRAPHIC STYLE */
+    /* BUTTONS */
     .stButton>button {
         font-family: 'Orbitron', sans-serif;
-        background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 229, 255, 0.3)) !important;
-        color: #00e5ff !important;
-        border: 1px solid #00e5ff !important;
-        padding: 20px 10px;
+        background: transparent !important;
+        color: #FFE81F !important;
+        border: 2px solid #FFE81F !important;
+        padding: 15px 25px;
         font-weight: bold;
-        font-size: 1rem;
-        transition: all 0.3s ease;
+        font-size: 1.1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         text-transform: uppercase;
-        border-radius: 6px;
-        box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        border-radius: 0px;
+        clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
         width: 100%;
-        margin-bottom: 10px;
     }
     
     .stButton>button:hover {
-        background: #00e5ff !important;
+        background: #FFE81F !important;
         color: #000 !important;
-        transform: scale(1.02);
-        box-shadow: 0 0 40px rgba(0, 229, 255, 0.6);
+        box-shadow: 0 0 25px #FFE81F;
+        transform: scale(1.05);
     }
     
-    /* SIDEBAR STYLING */
-    [data-testid="stSidebar"] {
-        background-color: rgba(5, 5, 10, 0.98);
-        border-right: 1px solid #333;
-    }
-    
-    [data-testid="stSidebar"] h3 {
-        color: #FFE81F;
-        font-size: 1rem;
-        border-bottom: 1px solid #333;
-        padding-bottom: 10px;
-    }
-
-    /* HUD */
+    /* HUD METRICS */
     .hud-container {
         display: flex;
         justify-content: center;
-        gap: 4rem;
-        background: rgba(0,0,0,0.85);
-        border-top: 2px solid #FFE81F;
-        border-bottom: 2px solid #FFE81F;
-        padding: 15px;
-        margin-bottom: 30px;
-        backdrop-filter: blur(10px);
+        gap: 3rem;
+        background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,229,255,0.1) 50%, rgba(0,0,0,0) 100%);
+        border-top: 1px solid #00e5ff;
+        border-bottom: 1px solid #00e5ff;
+        padding: 10px;
+        margin-bottom: 40px;
+        margin-top: -20px;
     }
     
     .metric-box { text-align: center; }
-    .metric-label { color: #888; font-size: 0.8rem; letter-spacing: 3px; font-family: 'Orbitron'; }
-    .metric-value { color: #fff; font-size: 2rem; font-weight: bold; font-family: 'Orbitron'; text-shadow: 0 0 10px #00e5ff; }
+    .metric-label { color: #00e5ff; font-size: 0.8rem; letter-spacing: 2px; font-family: 'Orbitron'; }
+    .metric-value { color: #fff; font-size: 1.8rem; font-weight: bold; font-family: 'Orbitron'; text-shadow: 0 0 10px #00e5ff; }
+    
+    /* RADIO BUTTONS FOR QUIZ */
+    .stRadio > div {
+        background: rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #444;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. CONTENT DATABASES
+# 2. CONTENT DATABASES (EXPANDED)
 # ==============================================================================
 
 TRIVIA_DB = [
-    # --- VIVE HISTORY & STRATEGY ---
+    # --- VIVE HISTORY & OPERATIONS ---
     {
+        "id": 1,
         "q": "Vive Health operates how many strategic distribution centers across the US to ensure 1-2 day delivery?",
         "options": ["Four", "Two", "One", "Six"],
         "correct": "Four",
-        "feedback": "Correct! Four centers allow 1-2 business day delivery across the entire US."
+        "feedback": "Correct! Four centers allow 1-2 business day delivery across the US."
     },
     {
+        "id": 2,
         "q": "What is the core advantage of Vive Health owning its own manufacturing facility?",
-        "options": ["'Military Grade Standard' Quality Control", "Cheaper Labor", "Avoiding Tariffs", "None of the above"],
+        "options": ["'Military Grade Standard' Quality Control", "Cheaper Labor", "Avoiding Tariffs", "Tax Loopholes"],
         "correct": "'Military Grade Standard' Quality Control",
-        "feedback": "Correct. Owning manufacturing allows for 'Military Grade' standards."
+        "feedback": "Correct. Owning manufacturing allows for superior QC standards."
     },
     {
-        "q": "In Oct 2025, the FBA Return Rate was slashed to what percentage, exceeding the 7.50% goal?",
+        "id": 3,
+        "q": "As of Oct 2025, the FBA Return Rate was slashed to what percentage (Goal < 7.50%)?",
         "options": ["5.54%", "10.2%", "2.1%", "0%"],
         "correct": "5.54%",
-        "feedback": "Correct. A massive win for the quality team, down from higher averages."
+        "feedback": "Correct. This exceeded the goal significantly."
     },
+    {
+        "id": 4,
+        "q": "Which certification is Vive Health pursuing to unlock the EU & UK markets?",
+        "options": ["ISO 13485", "ISO 9001", "Six Sigma Black Belt", "GMP Level 4"],
+        "correct": "ISO 13485",
+        "feedback": "Correct. ISO 13485 is the standard for Medical Devices."
+    },
+    
+    # --- QUALITY TOOLS & STRATEGY ---
+    {
+        "id": 5,
+        "q": "In FMEA (Failure Mode & Effects Analysis), what does RPN stand for?",
+        "options": ["Risk Priority Number", "Rapid Prototype Number", "Real Problem Notification", "Return Percentage Net"],
+        "correct": "Risk Priority Number",
+        "feedback": "Correct. RPN helps prioritize which risks to fix first."
+    },
+    {
+        "id": 6,
+        "q": "What is the formula for calculating RPN?",
+        "options": ["Severity x Occurrence x Detection", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
+        "correct": "Severity x Occurrence x Detection",
+        "feedback": "Correct. S x O x D = RPN."
+    },
+    {
+        "id": 7,
+        "q": "Which tool is used to trace a problem from 'What' is wrong to 'Why' it is happening (Root Cause)?",
+        "options": ["Fishbone (Ishikawa) Diagram", "Pareto Chart", "Scatter Plot", "Control Chart"],
+        "correct": "Fishbone (Ishikawa) Diagram",
+        "feedback": "Correct. It analyzes Man, Machine, Material, Method, etc."
+    },
+    {
+        "id": 8,
+        "q": "In the RACI matrix, what does the 'A' stand for?",
+        "options": ["Accountable", "Admin", "Action", "Advisor"],
+        "correct": "Accountable",
+        "feedback": "Correct. The person ultimately answerable for the task."
+    },
+    {
+        "id": 9,
+        "q": "According to the Kano Model, 'Delighters' are features that:",
+        "options": ["Customers don't expect but love", "Customers demand as a baseline", "Increase cost but not value", "Are required by law"],
+        "correct": "Customers don't expect but love",
+        "feedback": "Correct. Like the 'Bluetooth speakers' example."
+    },
+    {
+        "id": 10,
+        "q": "What is the difference between Verification and Validation?",
+        "options": ["Verification = Built it Right; Validation = Built the Right Thing", "Verification = User Testing; Validation = Lab Testing", "They are the same", "Validation is optional"],
+        "correct": "Verification = Built it Right; Validation = Built the Right Thing",
+        "feedback": "Correct. Verification checks specs. Validation checks user needs."
+    },
+
     # --- TEAM & CULTURE ---
     {
+        "id": 11,
         "q": "Who is the Retired PhD Chemist leading product testing at the Naples Office?",
         "options": ["Jim Ahearn", "Carolina Silva", "Annie", "Jason"],
         "correct": "Jim Ahearn",
         "feedback": "Correct. Jim leads research and testing."
     },
     {
-        "q": "Who manages the team of ~25 QC Inspectors on the ground in China?",
-        "options": ["Annie", "Jessica", "Luis", "Tom"],
-        "correct": "Annie",
-        "feedback": "Correct. Annie is the QC Manager in China."
-    },
-    {
+        "id": 12,
         "q": "Which Core Value states: 'We take full responsibility... No excuses'?",
         "options": ["Extreme Ownership", "Growth Mindset", "Best Ideas Rise", "Data Driven"],
         "correct": "Extreme Ownership",
         "feedback": "Correct. We own the mission, not just the task."
     },
-    # --- QUALITY TOOLS ---
+    
+    # --- BUSINESS & ROI ---
     {
-        "q": "In a Project Charter, what section captures the issue in the form of a measurement?",
-        "options": ["Problem Statement", "Business Case", "Goal Statement", "Timeline"],
-        "correct": "Problem Statement",
-        "feedback": "Correct. You can't fix what you can't measure."
+        "id": 13,
+        "q": "Obtaining the CE Mark will unlock which major markets?",
+        "options": ["EU & UK", "Asia Pacific", "South America", "Antarctica"],
+        "correct": "EU & UK",
+        "feedback": "Correct. This increases TAM by +$150B."
     },
     {
-        "q": "According to the Kano Model, features that customers don't expect but love are called:",
-        "options": ["Delighters/Excitement Attributes", "Basic Needs", "Performance Attributes", "Threshold Attributes"],
-        "correct": "Delighters/Excitement Attributes",
-        "feedback": "Correct. Like the 'Bluetooth speakers' example (though check if they add value!)."
-    },
-    {
-        "q": "Which tool helps move from 'What' is wrong to 'Why' it is happening (Root Cause)?",
-        "options": ["Fishbone Diagram (Ishikawa)", "Pareto Chart", "Scatter Plot", "Control Chart"],
-        "correct": "Fishbone Diagram (Ishikawa)",
-        "feedback": "Correct. It traces problems to Man, Machine, Material, Method, etc."
-    },
-    {
-        "q": "In FMEA, what is the formula for the Risk Priority Number (RPN)?",
-        "options": ["Severity x Occurrence x Detection", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
-        "correct": "Severity x Occurrence x Detection",
-        "feedback": "Correct. S x O x D = RPN. High RPNs get fixed first."
-    },
-    # --- TARIFFS & COSTS ---
-    {
-        "q": "In the TariffSight model, what defines the 'Landed Cost'?",
+        "id": 14,
+        "q": "In the TariffSight model, 'Landed Cost' includes:",
         "options": ["Production + Tariffs + Shipping + Storage + Fees", "MSRP - Profit", "Just Manufacturing Cost", "Shipping Cost only"],
         "correct": "Production + Tariffs + Shipping + Storage + Fees",
-        "feedback": "Correct. Landed cost includes every expense to get the product to the warehouse."
+        "feedback": "Correct. Landed cost is the total cost to get product to the warehouse."
     },
     {
-        "q": "What is 'Verification' vs 'Validation'?",
-        "options": ["Verification = Built it Right; Validation = Built the Right Thing", "Verification = User Testing; Validation = Lab Testing", "They are the same", "Verification is optional"],
-        "correct": "Verification = Built it Right; Validation = Built the Right Thing",
-        "feedback": "Correct. Verification checks specs. Validation checks user needs."
+        "id": 15,
+        "q": "What tool are we using to build custom analysis apps for free ('Vibe Coding')?",
+        "options": ["Gemini / Claude", "ChatGPT / DALL-E", "Watson", "Siri"],
+        "correct": "Gemini / Claude",
+        "feedback": "Correct. AI is driving efficiency."
+    },
+    {
+        "id": 16,
+        "q": "The 'Post-Op Shoe' case study revealed that returns were high because:",
+        "options": ["Shoes were 5-11% larger than competitors", "The fabric was tearing", "The velcro failed", "They were too expensive"],
+        "correct": "Shoes were 5-11% larger than competitors",
+        "feedback": "Correct. Data-driven resizing is now underway."
+    },
+    {
+        "id": 17,
+        "q": "What defines the 'B2B Return Rate' goal?",
+        "options": ["< 2.00%", "< 5.00%", "< 1.00%", "0%"],
+        "correct": "< 2.00%",
+        "feedback": "Correct. We are currently around 2.29%, needing focus."
+    },
+    {
+        "id": 18,
+        "q": "What is a Project Charter used for?",
+        "options": ["Defining problem, goal, scope, and team", "Calculating Taxes", "Ordering Pizza", " firing employees"],
+        "correct": "Defining problem, goal, scope, and team",
+        "feedback": "Correct. It is the 'Contract' for the project."
+    },
+    {
+        "id": 19,
+        "q": "What is 'Genchi Genbutsu'?",
+        "options": ["Go and see (at the source)", "Continuous Improvement", "Respect for People", "Just in Time"],
+        "correct": "Go and see (at the source)",
+        "feedback": "Correct. We go to the factory or warehouse to understand the real problem."
+    },
+    {
+        "id": 20,
+        "q": "What is the main purpose of APQP (Advanced Product Quality Planning)?",
+        "options": ["To build quality in from the start (Prevention)", "To inspect products at the end", "To negotiate prices", "To design logos"],
+        "correct": "To build quality in from the start (Prevention)",
+        "feedback": "Correct. Moving from reactive to proactive."
     }
 ]
 
@@ -253,8 +319,8 @@ if 'game_score' not in st.session_state:
     st.session_state.game_score = 0
 if 'total_rounds' not in st.session_state:
     st.session_state.total_rounds = 3
-if 'questions_asked' not in st.session_state:
-    st.session_state.questions_asked = []
+if 'questions_asked_ids' not in st.session_state:
+    st.session_state.questions_asked_ids = []
 if 'q_queue' not in st.session_state:
     st.session_state.q_queue = []
 if 'mode' not in st.session_state:
@@ -265,10 +331,9 @@ if 'current_deck' not in st.session_state:
     st.session_state.current_deck = 'leadership'
 if 'mission_status' not in st.session_state:
     st.session_state.mission_status = 'ONGOING'
-
-# SETTINGS (Defaults)
+# SETTINGS
 if 'game_duration_setting' not in st.session_state:
-    st.session_state.game_duration_setting = 10 # Default to 10s
+    st.session_state.game_duration_setting = 15 # Default to 15s for better gameplay
 
 # --- SCORE SYNC LOGIC ---
 if 'score' in st.query_params:
@@ -277,7 +342,6 @@ if 'score' in st.query_params:
         
         if st.session_state.game_state in ['GAME', 'BOXING_GAME']:
             # HANDLING DEATH / FAILURE
-            # If 0 was returned, it's a failure unless in Survival mode
             if incoming_score == 0 and st.session_state.game_duration_setting != 9999:
                 st.session_state.mission_status = 'FAILED'
                 st.session_state.game_state = 'GAMEOVER'
@@ -286,12 +350,15 @@ if 'score' in st.query_params:
                 st.session_state.game_score += incoming_score
                 st.session_state.game_state = 'TRIVIA'
                 
-                # Prepare questions
-                available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
-                if len(available) < 3: 
-                    st.session_state.questions_asked = [] 
+                # Prepare questions (5 per round now)
+                available = [q for q in TRIVIA_DB if q['id'] not in st.session_state.questions_asked_ids]
+                
+                # If we run out of unique questions, reset the pool but keep score
+                if len(available) < 5:
+                    st.session_state.questions_asked_ids = []
                     available = TRIVIA_DB
-                st.session_state.q_queue = random.sample(available, 3)
+                
+                st.session_state.q_queue = random.sample(available, min(5, len(available)))
                 
     except Exception as e:
         pass
@@ -299,28 +366,31 @@ if 'score' in st.query_params:
         st.query_params.clear()
 
 # ==============================================================================
-# 4. GAME MODULES
+# 4. GAME MODULES (OPTIMIZED JS)
 # ==============================================================================
 def get_space_shooter_html(round_num, duration):
-    difficulty = round_num * 0.8
+    difficulty = round_num * 0.5
     is_survival = "true" if duration == 9999 else "false"
     time_label = "SURVIVAL" if duration == 9999 else str(duration)
     
+    # JavaScript Game Engine
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
     <style>
-        body {{ margin: 0; overflow: hidden; background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Orbitron', monospace; }}
-        canvas {{ border: 2px solid #00e5ff; box-shadow: 0 0 40px rgba(0, 229, 255, 0.3); background: rgba(0,0,0,0.9); cursor: none; border-radius: 8px; }}
-        #overlay {{ position: absolute; color: #00e5ff; text-align: center; font-size: 24px; pointer-events: none; text-shadow: 0 0 10px #00e5ff; z-index: 10; }}
+        body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Courier New', monospace; }}
+        canvas {{ display: block; margin: 0 auto; border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); background: rgba(0,0,0,0.85); border-radius: 4px; }}
+        #overlay {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00e5ff; text-align: center; pointer-events: none; text-shadow: 0 0 10px #00e5ff; z-index: 10; width: 100%; }}
+        h2 {{ font-size: 40px; margin: 0; letter-spacing: 5px; }}
+        p {{ font-size: 18px; letter-spacing: 2px; }}
     </style>
     </head>
     <body>
     <div id="overlay">
-        <h2 style="margin:0; font-size: 40px;">SECTOR {round_num}</h2>
+        <h2>SECTOR {round_num}</h2>
         <p>MISSION: DEFEND QUALITY STANDARDS</p>
-        <p style="color:#ff0055; font-weight:bold;">CLICK TO ENGAGE</p>
+        <p style="color:#FFE81F; margin-top:20px; font-weight:bold; animation: blink 1s infinite;">CLICK TO ENGAGE</p>
     </div>
     <canvas id="gameCanvas" width="800" height="500"></canvas>
     <script>
@@ -333,17 +403,24 @@ def get_space_shooter_html(round_num, duration):
         let hull = 100;
         let timeLeft = {duration}; 
         let isSurvival = {is_survival};
+        let lastTime = 0;
+        let enemyTimer = 0;
         
-        const player = {{ x: 400, y: 450, width: 40, height: 40, color: '#00e5ff' }};
+        // Player
+        const player = {{ x: 400, y: 450, width: 40, height: 40, color: '#00e5ff', speed: 5 }};
+        
+        // Entities
         let bullets = [];
         let enemies = [];
         let particles = [];
         let stars = [];
 
-        for(let i=0; i<100; i++) {{
-            stars.push({{ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: Math.random() * 3 }});
+        // Initialize Stars
+        for(let i=0; i<50; i++) {{
+            stars.push({{ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: 0.5 + Math.random() * 2 }});
         }}
         
+        // Input
         canvas.addEventListener('mousemove', (e) => {{
             const rect = canvas.getBoundingClientRect();
             player.x = e.clientX - rect.left;
@@ -353,96 +430,157 @@ def get_space_shooter_html(round_num, duration):
             if(!gameActive && hull > 0) {{
                 gameActive = true;
                 overlay.style.display = 'none';
-                gameLoop();
-                setInterval(spawnEnemy, 700 - ({difficulty} * 100)); 
-                setInterval(updateTimer, 1000);
+                requestAnimationFrame(gameLoop);
+                setInterval(() => {{ if(gameActive && !isSurvival) timeLeft--; }}, 1000);
             }}
-            if(gameActive) bullets.push({{ x: player.x, y: player.y, speed: 15 }});
+            if(gameActive) bullets.push({{ x: player.x, y: player.y, speed: 10 }});
         }});
 
         function spawnEnemy() {{
-            if(!gameActive) return;
             const rand = Math.random();
+            // Increase difficulty by round
+            let speedMulti = 1 + ({difficulty} * 0.2);
+            
             if(rand > 0.70) {{
-                enemies.push({{x: Math.random() * (canvas.width - 50), y: -50, width: 50, height: 50, speed: 2 + ({difficulty}*0.5), type: 'ASTEROID', hp: 3, color: '#888888'}});
+                enemies.push({{x: Math.random() * (canvas.width - 50), y: -50, width: 50, height: 50, speed: 2 * speedMulti, type: 'ASTEROID', hp: 3, color: '#888'}});
             }} else {{
-                enemies.push({{x: Math.random() * (canvas.width - 30), y: -30, width: 30, height: 30, speed: 4 + ({difficulty}), type: 'DEFECT', hp: 1, color: '#ff0055'}});
+                enemies.push({{x: Math.random() * (canvas.width - 30), y: -30, width: 30, height: 30, speed: 3 * speedMulti, type: 'DEFECT', hp: 1, color: '#ff0055'}});
             }}
         }}
 
-        function updateTimer() {{
+        function gameLoop(timestamp) {{
             if(!gameActive) return;
-            if(!isSurvival) {{
-                timeLeft--;
-                if(timeLeft <= 0) endGame();
-            }}
-        }}
-
-        function endGame() {{
-            gameActive = false;
-            window.parent.location.search = '?score=' + score;
-        }}
-
-        function gameLoop() {{
-            if(!gameActive) return;
-            requestAnimationFrame(gameLoop);
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
             
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Clear
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
+            // Stars
             ctx.fillStyle = '#fff';
-            stars.forEach(s => {{ s.y += s.speed; if(s.y > canvas.height) s.y = 0; ctx.fillRect(s.x, s.y, s.size, s.size); }});
+            stars.forEach(s => {{ 
+                s.y += s.speed; 
+                if(s.y > canvas.height) s.y = 0; 
+                ctx.globalAlpha = Math.random();
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+                ctx.globalAlpha = 1.0;
+            }});
             
-            ctx.save(); ctx.translate(player.x, player.y); ctx.fillStyle = player.color;
-            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-20, 40); ctx.lineTo(0, 30); ctx.lineTo(20, 40); ctx.closePath(); ctx.fill();
+            // Spawner
+            enemyTimer += 16;
+            if(enemyTimer > (800 - ({difficulty} * 100))) {{
+                spawnEnemy();
+                enemyTimer = 0;
+            }}
+
+            // Player
+            ctx.save(); 
+            ctx.translate(player.x, player.y); 
+            ctx.fillStyle = player.color;
+            ctx.beginPath(); 
+            ctx.moveTo(0, -20); ctx.lineTo(-20, 20); ctx.lineTo(0, 10); ctx.lineTo(20, 20); 
+            ctx.closePath(); ctx.fill();
+            // Engine flame
+            ctx.fillStyle = '#FFE81F';
+            ctx.beginPath(); ctx.moveTo(-5, 15); ctx.lineTo(0, 30 + Math.random()*10); ctx.lineTo(5, 15); ctx.fill();
             ctx.restore();
             
+            // Bullets
             ctx.fillStyle = '#FFE81F';
             for(let i = bullets.length - 1; i >= 0; i--) {{
-                let b = bullets[i]; b.y -= b.speed; ctx.fillRect(b.x - 2, b.y, 4, 15); if(b.y < 0) bullets.splice(i, 1);
+                let b = bullets[i]; b.y -= b.speed; 
+                ctx.fillRect(b.x - 2, b.y, 4, 15); 
+                if(b.y < 0) bullets.splice(i, 1);
             }}
             
+            // Enemies
             for(let i = enemies.length - 1; i >= 0; i--) {{
                 let e = enemies[i]; e.y += e.speed;
-                ctx.fillStyle = e.color;
-                if(e.type === 'ASTEROID') {{ ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill(); }} else {{ ctx.fillRect(e.x, e.y, e.width, e.height); }}
                 
-                if(Math.abs(player.x - (e.x + e.width/2)) < 35 && Math.abs(player.y - e.y) < 35) {{
-                    hull -= (e.type === 'ASTEROID' ? 40 : 20);
-                    createExplosion(e.x, e.y, '#ffaa00', 20);
-                    enemies.splice(i, 1);
-                    if(hull <= 0) {{
-                        gameActive = false;
-                        // If survival, submit score. If standard, submit 0 (Fail).
-                        let final = isSurvival ? score : 0;
-                        window.parent.location.search = '?score=' + final; 
-                    }}
+                // Draw Enemy
+                ctx.fillStyle = e.color;
+                if(e.type === 'ASTEROID') {{ 
+                    ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill(); 
+                }} else {{ 
+                    ctx.fillRect(e.x, e.y, e.width, e.height); 
                 }}
                 
+                // Collision Player
+                let dx = player.x - (e.x + e.width/2);
+                let dy = player.y - (e.y + e.height/2);
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < 30) {{
+                    hull -= (e.type === 'ASTEROID' ? 30 : 15);
+                    createExplosion(e.x, e.y, '#ffaa00', 20);
+                    enemies.splice(i, 1);
+                    if(hull <= 0) endGame(false);
+                    continue;
+                }}
+                
+                // Collision Bullet
                 for(let j = bullets.length - 1; j >= 0; j--) {{
                     let b = bullets[j];
-                    if(b.x > e.x - 10 && b.x < e.x + e.width + 10 && b.y < e.y + e.height && b.y > e.y) {{
-                        e.hp--; bullets.splice(j, 1); createExplosion(b.x, b.y, '#fff', 5);
-                        if(e.hp <= 0) {{ score += (e.type === 'ASTEROID' ? 250 : 100); createExplosion(e.x, e.y, e.color, 15); enemies.splice(i, 1); }}
+                    if(b.x > e.x && b.x < e.x + e.width && b.y < e.y + e.height && b.y > e.y) {{
+                        e.hp--; 
+                        bullets.splice(j, 1); 
+                        createExplosion(b.x, b.y, '#fff', 5);
+                        
+                        if(e.hp <= 0) {{ 
+                            score += (e.type === 'ASTEROID' ? 250 : 100); 
+                            createExplosion(e.x, e.y, e.color, 15); 
+                            enemies.splice(i, 1); 
+                        }}
                         break;
                     }}
                 }}
+                
                 if(e.y > canvas.height) enemies.splice(i, 1);
             }}
             
+            // Particles
             for(let i = particles.length - 1; i >= 0; i--) {{
-                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); if(p.life <= 0) particles.splice(i, 1);
+                let p = particles[i]; 
+                p.x += p.vx; p.y += p.vy; p.life--; 
+                ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); 
+                if(p.life <= 0) particles.splice(i, 1);
             }}
             
-            ctx.fillStyle = '#00e5ff'; ctx.font = '20px Orbitron'; ctx.fillText('ROI: $' + score, 20, 30);
-            ctx.fillStyle = hull < 30 ? '#ff0055' : '#00ff00'; ctx.fillText('HULL: ' + hull + '%', 20, 60);
+            // HUD
+            ctx.fillStyle = '#00e5ff'; ctx.font = 'bold 20px monospace'; ctx.fillText('ROI: $' + score, 20, 30);
+            
+            // Hull Bar
+            ctx.fillStyle = '#333'; ctx.fillRect(20, 45, 200, 15);
+            ctx.fillStyle = hull < 30 ? '#ff0055' : '#00ff00'; ctx.fillRect(20, 45, hull * 2, 15);
+            ctx.fillText('HULL', 230, 58);
+
+            // Timer
             ctx.fillStyle = '#fff'; 
-            let timerTxt = isSurvival ? "SURVIVAL" : timeLeft;
-            ctx.fillText('TIME: ' + timerTxt, 600, 30);
+            let timerTxt = isSurvival ? "SURVIVAL" : timeLeft + "s";
+            ctx.fillText(timerTxt, 700, 30);
+            
+            if(!isSurvival && timeLeft <= 0) endGame(true);
+
+            requestAnimationFrame(gameLoop);
         }}
 
         function createExplosion(x, y, color, count) {{
-            for(let i = 0; i < count; i++) {{ particles.push({{ x: x, y: y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, life: 10 + Math.random() * 10, color: color }}); }}
+            for(let i = 0; i < count; i++) {{ 
+                particles.push({{ x: x, y: y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, life: 10 + Math.random() * 10, color: color }}); 
+            }}
         }}
+
+        function endGame(success) {{
+            gameActive = false;
+            let finalScore = isSurvival ? score : (success ? score : 0);
+            window.parent.location.search = '?score=' + finalScore; 
+        }}
+        
+        // CSS for blinking text
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }`;
+        document.head.appendChild(style);
     </script>
     </body>
     </html>
@@ -450,23 +588,25 @@ def get_space_shooter_html(round_num, duration):
 
 def get_boxing_html(round_num, duration):
     is_survival = "true" if duration == 9999 else "false"
+    # FIX: Pre-calculate Python variables to avoid f-string syntax error
+    cpu_start_hp = 9999 if duration == 9999 else 100 + (round_num * 25)
     
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
     <style>
-        body {{ margin: 0; overflow: hidden; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Press Start 2P', cursive; }}
-        canvas {{ border: 4px solid #FFD700; box-shadow: 0 0 30px #FFD700; background: linear-gradient(to bottom, #202020 0%, #000 100%); }}
-        #overlay {{ position: absolute; color: #FFD700; text-align: center; font-size: 20px; pointer-events: none; text-shadow: 2px 2px #000; width: 100%; }}
+        body {{ margin: 0; overflow: hidden; background: #050505; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Courier New', monospace; }}
+        canvas {{ border: 4px solid #FFE81F; box-shadow: 0 0 30px rgba(255, 232, 31, 0.2); background: linear-gradient(to bottom, #1a1a1a 0%, #000 100%); }}
+        #overlay {{ position: absolute; color: #FFE81F; text-align: center; pointer-events: none; width: 100%; text-shadow: 2px 2px #000; }}
     </style>
     </head>
     <body>
     <div id="overlay">
-        <h2>ROUND {round_num}</h2>
-        <p>OPPONENT: THE AUDITOR</p>
-        <p style="font-size:12px; color:#aaa; margin-top:20px;">KEYS: [A] JAB | [S] HAYMAKER | [D] BLOCK</p>
-        <p style="color:#00e5ff; margin-top:20px;">CLICK TO FIGHT</p>
+        <h2 style="font-size:30px;">ROUND {round_num}</h2>
+        <p style="font-size:14px; color:#ccc;">OPPONENT: THE AUDITOR</p>
+        <p style="margin-top:10px; color:#00e5ff;">KEYS: [A] LEFT JAB | [S] RIGHT HOOK | [D] BLOCK</p>
+        <p style="color:#FFE81F; font-weight:bold; margin-top:20px; animation: blink 1s infinite;">CLICK TO FIGHT</p>
     </div>
     <canvas id="gameCanvas" width="600" height="400"></canvas>
     <script>
@@ -477,63 +617,91 @@ def get_boxing_html(round_num, duration):
         let gameActive = false;
         let score = 0;
         let playerHP = 100;
-        let cpuHP = {duration == 9999 ? 9999 : 100 + (round_num * 20)};
+        let cpuHP = {cpu_start_hp};
         let maxCpuHP = cpuHP;
         let stamina = 100;
         let timeLeft = {duration};
         let isSurvival = {is_survival};
+        
         let action = 'IDLE';
         let cpuAction = 'IDLE';
         let message = '';
         let msgTimer = 0;
+        let timerInterval;
+        let cpuInterval;
         
         canvas.addEventListener('mousedown', () => {{
             if(!gameActive && playerHP > 0) {{
                 gameActive = true;
                 overlay.style.display = 'none';
                 gameLoop();
-                setInterval(cpuThink, 900 - ({round_num} * 50)); 
-                setInterval(updateTimer, 1000);
+                
+                // Difficulty increases with rounds
+                let thinkSpeed = Math.max(400, 1000 - ({round_num} * 100));
+                
+                cpuInterval = setInterval(cpuThink, thinkSpeed); 
+                timerInterval = setInterval(updateTimer, 1000);
                 window.addEventListener('keydown', handleInput);
             }}
         }});
 
         function handleInput(e) {{
-            if(!gameActive) return;
-            if(action !== 'IDLE') return; 
+            if(!gameActive || action !== 'IDLE') return; 
             
-            if(e.key.toLowerCase() === 'a' && stamina >= 10) {{
-                action = 'JAB'; stamina -= 10; checkHit(10, 0.8); setTimeout(() => action = 'IDLE', 200);
-            }} else if (e.key.toLowerCase() === 's' && stamina >= 30) {{
-                action = 'HAYMAKER'; stamina -= 30; checkHit(30, 0.4); setTimeout(() => action = 'IDLE', 600);
-            }} else if (e.key.toLowerCase() === 'd') {{
-                action = 'BLOCK'; stamina = Math.min(100, stamina + 5); setTimeout(() => action = 'IDLE', 300);
+            let key = e.key.toLowerCase();
+            if(key === 'a' && stamina >= 15) {{
+                action = 'JAB'; stamina -= 15; checkHit(10 + ({round_num}*2), 0.8); 
+                setTimeout(() => action = 'IDLE', 250);
+            }} else if (key === 's' && stamina >= 35) {{
+                action = 'HOOK'; stamina -= 35; checkHit(25 + ({round_num}*2), 0.5); 
+                setTimeout(() => action = 'IDLE', 600);
+            }} else if (key === 'd') {{
+                action = 'BLOCK'; stamina = Math.min(100, stamina + 10); 
+                setTimeout(() => action = 'IDLE', 400);
             }}
         }}
 
         function checkHit(dmg, accuracy) {{
-            if(cpuAction === 'BLOCK') {{ showMsg("BLOCKED!", '#ffff00'); return; }}
+            if(cpuAction === 'BLOCK') {{ 
+                showMsg("BLOCKED!", '#ffff00'); 
+                return; 
+            }}
             if(Math.random() < accuracy) {{
-                cpuHP -= dmg; score += dmg * 10; showMsg("HIT!", '#00ff00');
+                cpuHP -= dmg; score += dmg * 10; 
+                showMsg("HIT!", '#00ff00');
                 if(cpuHP <= 0) endGame(true);
-            }} else {{ showMsg("MISSED!", '#aaa'); }}
+            }} else {{ 
+                showMsg("MISSED!", '#aaa'); 
+            }}
         }}
 
-        function showMsg(text, color) {{ message = text; msgTimer = 30; }}
+        function showMsg(text, color) {{ message = text; msgTimer = 40; msgColor = color; }}
+        let msgColor = '#fff';
 
         function cpuThink() {{
             if(!gameActive) return;
             const rand = Math.random();
+            
+            // AI Logic
             if(rand > 0.6) {{
                 cpuAction = 'WINDUP';
                 setTimeout(() => {{
+                    if(!gameActive) return;
                     cpuAction = 'PUNCH';
-                    if(action === 'BLOCK') {{ stamina = Math.min(100, stamina + 10); showMsg("BLOCKED!", '#00e5ff'); }} 
-                    else {{ playerHP -= 10 + ({round_num} * 2); showMsg("CRITICAL!", '#ff0055'); if(playerHP <= 0) endGame(false); }}
-                    setTimeout(() => cpuAction = 'IDLE', 300);
+                    // Damage calculation
+                    if(action === 'BLOCK') {{ 
+                        stamina = Math.min(100, stamina + 15); 
+                        showMsg("BLOCKED!", '#00e5ff'); 
+                    }} else {{ 
+                        playerHP -= 10 + ({round_num} * 3); 
+                        showMsg("OUCH!", '#ff0055'); 
+                        if(playerHP <= 0) endGame(false); 
+                    }}
+                    setTimeout(() => cpuAction = 'IDLE', 400);
                 }}, 400);
             }} else if (rand > 0.3) {{
-                cpuAction = 'BLOCK'; setTimeout(() => cpuAction = 'IDLE', 600);
+                cpuAction = 'BLOCK'; 
+                setTimeout(() => cpuAction = 'IDLE', 800);
             }}
         }}
 
@@ -548,10 +716,12 @@ def get_boxing_html(round_num, duration):
 
         function endGame(win) {{
             gameActive = false;
-            // If survival and player died, we send score. If not survival and died, send 0.
+            clearInterval(timerInterval);
+            clearInterval(cpuInterval);
+            
             let finalScore = score;
             if (!isSurvival && !win) finalScore = 0;
-            if (isSurvival) finalScore += 500; // Bonus for effort
+            if (isSurvival) finalScore += 500; 
             else if (win) finalScore += 1000;
             
             window.parent.location.search = '?score=' + finalScore;
@@ -562,36 +732,64 @@ def get_boxing_html(round_num, duration):
         function gameLoop() {{
             if(!gameActive) return;
             requestAnimationFrame(gameLoop);
-            drawRect(0, 0, 600, 400, '#222');
-            drawRect(0, 300, 600, 100, '#333'); // Floor
             
+            // BG
+            drawRect(0, 0, 600, 400, '#111');
+            
+            // Floor
+            var grd = ctx.createLinearGradient(0, 300, 0, 400);
+            grd.addColorStop(0, "#222");
+            grd.addColorStop(1, "#444");
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 300, 600, 100);
+            
+            // Ropes
+            drawRect(0, 100, 600, 5, '#FFE81F');
+            drawRect(0, 200, 600, 5, '#FFE81F');
+            drawRect(0, 280, 600, 5, '#FFE81F');
+
+            // CPU
             let cpuColor = '#ff00ff';
-            if(cpuAction === 'BLOCK') cpuColor = '#555';
-            if(cpuAction === 'WINDUP') cpuColor = '#ffaa00';
+            if(cpuAction === 'BLOCK') cpuColor = '#666';
+            if(cpuAction === 'WINDUP') cpuColor = '#ffa500';
             if(cpuAction === 'PUNCH') cpuColor = '#ff0000';
             
-            drawRect(250, 100, 100, 200, cpuColor); // Body
-            drawRect(270, 60, 60, 40, cpuColor); // Head
+            // CPU Body
+            drawRect(260, 120, 80, 180, cpuColor);
+            // CPU Head
+            drawRect(270, 70, 60, 50, cpuColor);
             
-            if(action === 'JAB') drawRect(280, 150, 40, 40, '#00e5ff');
-            else if(action === 'HAYMAKER') drawRect(320, 120, 50, 50, '#00e5ff');
-            else if(action === 'BLOCK') drawRect(250, 300, 100, 20, '#00e5ff');
-            else {{ drawRect(200, 350, 50, 50, '#00e5ff'); drawRect(350, 350, 50, 50, '#00e5ff'); }}
+            // Player Hands
+            if(action === 'JAB') drawRect(240, 160, 60, 40, '#00e5ff'); // Left extended
+            else drawRect(200, 320, 50, 50, '#00e5ff'); // Left guard
+            
+            if(action === 'HOOK') drawRect(300, 150, 70, 60, '#00e5ff'); // Right huge
+            else drawRect(350, 320, 50, 50, '#00e5ff'); // Right guard
+            
+            if(action === 'BLOCK') drawRect(220, 280, 160, 40, '#00e5ff');
 
-            ctx.font = '16px monospace'; ctx.fillStyle = '#fff';
+            // UI
+            ctx.font = 'bold 16px monospace'; ctx.fillStyle = '#fff';
             ctx.fillText("YOU: " + playerHP + "%", 20, 30);
-            drawRect(20, 40, stamina * 1.5, 5, '#00e5ff');
+            // Stamina Bar
+            drawRect(20, 40, stamina * 1.5, 8, '#00e5ff');
             
-            ctx.fillStyle = '#ff0055'; ctx.fillText("AUDITOR", 500, 30);
+            ctx.fillStyle = '#ff0055'; ctx.fillText("AUDITOR: " + cpuHP, 450, 30);
 
-            ctx.fillStyle = '#FFD700'; ctx.font = '30px monospace'; 
+            ctx.fillStyle = '#FFE81F'; ctx.font = 'bold 40px monospace'; 
             let timeTxt = isSurvival ? "∞" : timeLeft;
             ctx.fillText(timeTxt, 280, 50);
             
             if(msgTimer > 0) {{
-                ctx.font = '30px monospace'; ctx.fillStyle = '#fff'; ctx.fillText(message, 220, 150); msgTimer--;
+                ctx.font = 'bold 40px monospace'; ctx.fillStyle = msgColor; 
+                ctx.fillText(message, 200, 200); 
+                msgTimer--;
             }}
         }}
+        
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }`;
+        document.head.appendChild(style);
     </script>
     </body>
     </html>
@@ -608,12 +806,12 @@ def show_sidebar():
         # SETTINGS
         st.markdown("#### ⚙️ PROTOCOL SETTINGS")
         duration_mode = st.selectbox("GAME DURATION", 
-                                    ["Quick Drill (10s)", "Standard (30s)", "Survival (Until Death)"],
+                                    ["Quick Drill (15s)", "Standard (45s)", "Survival (Until Death)"],
                                     index=0)
         
         # Update state based on selection
-        if "Quick" in duration_mode: st.session_state.game_duration_setting = 10
-        elif "Standard" in duration_mode: st.session_state.game_duration_setting = 30
+        if "Quick" in duration_mode: st.session_state.game_duration_setting = 15
+        elif "Standard" in duration_mode: st.session_state.game_duration_setting = 45
         else: st.session_state.game_duration_setting = 9999
 
         st.markdown("---")
@@ -636,9 +834,10 @@ def show_sidebar():
         if st.button("🎓 OFFICER EXAM"):
             st.session_state.mode = 'TRAINING'
             st.session_state.game_state = 'TRIVIA'
+            # Reset trivia deck if empty
             if not st.session_state.q_queue:
-                available = TRIVIA_DB.copy()
-                st.session_state.q_queue = random.sample(available, 3)
+                available = [q for q in TRIVIA_DB if q['id'] not in st.session_state.questions_asked_ids]
+                st.session_state.q_queue = random.sample(available, min(5, len(available)))
             st.rerun()
             
         if st.button("📂 INTEL VIEWER"):
@@ -646,36 +845,37 @@ def show_sidebar():
             st.rerun()
             
         st.markdown("---")
-        st.caption("Quality Wars v4.0")
+        st.caption("Quality Wars v5.0")
 
 def show_menu():
     st.markdown("# QUALITY WARS")
-    st.markdown("<h4 style='text-align:center; color:#FFE81F; margin-top:-15px'>THE ROI STRIKES BACK</h4>", unsafe_allow_html=True)
-    
-    st.markdown("---")
+    st.markdown("<h3 style='text-align:center; color:#00e5ff; margin-top:-20px; letter-spacing: 8px;'>RETURN OF THE ROI</h3>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
-        <div style="background:rgba(0,20,40,0.8); padding:30px; border:2px solid #00e5ff; border-radius:12px; margin-bottom:30px; text-align:center; box-shadow: 0 0 30px rgba(0,229,255,0.2);">
-            <h3 style="color: #fff; margin-top:0;">DAILY TRAINING PROTOCOL</h3>
-            <p style="color: #ccc; font-size: 1.1rem;">
-                Engage in simulations to sharpen your Quality Assurance skills. 
-                Combine tactical agility with strategic knowledge to maximize ROI.
+        <div style="background:rgba(0,20,40,0.8); padding:30px; border:1px solid #00e5ff; border-top: 5px solid #FFE81F; border-radius:4px; margin-bottom:30px; text-align:center; box-shadow: 0 0 50px rgba(0,229,255,0.1);">
+            <p style="color: #ccc; font-size: 1.2rem; line-height: 1.6;">
+                The galaxy is plagued by <b>defects</b> and <b>inefficiency</b>. 
+                <br><br>
+                As a Quality Officer, you must master the archives of <b>ISO 13485</b>, 
+                battle the <b>Audit Droids</b>, and secure the <b>Profit Margin</b>.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("🚀 START SPACE CAMPAIGN", key="btn_camp"):
-            st.session_state.mode = 'CAMPAIGN'
-            st.session_state.game_state = 'INTEL'
-            st.rerun()
-            
-        if st.button("🥊 ENTER BOXING GYM", key="btn_box"):
-            st.session_state.mode = 'BOXING'
-            st.session_state.game_state = 'INTEL'
-            st.rerun()
-            
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🚀 START CAMPAIGN", key="btn_camp"):
+                st.session_state.mode = 'CAMPAIGN'
+                st.session_state.game_state = 'INTEL'
+                st.rerun()
+        with c2:    
+            if st.button("🥊 BOXING GYM", key="btn_box"):
+                st.session_state.mode = 'BOXING'
+                st.session_state.game_state = 'INTEL'
+                st.rerun()
+        
         if st.button("📂 REVIEW MISSION INTEL", key="btn_intel"):
             st.session_state.game_state = 'VIEWER'
             st.rerun()
@@ -698,12 +898,11 @@ def show_viewer():
     
     st.markdown(f"""
     <div class="intel-viewer">
-        <h3 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; color: #00e5ff;">{deck['title']} // PAGE {st.session_state.slide_index + 1}</h3>
-        <div class="slide-content">{deck['slides'][st.session_state.slide_index]}</div>
+        <h3 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; color: #FFE81F;">{deck['title']} // PAGE {st.session_state.slide_index + 1}</h3>
+        <div style="font-size: 1.3rem; line-height: 1.8; color: #ddd; white-space: pre-wrap;">{deck['slides'][st.session_state.slide_index]}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    st.write("")
     c1, c2, c3 = st.columns([1, 4, 1])
     with c1:
         if st.button("◀ PREV"):
@@ -723,26 +922,32 @@ def show_intel_briefing():
     if st.session_state.mode == 'CAMPAIGN':
         title = f"SECTOR {st.session_state.current_round} BRIEFING"
         msg1 = f"**OBJECTIVE:** Survive the asteroid field for **{dur_txt}**."
-        msg2 = "**THREAT:** Heavy Asteroids. 100% Hull Loss = Failure."
+        msg2 = "**THREAT:** Heavy Asteroids & Defects. 100% Hull Loss = Failure."
         btn = "INITIATE LAUNCH SEQUENCE"
     else:
         title = f"ROUND {st.session_state.current_round} WEIGH-IN"
-        msg1 = f"**OBJECTIVE:** Survive/Defeat The Auditor for **{dur_txt}**."
-        msg2 = "**STRATEGY:** Use [D] to Block when opponent flashes ORANGE."
+        msg1 = f"**OBJECTIVE:** Defeat The Auditor in **{dur_txt}**."
+        msg2 = "**CONTROLS:** [A] Left Jab, [S] Right Hook, [D] Block."
         btn = "STEP INTO THE RING"
 
     st.markdown(f"## {title}")
     
     st.markdown(f"""
-    <div style="background: rgba(0,0,0,0.6); padding: 20px; border-left: 5px solid #FFE81F; margin-bottom: 20px;">
-        <p style="font-family: 'Orbitron'; color: #FFE81F; font-size: 1.2rem;">COMMANDER'S NOTE:</p>
-        <p>Review the Intel if you are unsure of the protocols. Knowledge is your best weapon.</p>
+    <div class="mission-card">
+        <h3 style="color: #FFE81F;">COMMANDER'S NOTE:</h3>
+        <p style="font-size: 1.2rem;">
+            "We do not rise to the level of our expectations. We fall to the level of our training."
+            <br><br>
+            Review the Intel if you are unsure of the protocols. Knowledge is your best weapon.
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
-    with col1: st.info(msg1)
-    with col2: st.error(msg2)
+    with col1: 
+        st.info(msg1)
+    with col2: 
+        st.warning(msg2)
     
     st.write("")
     if st.button(btn, type="primary"):
@@ -752,52 +957,62 @@ def show_intel_briefing():
 def show_trivia_round():
     st.markdown(f"## KNOWLEDGE CHECKPOINT: ROUND {st.session_state.current_round}")
     
-    # Fallback queue population
+    # Ensure queue is populated
     if not st.session_state.q_queue:
-        available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
-        if len(available) < 3: available = TRIVIA_DB
-        st.session_state.q_queue = random.sample(available, 3)
+        available = [q for q in TRIVIA_DB if q['id'] not in st.session_state.questions_asked_ids]
+        if len(available) < 5: 
+            st.session_state.questions_asked_ids = [] # Reshuffle deck
+            available = TRIVIA_DB
+        st.session_state.q_queue = random.sample(available, min(5, len(available)))
+
+    # Display Score so far
+    st.progress(st.session_state.trivia_score / (st.session_state.total_rounds * 5) if st.session_state.total_rounds > 0 else 0)
 
     with st.form("quiz_form"):
         score_delta = 0
         for i, q in enumerate(st.session_state.q_queue):
             st.markdown(f"##### {i+1}. {q['q']}")
             
-            # Randomized options
+            # Randomized options logic (stable per render)
             opts = q['options'].copy()
-            random.seed(q['q'] + str(st.session_state.current_round))
+            # Simple shuffle based on Q text to keep it consistent during interaction
+            random.seed(q['q']) 
             random.shuffle(opts)
-            random.seed()
+            random.seed() # Reset seed
             
-            choice = st.radio(f"select_{i}", opts, key=f"q{i}", index=None, label_visibility="collapsed")
+            choice = st.radio(f"Select Answer:", opts, key=f"q_{st.session_state.current_round}_{i}", label_visibility="collapsed")
             
-            if choice:
-                if choice == q['correct']:
-                    score_delta += 1
-                    st.success(f"Correct! {q['feedback']}")
-                else:
-                    st.error(f"Incorrect. The answer was: {q['correct']}")
+            # Check answer logic happens AFTER submit in the logic block below, 
+            # but we need to store the choice to check it.
             
             st.markdown("---")
         
         if st.form_submit_button("SUBMIT ANSWERS"):
-            st.session_state.trivia_score += score_delta
+            # Calculate score
+            correct_count = 0
+            for i, q in enumerate(st.session_state.q_queue):
+                user_choice = st.session_state.get(f"q_{st.session_state.current_round}_{i}")
+                if user_choice == q['correct']:
+                    correct_count += 1
+                    st.toast(f"✅ Q{i+1} Correct!", icon="🎉")
+                else:
+                    st.toast(f"❌ Q{i+1} Wrong. Answer: {q['correct']}", icon="⚠️")
+                
+                # Mark question as asked
+                if q['id'] not in st.session_state.questions_asked_ids:
+                    st.session_state.questions_asked_ids.append(q['id'])
+
+            st.session_state.trivia_score += correct_count
             
-            if score_delta == 3:
-                st.balloons()
-            
-            time.sleep(2)
+            time.sleep(2) # Give user time to read toasts
             
             if st.session_state.current_round < st.session_state.total_rounds:
                 st.session_state.current_round += 1
                 # Next state logic
                 next_state = 'TRIVIA' if st.session_state.mode == 'TRAINING' else 'INTEL'
                 st.session_state.game_state = next_state
-                
-                # Re-roll queue
-                available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
-                if len(available) < 3: available = TRIVIA_DB
-                st.session_state.q_queue = random.sample(available, 3)
+                # Clear queue for next round to force re-roll
+                st.session_state.q_queue = []
                 st.rerun()
             else:
                 st.session_state.mission_status = 'SUCCESS'
@@ -809,16 +1024,16 @@ def show_gameover():
     if st.session_state.mission_status == 'FAILED':
         st.markdown("# 💀 MISSION FAILED")
         st.markdown("""
-        <div style="text-align:center; padding:40px; border:2px solid #ff0055; border-radius:10px; background:rgba(0,0,0,0.8);">
+        <div style="text-align:center; padding:40px; border:2px solid #ff0055; border-radius:4px; background:rgba(50,0,0,0.5);">
             <h1 style="color:#ff0055; font-size:40px !important; margin:0;">CRITICAL FAILURE</h1>
-            <p>Your department has been shut down due to excessive defects.</p>
+            <p style="font-size: 1.2rem; margin-top: 20px;">Your department has been shut down due to excessive defects.</p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("---")
         if st.button("RESET SIMULATION", type="primary"):
             for k in ['current_round', 'trivia_score', 'game_score']: st.session_state[k] = 0
-            st.session_state.questions_asked = []
+            st.session_state.questions_asked_ids = []
             st.session_state.mission_status = 'ONGOING'
             st.session_state.game_state = 'MENU'
             st.rerun()
@@ -826,11 +1041,9 @@ def show_gameover():
 
     # Standard Scoring
     st.markdown("# MISSION DEBRIEF")
-    max_trivia = st.session_state.total_rounds * 3
-    trivia_pct = (st.session_state.trivia_score / max_trivia) * 100
+    max_trivia = st.session_state.total_rounds * 5 # 5 qs per round
+    trivia_pct = (st.session_state.trivia_score / max_trivia) * 100 if max_trivia > 0 else 0
     
-    # Game score calculation
-    # If survival mode, game score can be huge, so we just show raw points
     if st.session_state.game_duration_setting == 9999:
          game_text = f"{st.session_state.game_score} (SURVIVAL)"
     else:
@@ -839,17 +1052,18 @@ def show_gameover():
     if st.session_state.mode == 'TRAINING':
         final_score = trivia_pct
     else:
-        # Simple weighted score for standard modes
+        # Weighted score
         game_pct = min((st.session_state.game_score / 3000) * 100, 100)
         final_score = (trivia_pct * 0.60) + (game_pct * 0.40)
     
     # Rank
-    if final_score >= 90: rank, color = "QUALITY MASTER", "#00ff00"
+    if final_score >= 90: rank, color = "JEDI MASTER", "#00ff00"
     elif final_score >= 70: rank, color = "QUALITY KNIGHT", "#00e5ff"
-    else: rank, color = "INTERN", "#ff0055"
+    elif final_score >= 50: rank, color = "PADAWAN", "#FFE81F"
+    else: rank, color = "JAR JAR BINKS", "#ff0055"
     
     st.markdown(f"""
-    <div style="text-align:center; padding:40px; border:2px solid {color}; border-radius:10px; background:rgba(0,0,0,0.8);">
+    <div style="text-align:center; padding:40px; border:2px solid {color}; border-radius:10px; background:rgba(0,0,0,0.8); box-shadow: 0 0 50px {color}40;">
         <h1 style="color:{color}; font-size:80px !important; margin:0;">{final_score:.1f}%</h1>
         <h2 style="color:{color}; letter-spacing:5px; font-family:'Orbitron';">{rank}</h2>
     </div>
@@ -857,17 +1071,19 @@ def show_gameover():
     
     c1, c2 = st.columns(2)
     with c1:
-        st.write(f"**KNOWLEDGE:** {st.session_state.trivia_score}/{max_trivia}")
+        st.markdown("### KNOWLEDGE")
+        st.write(f"**Score:** {st.session_state.trivia_score}/{max_trivia}")
         st.progress(trivia_pct/100)
     with c2:
         if st.session_state.mode != 'TRAINING':
-            st.write(f"**PERFORMANCE:** {game_text}")
+            st.markdown("### SKILLS")
+            st.write(f"**Combat Score:** {game_text}")
 
     st.markdown("---")
-    if st.button("START NEW CAMPAIGN"):
+    if st.button("START NEW CAMPAIGN", type="primary"):
         for k in ['current_round', 'trivia_score', 'game_score']: st.session_state[k] = 0
         st.session_state.current_round = 1
-        st.session_state.questions_asked = []
+        st.session_state.questions_asked_ids = []
         st.session_state.mission_status = 'ONGOING'
         st.session_state.game_state = 'MENU'
         st.rerun()
@@ -895,9 +1111,13 @@ elif st.session_state.game_state == 'VIEWER':
 elif st.session_state.game_state == 'INTEL':
     show_intel_briefing()
 elif st.session_state.game_state == 'GAME':
-    components.html(get_space_shooter_html(st.session_state.current_round, st.session_state.game_duration_setting), height=550)
+    # Space Shooter
+    html_code = get_space_shooter_html(st.session_state.current_round, st.session_state.game_duration_setting)
+    components.html(html_code, height=550)
 elif st.session_state.game_state == 'BOXING_GAME':
-    components.html(get_boxing_html(st.session_state.current_round, st.session_state.game_duration_setting), height=450)
+    # Boxing
+    html_code = get_boxing_html(st.session_state.current_round, st.session_state.game_duration_setting)
+    components.html(html_code, height=450)
 elif st.session_state.game_state == 'TRIVIA':
     show_trivia_round()
 elif st.session_state.game_state == 'GAMEOVER':
