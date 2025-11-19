@@ -579,7 +579,7 @@ def get_space_shooter_html(round_num, duration):
         
         // CSS for blinking text
         const style = document.createElement('style');
-        style.innerHTML = `@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }`;
+        style.innerHTML = `@keyframes blink {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0; }} 100% {{ opacity: 1; }} }}`;
         document.head.appendChild(style);
     </script>
     </body>
@@ -787,8 +787,9 @@ def get_boxing_html(round_num, duration):
             }}
         }}
         
+        // CSS for blinking text
         const style = document.createElement('style');
-        style.innerHTML = `@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }`;
+        style.innerHTML = `@keyframes blink {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0; }} 100% {{ opacity: 1; }} }}`;
         document.head.appendChild(style);
     </script>
     </body>
@@ -944,7 +945,7 @@ def show_intel_briefing():
     """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
-    with col1: 
+    with c1: 
         st.info(msg1)
     with col2: 
         st.warning(msg2)
