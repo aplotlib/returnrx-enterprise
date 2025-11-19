@@ -13,32 +13,35 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CUSTOM CSS: STARRY WARS THEME & ANIMATIONS
+# CUSTOM CSS: EARTH/SPACE THEME & ANIMATIONS
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
 
-    /* COSMIC BACKGROUND ANIMATION */
-    @keyframes move-twink-back {
-        from {background-position:0 0;}
-        to {background-position:-10000px 5000px;}
-    }
-    @keyframes twinkle {
-        0% {opacity: 0.3;}
-        50% {opacity: 1;}
-        100% {opacity: 0.3;}
-    }
-
+    /* BACKGROUND & ATMOSPHERE */
     .stApp {
         background-color: #000;
-        background-image: 
-            radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-            radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
-            radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
-        background-size: 550px 550px, 350px 350px, 250px 250px;
-        background-position: 0 0, 40px 60px, 130px 270px;
+        background-image: url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop");
+        background-size: cover;
+        background-position: center center;
+        background-attachment: fixed;
         font-family: 'Rajdhani', sans-serif;
         color: #e0e0e0;
+    }
+    
+    /* SCANLINE OVERLAY FOR CRT EFFECT */
+    .stApp::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 0;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
     }
 
     /* TYPOGRAPHY */
@@ -46,43 +49,55 @@ st.markdown("""
         font-family: 'Orbitron', sans-serif !important;
         text-transform: uppercase;
         letter-spacing: 3px;
+        position: relative;
+        z-index: 1;
     }
     
     h1 {
         background: linear-gradient(180deg, #FFE81F 0%, #9B870C 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-shadow: 0px 0px 20px rgba(255, 232, 31, 0.5);
+        text-shadow: 0px 0px 20px rgba(255, 232, 31, 0.6);
         text-align: center;
         font-weight: 900;
-        font-size: 4rem !important;
+        font-size: 4.5rem !important;
         padding: 30px 0;
         margin-bottom: 0;
     }
 
-    h2 { color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+    h2 { 
+        color: #00e5ff; 
+        text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+        border-bottom: 2px solid #00e5ff;
+        padding-bottom: 10px;
+        display: inline-block;
+    }
 
-    /* UI CARDS */
-    .intel-viewer, .mission-card {
-        background: rgba(16, 20, 24, 0.9);
+    /* UI PANELS (Glassmorphism) */
+    .intel-viewer, .mission-card, .hud-container {
+        background: rgba(16, 20, 24, 0.85);
+        backdrop-filter: blur(10px);
         border: 1px solid #333;
         border-left: 5px solid #FFE81F;
         box-shadow: 0 0 30px rgba(0,0,0, 0.8);
         border-radius: 4px;
         padding: 30px;
         margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
     }
     
     .mission-card:hover {
         border-color: #00e5ff;
         transform: translateY(-2px);
         transition: all 0.3s ease;
+        box-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
     }
 
     /* BUTTONS */
     .stButton>button {
         font-family: 'Orbitron', sans-serif;
-        background: transparent !important;
+        background: rgba(0, 0, 0, 0.7) !important;
         color: #FFE81F !important;
         border: 2px solid #FFE81F !important;
         padding: 15px 25px;
@@ -93,13 +108,15 @@ st.markdown("""
         border-radius: 0px;
         clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
         width: 100%;
+        position: relative;
+        z-index: 2;
     }
     
     .stButton>button:hover {
         background: #FFE81F !important;
         color: #000 !important;
         box-shadow: 0 0 25px #FFE81F;
-        transform: scale(1.05);
+        transform: scale(1.02);
     }
     
     /* HUD METRICS */
@@ -107,10 +124,10 @@ st.markdown("""
         display: flex;
         justify-content: center;
         gap: 3rem;
-        background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,229,255,0.1) 50%, rgba(0,0,0,0) 100%);
+        background: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,229,255,0.1) 50%, rgba(0,0,0,0.5) 100%);
         border-top: 1px solid #00e5ff;
         border-bottom: 1px solid #00e5ff;
-        padding: 10px;
+        padding: 15px;
         margin-bottom: 40px;
         margin-top: -20px;
     }
@@ -121,165 +138,137 @@ st.markdown("""
     
     /* RADIO BUTTONS FOR QUIZ */
     .stRadio > div {
-        background: rgba(255,255,255,0.05);
+        background: rgba(0,0,0,0.6);
         padding: 20px;
         border-radius: 8px;
         border: 1px solid #444;
+    }
+    .stRadio label { color: #fff !important; font-size: 1.1rem; }
+    
+    /* TOASTS */
+    div[data-testid="stToast"] {
+        background-color: rgba(0, 20, 40, 0.95) !important;
+        border: 1px solid #00e5ff !important;
+        color: #fff !important;
+        font-family: 'Orbitron', sans-serif;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. CONTENT DATABASES (UPDATED)
+# 2. CONTENT DATABASES (UPDATED FROM UPLOADED DOCUMENTS)
 # ==============================================================================
 
 TRIVIA_DB = [
-    # --- VIVE HISTORY & OPERATIONS ---
+    # --- VIVE STRATEGY & METRICS (From Quality Leadership Presentation) ---
     {
         "id": 1,
-        "q": "Vive Health operates how many strategic distribution centers across the US to ensure 1-2 day delivery?",
-        "options": ["Four", "Two", "One", "Six"],
-        "correct": "Four",
-        "feedback": "Correct! Four centers allow 1-2 business day delivery across the US."
+        "q": "According to the 'Quality Leadership Presentation', the in-house AI categorization tool saves approximately how many hours per month?",
+        "options": ["~40 hours", "~10 hours", "~100 hours", "It costs time, doesn't save it"],
+        "correct": "~40 hours",
+        "feedback": "Correct! The slide 'Overcoming Challenges' states the in-house AI tool saves ~40hrs/Month."
     },
     {
         "id": 2,
-        "q": "What is the core advantage of Vive Health owning its own manufacturing facility?",
-        "options": ["'Military Grade Standard' Quality Control", "Cheaper Labor", "Avoiding Tariffs", "Tax Loopholes"],
-        "correct": "'Military Grade Standard' Quality Control",
-        "feedback": "Correct. Owning manufacturing allows for superior QC standards."
+        "q": "What is the 'B2B Return Rate' goal mentioned in the November 2025 presentation?",
+        "options": ["<= 2.00%", "<= 5.00%", "<= 1.00%", "0%"],
+        "correct": "<= 2.00%",
+        "feedback": "Correct. The actual was 2.29%, so it 'Needs Focus'."
     },
     {
         "id": 3,
-        "q": "As of Oct 2025, the FBA Return Rate was slashed to what percentage (Goal < 7.50%)?",
-        "options": ["5.54%", "10.2%", "2.1%", "0%"],
-        "correct": "5.54%",
-        "feedback": "Correct. This exceeded the goal significantly."
+        "q": "Which certification is Vive Health pursuing to unlock the EU & UK markets, potentially doubling TAM?",
+        "options": ["ISO 13485", "ISO 9001", "Six Sigma Black Belt", "GMP Level 4"],
+        "correct": "ISO 13485",
+        "feedback": "Correct. ISO 13485 is the standard required for Medical Devices in these markets."
     },
     {
         "id": 4,
-        "q": "Which regulatory marking is required to unlock the EU & UK markets?",
-        "options": ["CE Mark", "ISO 13485", "FDA Clearance", "UL Listing"],
-        "correct": "CE Mark",
-        "feedback": "Correct. CE Mark is the requirement for market access, expanding TAM by +$150B."
+        "q": "In the 'Post-Op Shoe' case study, what was the root cause of the high return rate?",
+        "options": ["Shoes were 5-11% larger than competitors", "The fabric was tearing", "The velcro failed", "They were too expensive"],
+        "correct": "Shoes were 5-11% larger than competitors",
+        "feedback": "Correct. Analysis revealed the sizing was significantly larger than the market leader."
     },
-    
-    # --- QUALITY TOOLS & STRATEGY ---
     {
         "id": 5,
-        "q": "In FMEA (Failure Mode & Effects Analysis), what does RPN stand for?",
-        "options": ["Risk Priority Number", "Rapid Prototype Number", "Real Problem Notification", "Return Percentage Net"],
-        "correct": "Risk Priority Number",
-        "feedback": "Correct. RPN helps prioritize which risks to fix first."
+        "q": "What was the FBA Return Rate in October 2025?",
+        "options": ["5.54%", "7.50%", "10.2%", "2.1%"],
+        "correct": "5.54%",
+        "feedback": "Correct. This exceeded the goal of 7.50% significantly."
     },
+
+    # --- QUALITY TOOLS (From Product Dev Quality Strategies) ---
     {
         "id": 6,
-        "q": "What is the formula for calculating RPN?",
+        "q": "In FMEA (Failure Mode & Effects Analysis), how is the RPN calculated?",
         "options": ["Severity x Occurrence x Detection", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
         "correct": "Severity x Occurrence x Detection",
-        "feedback": "Correct. S x O x D = RPN."
+        "feedback": "Correct. S x O x D = Risk Priority Number."
     },
     {
         "id": 7,
-        "q": "Which tool is used to trace a problem from 'What' is wrong to 'Why' it is happening (Root Cause)?",
-        "options": ["Fishbone (Ishikawa) Diagram", "Pareto Chart", "Scatter Plot", "Control Chart"],
-        "correct": "Fishbone (Ishikawa) Diagram",
-        "feedback": "Correct. It analyzes Man, Machine, Material, Method, etc."
+        "q": "According to the Kano Model, features that customers do not expect but love are called:",
+        "options": ["Delighters/Excitement Attributes", "Basic Needs", "Performance Attributes", "Mandatory Requirements"],
+        "correct": "Delighters/Excitement Attributes",
+        "feedback": "Correct. Examples include 'Bluetooth speakers' on a knee brace (though maybe unnecessary!)."
     },
     {
         "id": 8,
-        "q": "In the RACI matrix, what does the 'A' stand for?",
-        "options": ["Accountable", "Admin", "Action", "Advisor"],
-        "correct": "Accountable",
-        "feedback": "Correct. The person ultimately answerable for the task."
+        "q": "Which tool identifies the 'Who' for every task (Responsible, Accountable, Consulted, Informed)?",
+        "options": ["RACI Matrix", "SWOT Analysis", "Gantt Chart", "Fishbone Diagram"],
+        "correct": "RACI Matrix",
+        "feedback": "Correct. It clarifies roles and responsibilities."
     },
     {
         "id": 9,
-        "q": "According to the Kano Model, 'Delighters' are features that:",
-        "options": ["Customers don't expect but love", "Customers demand as a baseline", "Increase cost but not value", "Are required by law"],
-        "correct": "Customers don't expect but love",
-        "feedback": "Correct. Like the 'Bluetooth speakers' example."
-    },
-    {
-        "id": 10,
         "q": "What is the difference between Verification and Validation?",
         "options": ["Verification = Built it Right; Validation = Built the Right Thing", "Verification = User Testing; Validation = Lab Testing", "They are the same", "Validation is optional"],
         "correct": "Verification = Built it Right; Validation = Built the Right Thing",
-        "feedback": "Correct. Verification checks specs. Validation checks user needs."
+        "feedback": "Correct. Verification checks specs (Lab). Validation checks user needs (Real World)."
+    },
+    {
+        "id": 10,
+        "q": "The 'Fishbone Diagram' (Ishikawa) is primarily used for what?",
+        "options": ["Root Cause Analysis (From What to Why)", "Project Scheduling", "Budgeting", "Designing Logos"],
+        "correct": "Root Cause Analysis (From What to Why)",
+        "feedback": "Correct. It traces problems to sources like Man, Machine, Material, Method."
     },
 
-    # --- TEAM & CULTURE ---
+    # --- TEAM & EXECUTION ---
     {
         "id": 11,
-        "q": "Who is the Retired PhD Chemist leading product testing at the Naples Office?",
+        "q": "Who leads Research and Testing at the Naples Office?",
         "options": ["Jim Ahearn", "Carolina Silva", "Annie", "Jason"],
         "correct": "Jim Ahearn",
-        "feedback": "Correct. Jim leads research and testing."
+        "feedback": "Correct. Jim is the retired PhD Chemist leading testing."
     },
     {
         "id": 12,
-        "q": "Which Core Value states: 'We take full responsibility... No excuses'?",
-        "options": ["Extreme Ownership", "Growth Mindset", "Best Ideas Rise", "Data Driven"],
-        "correct": "Extreme Ownership",
-        "feedback": "Correct. We own the mission, not just the task."
+        "q": "What is the 'Project Charter' used for?",
+        "options": ["Defines problem, goal, scope, and team", "Calculates Taxes", "Orders Pizza", "Fires employees"],
+        "correct": "Defines problem, goal, scope, and team",
+        "feedback": "Correct. It is the 'Contract' for the improvement team."
     },
-    
-    # --- BUSINESS & ROI ---
     {
         "id": 13,
-        "q": "Obtaining the CE Mark will unlock which major markets?",
-        "options": ["EU & UK", "Asia Pacific", "South America", "Antarctica"],
-        "correct": "EU & UK",
-        "feedback": "Correct. This increases TAM by +$150B."
+        "q": "What does 'Genchi Genbutsu' mean in the context of Vive's execution tools?",
+        "options": ["Go and see (to the Source)", "Continuous Improvement", "Respect for People", "Just in Time"],
+        "correct": "Go and see (to the Source)",
+        "feedback": "Correct. Example: Going to the China factory or KS Warehouse to see the issue."
     },
     {
         "id": 14,
-        "q": "In the TariffSight model, 'Landed Cost' includes:",
-        "options": ["Production + Tariffs + Shipping + Storage + Fees", "MSRP - Profit", "Just Manufacturing Cost", "Shipping Cost only"],
-        "correct": "Production + Tariffs + Shipping + Storage + Fees",
-        "feedback": "Correct. Landed cost is the total cost to get product to the warehouse."
+        "q": "The CE Mark gives access to a Class I medical device market of approximately what size?",
+        "options": ["$22B - $37B", "$1B - $5B", "$100B+", "$1M"],
+        "correct": "$22B - $37B",
+        "feedback": "Correct. This covers the EU and UK markets for Class I equivalent devices."
     },
     {
         "id": 15,
-        "q": "What tool are we using to build custom analysis apps for free ('Vibe Coding')?",
-        "options": ["Gemini / Claude", "ChatGPT / DALL-E", "Watson", "Siri"],
-        "correct": "Gemini / Claude",
-        "feedback": "Correct. AI is driving efficiency."
-    },
-    {
-        "id": 16,
-        "q": "The 'Post-Op Shoe' case study revealed that returns were high because:",
-        "options": ["Shoes were 5-11% larger than competitors", "The fabric was tearing", "The velcro failed", "They were too expensive"],
-        "correct": "Shoes were 5-11% larger than competitors",
-        "feedback": "Correct. Data-driven resizing is now underway."
-    },
-    {
-        "id": 17,
-        "q": "What defines the 'B2B Return Rate' goal?",
-        "options": ["< 2.00%", "< 5.00%", "< 1.00%", "0%"],
-        "correct": "< 2.00%",
-        "feedback": "Correct. We are currently around 2.29%, needing focus."
-    },
-    {
-        "id": 18,
-        "q": "What is a Project Charter used for?",
-        "options": ["Defining problem, goal, scope, and team", "Calculating Taxes", "Ordering Pizza", " firing employees"],
-        "correct": "Defining problem, goal, scope, and team",
-        "feedback": "Correct. It is the 'Contract' for the project."
-    },
-    {
-        "id": 19,
-        "q": "What is 'Genchi Genbutsu'?",
-        "options": ["Go and see (at the source)", "Continuous Improvement", "Respect for People", "Just in Time"],
-        "correct": "Go and see (at the source)",
-        "feedback": "Correct. We go to the factory or warehouse to understand the real problem."
-    },
-    {
-        "id": 20,
-        "q": "What is the main purpose of APQP (Advanced Product Quality Planning)?",
-        "options": ["To build quality in from the start (Prevention)", "To inspect products at the end", "To negotiate prices", "To design logos"],
-        "correct": "To build quality in from the start (Prevention)",
-        "feedback": "Correct. Moving from reactive to proactive."
+        "q": "What tool is used to translate customer requirements ('Whats') into engineering specifications ('Hows')?",
+        "options": ["House of Quality (QFD)", "Pareto Chart", "Scatter Plot", "Control Chart"],
+        "correct": "House of Quality (QFD)",
+        "feedback": "Correct. It ensures we build what the customer actually values."
     }
 ]
 
@@ -366,7 +355,7 @@ if 'score' in st.query_params:
         st.query_params.clear()
 
 # ==============================================================================
-# 4. GAME MODULES (OPTIMIZED JS)
+# 4. GAME MODULES (IMPROVED VISUALS)
 # ==============================================================================
 def get_space_shooter_html(round_num, duration):
     difficulty = round_num * 0.5
@@ -380,7 +369,7 @@ def get_space_shooter_html(round_num, duration):
     <head>
     <style>
         body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Courier New', monospace; }}
-        canvas {{ display: block; margin: 0 auto; border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); background: rgba(0,0,0,0.85); border-radius: 4px; }}
+        canvas {{ display: block; margin: 0 auto; border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); background: rgba(0,0,0,0.6); border-radius: 4px; }}
         #overlay {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00e5ff; text-align: center; pointer-events: none; text-shadow: 0 0 10px #00e5ff; z-index: 10; width: 100%; }}
         h2 {{ font-size: 40px; margin: 0; letter-spacing: 5px; }}
         p {{ font-size: 18px; letter-spacing: 2px; }}
@@ -474,25 +463,31 @@ def get_space_shooter_html(round_num, duration):
                 enemyTimer = 0;
             }}
 
-            // Player
+            // Player (X-Wing-ish shape)
             ctx.save(); 
             ctx.translate(player.x, player.y); 
             ctx.fillStyle = player.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = player.color;
             ctx.beginPath(); 
             ctx.moveTo(0, -20); ctx.lineTo(-20, 20); ctx.lineTo(0, 10); ctx.lineTo(20, 20); 
             ctx.closePath(); ctx.fill();
+            ctx.shadowBlur = 0;
             // Engine flame
             ctx.fillStyle = '#FFE81F';
             ctx.beginPath(); ctx.moveTo(-5, 15); ctx.lineTo(0, 30 + Math.random()*10); ctx.lineTo(5, 15); ctx.fill();
             ctx.restore();
             
-            // Bullets
-            ctx.fillStyle = '#FFE81F';
+            // Bullets (Laser bolts)
+            ctx.fillStyle = '#00ff00';
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#00ff00';
             for(let i = bullets.length - 1; i >= 0; i--) {{
                 let b = bullets[i]; b.y -= b.speed; 
                 ctx.fillRect(b.x - 2, b.y, 4, 15); 
                 if(b.y < 0) bullets.splice(i, 1);
             }}
+            ctx.shadowBlur = 0;
             
             // Enemies
             for(let i = enemies.length - 1; i >= 0; i--) {{
@@ -503,7 +498,12 @@ def get_space_shooter_html(round_num, duration):
                 if(e.type === 'ASTEROID') {{ 
                     ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill(); 
                 }} else {{ 
+                    // TIE Fighter-ish
                     ctx.fillRect(e.x, e.y, e.width, e.height); 
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(e.x + 5, e.y + 5, e.width - 10, e.height - 10);
+                    ctx.fillStyle = e.color;
+                    ctx.fillRect(e.x + 12, e.y + 12, 6, 6);
                 }}
                 
                 // Collision Player
@@ -548,17 +548,18 @@ def get_space_shooter_html(round_num, duration):
             }}
             
             // HUD
-            ctx.fillStyle = '#00e5ff'; ctx.font = 'bold 20px monospace'; ctx.fillText('ROI: $' + score, 20, 30);
+            ctx.fillStyle = '#00e5ff'; ctx.font = 'bold 20px Courier New'; ctx.fillText('ROI: $' + score, 20, 30);
             
             // Hull Bar
             ctx.fillStyle = '#333'; ctx.fillRect(20, 45, 200, 15);
             ctx.fillStyle = hull < 30 ? '#ff0055' : '#00ff00'; ctx.fillRect(20, 45, hull * 2, 15);
-            ctx.fillText('HULL', 230, 58);
+            ctx.fillStyle = '#fff'; ctx.font = '12px Courier New'; ctx.fillText('HULL INTEGRITY', 230, 57);
 
             // Timer
             ctx.fillStyle = '#fff'; 
-            let timerTxt = isSurvival ? "SURVIVAL" : timeLeft + "s";
-            ctx.fillText(timerTxt, 700, 30);
+            let timerTxt = isSurvival ? "SURVIVAL MODE" : timeLeft + "s";
+            ctx.font = 'bold 20px Courier New';
+            ctx.fillText(timerTxt, 650, 30);
             
             if(!isSurvival && timeLeft <= 0) endGame(true);
 
@@ -588,25 +589,27 @@ def get_space_shooter_html(round_num, duration):
 
 def get_boxing_html(round_num, duration):
     is_survival = "true" if duration == 9999 else "false"
-    # FIX: Pre-calculate Python variables to avoid f-string syntax error
     cpu_start_hp = 9999 if duration == 9999 else 100 + (round_num * 25)
     
+    # Improved Canvas Drawing Logic for Stick Figures
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
     <style>
-        body {{ margin: 0; overflow: hidden; background: #050505; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Courier New', monospace; }}
-        canvas {{ border: 4px solid #FFE81F; box-shadow: 0 0 30px rgba(255, 232, 31, 0.2); background: linear-gradient(to bottom, #1a1a1a 0%, #000 100%); }}
-        #overlay {{ position: absolute; color: #FFE81F; text-align: center; pointer-events: none; width: 100%; text-shadow: 2px 2px #000; }}
+        body {{ margin: 0; overflow: hidden; background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Courier New', monospace; }}
+        canvas {{ border: 4px solid #FFE81F; box-shadow: 0 0 30px rgba(255, 232, 31, 0.4); background: rgba(0,0,0,0.8); border-radius: 8px; }}
+        #overlay {{ position: absolute; color: #FFE81F; text-align: center; pointer-events: none; width: 100%; text-shadow: 2px 2px #000; z-index: 10; }}
     </style>
     </head>
     <body>
     <div id="overlay">
-        <h2 style="font-size:30px;">ROUND {round_num}</h2>
-        <p style="font-size:14px; color:#ccc;">OPPONENT: THE AUDITOR</p>
-        <p style="margin-top:10px; color:#00e5ff;">KEYS: [A] LEFT JAB | [S] RIGHT HOOK | [D] BLOCK</p>
-        <p style="color:#FFE81F; font-weight:bold; margin-top:20px; animation: blink 1s infinite;">CLICK TO FIGHT</p>
+        <h2 style="font-size:40px; margin-bottom: 10px;">ROUND {round_num}</h2>
+        <p style="font-size:18px; color:#00e5ff; background: rgba(0,0,0,0.8); display:inline-block; padding: 5px 15px;">OPPONENT: THE AUDITOR</p>
+        <div style="margin-top:20px; color:#fff;">
+            <p>[A] LEFT JAB  |  [S] RIGHT HOOK  |  [D] BLOCK</p>
+        </div>
+        <p style="color:#FFE81F; font-size: 24px; font-weight:bold; margin-top:30px; animation: blink 1s infinite;">CLICK TO FIGHT</p>
     </div>
     <canvas id="gameCanvas" width="600" height="400"></canvas>
     <script>
@@ -618,7 +621,6 @@ def get_boxing_html(round_num, duration):
         let score = 0;
         let playerHP = 100;
         let cpuHP = {cpu_start_hp};
-        let maxCpuHP = cpuHP;
         let stamina = 100;
         let timeLeft = {duration};
         let isSurvival = {is_survival};
@@ -627,6 +629,8 @@ def get_boxing_html(round_num, duration):
         let cpuAction = 'IDLE';
         let message = '';
         let msgTimer = 0;
+        let msgColor = '#fff';
+        
         let timerInterval;
         let cpuInterval;
         
@@ -636,9 +640,7 @@ def get_boxing_html(round_num, duration):
                 overlay.style.display = 'none';
                 gameLoop();
                 
-                // Difficulty increases with rounds
                 let thinkSpeed = Math.max(400, 1000 - ({round_num} * 100));
-                
                 cpuInterval = setInterval(cpuThink, thinkSpeed); 
                 timerInterval = setInterval(updateTimer, 1000);
                 window.addEventListener('keydown', handleInput);
@@ -676,19 +678,16 @@ def get_boxing_html(round_num, duration):
         }}
 
         function showMsg(text, color) {{ message = text; msgTimer = 40; msgColor = color; }}
-        let msgColor = '#fff';
 
         function cpuThink() {{
             if(!gameActive) return;
             const rand = Math.random();
             
-            // AI Logic
             if(rand > 0.6) {{
                 cpuAction = 'WINDUP';
                 setTimeout(() => {{
                     if(!gameActive) return;
                     cpuAction = 'PUNCH';
-                    // Damage calculation
                     if(action === 'BLOCK') {{ 
                         stamina = Math.min(100, stamina + 15); 
                         showMsg("BLOCKED!", '#00e5ff'); 
@@ -727,64 +726,149 @@ def get_boxing_html(round_num, duration):
             window.parent.location.search = '?score=' + finalScore;
         }}
 
-        function drawRect(x, y, w, h, color) {{ ctx.fillStyle = color; ctx.fillRect(x, y, w, h); }}
+        // --- DRAWING FUNCTIONS FOR STICK FIGURES ---
+
+        function drawStickFigure(ctx, x, y, color, pose, isFacingLeft) {{
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = color;
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(x, y - 50, 15, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Torso
+            ctx.beginPath();
+            ctx.moveTo(x, y - 35);
+            ctx.lineTo(x, y + 30);
+            ctx.stroke();
+            
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(x, y + 30);
+            ctx.lineTo(x - 20, y + 90); // Left Leg
+            ctx.moveTo(x, y + 30);
+            ctx.lineTo(x + 20, y + 90); // Right Leg
+            ctx.stroke();
+            
+            // Arms based on Pose
+            ctx.beginPath();
+            
+            let shoulderY = y - 20;
+            let armLen = 35;
+            let dir = isFacingLeft ? -1 : 1;
+            
+            if (pose === 'IDLE') {{
+                // Guard up
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (20 * dir), y + 10); // Elbow
+                ctx.lineTo(x + (35 * dir), y - 10); // Hand
+                
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (10 * dir), y + 10);
+                ctx.lineTo(x + (25 * dir), y - 5);
+            }} 
+            else if (pose === 'JAB' || pose === 'PUNCH') {{
+                // Punching Arm Straight
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (60 * dir), shoulderY); 
+                // Guard Arm
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (10 * dir), y + 10);
+                ctx.lineTo(x + (25 * dir), y - 5);
+            }}
+            else if (pose === 'HOOK') {{
+                // Hooking Arm curved
+                ctx.moveTo(x, shoulderY);
+                ctx.quadraticCurveTo(x + (30*dir), shoulderY - 40, x + (50*dir), shoulderY);
+                // Guard Arm
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (10 * dir), y + 10);
+                ctx.lineTo(x + (25 * dir), y - 5);
+            }}
+            else if (pose === 'BLOCK') {{
+                // Both arms up high
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (25 * dir), shoulderY - 20);
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (15 * dir), shoulderY - 20);
+            }}
+            else if (pose === 'WINDUP') {{
+                // Windup animation (pull back)
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x - (20 * dir), shoulderY); 
+                ctx.moveTo(x, shoulderY);
+                ctx.lineTo(x + (10 * dir), y); 
+            }}
+            
+            ctx.stroke();
+            ctx.shadowBlur = 0; // Reset shadow
+        }}
 
         function gameLoop() {{
             if(!gameActive) return;
             requestAnimationFrame(gameLoop);
             
-            // BG
-            drawRect(0, 0, 600, 400, '#111');
+            // Clear Canvas
+            ctx.clearRect(0,0,600,400);
             
-            // Floor
+            // Draw Floor
             var grd = ctx.createLinearGradient(0, 300, 0, 400);
-            grd.addColorStop(0, "#222");
-            grd.addColorStop(1, "#444");
+            grd.addColorStop(0, "rgba(50,50,50,0.8)");
+            grd.addColorStop(1, "rgba(0,0,0,0.8)");
             ctx.fillStyle = grd;
-            ctx.fillRect(0, 300, 600, 100);
+            ctx.fillRect(0, 320, 600, 80);
             
-            // Ropes
-            drawRect(0, 100, 600, 5, '#FFE81F');
-            drawRect(0, 200, 600, 5, '#FFE81F');
-            drawRect(0, 280, 600, 5, '#FFE81F');
+            // Draw Ropes
+            ctx.strokeStyle = '#FFE81F';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, 100); ctx.lineTo(600, 100); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(600, 200); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 280); ctx.lineTo(600, 280); ctx.stroke();
 
-            // CPU
-            let cpuColor = '#ff00ff';
-            if(cpuAction === 'BLOCK') cpuColor = '#666';
-            if(cpuAction === 'WINDUP') cpuColor = '#ffa500';
-            if(cpuAction === 'PUNCH') cpuColor = '#ff0000';
-            
-            // CPU Body
-            drawRect(260, 120, 80, 180, cpuColor);
-            // CPU Head
-            drawRect(270, 70, 60, 50, cpuColor);
-            
-            // Player Hands
-            if(action === 'JAB') drawRect(240, 160, 60, 40, '#00e5ff'); // Left extended
-            else drawRect(200, 320, 50, 50, '#00e5ff'); // Left guard
-            
-            if(action === 'HOOK') drawRect(300, 150, 70, 60, '#00e5ff'); // Right huge
-            else drawRect(350, 320, 50, 50, '#00e5ff'); // Right guard
-            
-            if(action === 'BLOCK') drawRect(220, 280, 160, 40, '#00e5ff');
+            // PLAYER (Blue, facing right)
+            let pColor = '#00e5ff';
+            if (action === 'BLOCK') pColor = '#ffffff';
+            drawStickFigure(ctx, 200, 250, pColor, action, false);
+
+            // OPPONENT (Red, facing left)
+            let eColor = '#ff0055';
+            if (cpuAction === 'BLOCK') eColor = '#aaa';
+            if (cpuAction === 'WINDUP') eColor = '#ffa500';
+            drawStickFigure(ctx, 400, 250, eColor, cpuAction, true);
 
             // UI
-            ctx.font = 'bold 16px monospace'; ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px Courier New'; 
+            ctx.fillStyle = '#00e5ff';
             ctx.fillText("YOU: " + playerHP + "%", 20, 30);
-            // Stamina Bar
-            drawRect(20, 40, stamina * 1.5, 8, '#00e5ff');
+            // Stamina
+            ctx.fillStyle = '#00e5ff';
+            ctx.fillRect(20, 40, stamina * 1.5, 6);
             
-            ctx.fillStyle = '#ff0055'; ctx.fillText("AUDITOR: " + cpuHP, 450, 30);
+            ctx.fillStyle = '#ff0055'; 
+            ctx.textAlign = "right";
+            ctx.fillText("AUDITOR: " + cpuHP, 580, 30);
+            ctx.textAlign = "left";
 
-            ctx.fillStyle = '#FFE81F'; ctx.font = 'bold 40px monospace'; 
+            // Timer
+            ctx.fillStyle = '#FFE81F'; 
+            ctx.font = 'bold 40px Courier New'; 
+            ctx.textAlign = "center";
             let timeTxt = isSurvival ? "∞" : timeLeft;
-            ctx.fillText(timeTxt, 280, 50);
+            ctx.fillText(timeTxt, 300, 50);
             
+            // Messages
             if(msgTimer > 0) {{
-                ctx.font = 'bold 40px monospace'; ctx.fillStyle = msgColor; 
-                ctx.fillText(message, 200, 200); 
+                ctx.font = 'bold 30px Courier New'; 
+                ctx.fillStyle = msgColor; 
+                ctx.fillText(message, 300, 150); 
                 msgTimer--;
             }}
+            ctx.textAlign = "left"; // Reset
         }}
         
         // CSS for blinking text
@@ -846,7 +930,7 @@ def show_sidebar():
             st.rerun()
             
         st.markdown("---")
-        st.caption("Quality Wars v5.0")
+        st.caption("Quality Wars v5.1 | Earth Defense")
 
 def show_menu():
     st.markdown("# QUALITY WARS")
@@ -857,10 +941,10 @@ def show_menu():
         st.markdown("""
         <div style="background:rgba(0,20,40,0.8); padding:30px; border:1px solid #00e5ff; border-top: 5px solid #FFE81F; border-radius:4px; margin-bottom:30px; text-align:center; box-shadow: 0 0 50px rgba(0,229,255,0.1);">
             <p style="color: #ccc; font-size: 1.2rem; line-height: 1.6;">
-                The galaxy is plagued by <b>defects</b> and <b>inefficiency</b>. 
+                The Earth Market is under attack by <b>defects</b> and <b>audit droids</b>. 
                 <br><br>
                 As a Quality Officer, you must master the archives of <b>ISO 13485</b>, 
-                battle the <b>Audit Droids</b>, and secure the <b>Profit Margin</b>.
+                battle for the <b>Profit Margin</b>, and secure the future.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -924,11 +1008,13 @@ def show_intel_briefing():
         title = f"SECTOR {st.session_state.current_round} BRIEFING"
         msg1 = f"**OBJECTIVE:** Survive the asteroid field for **{dur_txt}**."
         msg2 = "**THREAT:** Heavy Asteroids & Defects. 100% Hull Loss = Failure."
+        controls = "**CONTROLS:** Use Mouse to Move. Click to Shoot."
         btn = "INITIATE LAUNCH SEQUENCE"
     else:
         title = f"ROUND {st.session_state.current_round} WEIGH-IN"
         msg1 = f"**OBJECTIVE:** Defeat The Auditor in **{dur_txt}**."
-        msg2 = "**CONTROLS:** [A] Left Jab, [S] Right Hook, [D] Block."
+        msg2 = "**THREAT:** Do not run out of stamina. Time blocks correctly."
+        controls = "**CONTROLS:** [A] Left Jab | [S] Right Hook | [D] Block"
         btn = "STEP INTO THE RING"
 
     st.markdown(f"## {title}")
@@ -939,7 +1025,7 @@ def show_intel_briefing():
         <p style="font-size: 1.2rem;">
             "We do not rise to the level of our expectations. We fall to the level of our training."
             <br><br>
-            Review the Intel if you are unsure of the protocols. Knowledge is your best weapon.
+            Review the Intel below. Knowledge is your best weapon.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -947,6 +1033,7 @@ def show_intel_briefing():
     col1, col2 = st.columns(2)
     with col1: 
         st.info(msg1)
+        st.markdown(controls)
     with col2: 
         st.warning(msg2)
     
@@ -970,7 +1057,6 @@ def show_trivia_round():
     st.progress(st.session_state.trivia_score / (st.session_state.total_rounds * 5) if st.session_state.total_rounds > 0 else 0)
 
     with st.form("quiz_form"):
-        score_delta = 0
         for i, q in enumerate(st.session_state.q_queue):
             st.markdown(f"##### {i+1}. {q['q']}")
             
@@ -981,11 +1067,7 @@ def show_trivia_round():
             random.shuffle(opts)
             random.seed() # Reset seed
             
-            choice = st.radio(f"Select Answer:", opts, key=f"q_{st.session_state.current_round}_{i}", label_visibility="collapsed")
-            
-            # Check answer logic happens AFTER submit in the logic block below, 
-            # but we need to store the choice to check it.
-            
+            st.radio(f"Select Answer:", opts, key=f"q_{st.session_state.current_round}_{i}", label_visibility="collapsed")
             st.markdown("---")
         
         if st.form_submit_button("SUBMIT ANSWERS"):
