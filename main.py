@@ -4,6 +4,7 @@ import random
 import time
 import os
 import base64
+import glob
 
 # ==============================================================================
 # 1. CONFIGURATION & ASSETS
@@ -158,7 +159,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. CONTENT DATABASES (UPDATED)
+# 2. CONTENT DATABASES
 # ==============================================================================
 
 TRIVIA_DB = [
@@ -239,6 +240,19 @@ TRIVIA_DB = [
     }
 ]
 
+SLIDE_DECKS = {
+    "leadership": {
+        "title": "Quality Leadership Presentation (Nov 2025)",
+        "slides": [
+            "**MISSION BRIEFING: QUALITY APPROVED**\n\n**THE SQUAD:**\n* **Carolina Silva:** Quality Analyst (Data/Biomedical).\n* **Annie:** QC Manager China (~25 Inspectors).\n* **Jim Ahearn:** Research & Testing (PhD Chemist).\n* **Luis Hidalgo:** CS Troubleshooting Specialist.\n* **Jason:** QC Lead at MPF (~7 Inspectors).\n* **Jessica Marshall:** Regulatory Affairs (ISO 13485).",
+            "**THE OBJECTIVE: REVENUE GENERATION**\n\nQuality is not just a cost center. It is a revenue generator.\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Direct Revenue:** Developed memory foam seat cushion to offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom apps for free.",
+            "**STATUS REPORT: METRICS**\n\n* **FBA Return Rate:** 5.54% (Goal < 7.50%) - [EXCEEDING]\n* **B2B Return Rate:** 2.29% (Goal < 2.00%) - [NEEDS FOCUS]\n* **ISO 13485:** 42.5% Implementation Complete.\n* **VoC Health:** 77.61% Listings 'Good/Excellent'.",
+            "**TACTICAL WIN: POST-OP SHOE**\n\n**Situation:** Returns were 20-40% due to 'size' complaints.\n**Action:** Analyzed competitors. Found our shoes were 5-11% larger than market leader.\n**Result:** Data-driven resizing initiated.\n\n*Lesson: Don't accept the status quo.*",
+            "**CAUTIONARY TALE: THE PACKAGING MISTAKE**\n\n**Problem:** Switched to shrink wrap to save Amazon FBA fees.\n**Blowback:** Damaged B2B sales perception. Net negative for company.\n**Solution:** Cross-department sign-offs required. Don't optimize one metric at the expense of the whole."
+        ]
+    }
+}
+
 # ==============================================================================
 # 3. STATE MANAGEMENT & LOGIC
 # ==============================================================================
@@ -273,35 +287,55 @@ if 'score' in st.query_params:
         duration = st.session_state.game_duration_setting
         
         if st.session_state.game_state in ['GAME', 'BOXING_GAME']:
-            # HANDLING DEATH / FAILURE
+            # HANDLING DEATH / FAILURE (Strictly < 0 hull/health)
+            # The games return 0 if failed.
             if incoming_score == 0 and duration != 9999:
                 st.session_state.mission_status = 'FAILED'
                 st.session_state.game_state = 'GAMEOVER'
             else:
                 # SUCCESS CHECKS
                 congrats_msg = None
-                if duration == 15 and incoming_score > 1000:
-                    congrats_msg = "OUTSTANDING PERFORMANCE! (> $1000)"
-                elif duration == 45 and incoming_score > 3000:
-                    congrats_msg = "LEGENDARY PERFORMANCE! (> $3000)"
-                elif duration == 15 and incoming_score > 500: # Boxing lower threshold
-                     congrats_msg = "SOLID KNOCKOUT!"
+                
+                # Asteroids Logic
+                if st.session_state.game_state == 'GAME':
+                    if duration == 15 and incoming_score >= 1000:
+                         congrats_msg = "CONGRATULATIONS! ACE PILOT! (> $1000)"
+                    elif duration == 45 and incoming_score >= 3000:
+                         congrats_msg = "LEGENDARY PERFORMANCE! (> $3000)"
+                    elif incoming_score > 0:
+                         congrats_msg = "SECTOR CLEARED. GOOD FLYING."
+                    else:
+                         congrats_msg = "MISSION FAILED. RETURN TO BASE."
+                         st.session_state.game_state = 'GAMEOVER'
+                         st.session_state.mission_status = 'FAILED'
+
+                # Boxing Logic
+                elif st.session_state.game_state == 'BOXING_GAME':
+                    if duration == 15 and incoming_score >= 500:
+                         congrats_msg = "KNOCKOUT PERFORMANCE! (> $500)"
+                    elif duration == 45 and incoming_score >= 1500:
+                         congrats_msg = "HEAVYWEIGHT CHAMPION! (> $1500)"
+                    elif incoming_score > 0:
+                         congrats_msg = "MATCH WON."
+                    else:
+                         congrats_msg = "KNOCKED OUT."
+                         st.session_state.game_state = 'GAMEOVER'
+                         st.session_state.mission_status = 'FAILED'
                 
                 if congrats_msg:
                     st.session_state.last_round_msg = congrats_msg
-                else:
-                    st.session_state.last_round_msg = "OBJECTIVE COMPLETE."
-
-                st.session_state.game_score += incoming_score
-                st.session_state.game_state = 'TRIVIA'
                 
-                # Prepare questions (5 per round)
-                available = [q for q in TRIVIA_DB if q['id'] not in st.session_state.questions_asked_ids]
-                if len(available) < 5:
-                    st.session_state.questions_asked_ids = []
-                    available = TRIVIA_DB
-                
-                st.session_state.q_queue = random.sample(available, min(5, len(available)))
+                if st.session_state.game_state != 'GAMEOVER':
+                    st.session_state.game_score += incoming_score
+                    st.session_state.game_state = 'TRIVIA'
+                    
+                    # Prepare questions (5 per round)
+                    available = [q for q in TRIVIA_DB if q['id'] not in st.session_state.questions_asked_ids]
+                    if len(available) < 5:
+                        st.session_state.questions_asked_ids = []
+                        available = TRIVIA_DB
+                    
+                    st.session_state.q_queue = random.sample(available, min(5, len(available)))
                 
     except Exception as e:
         pass
@@ -309,7 +343,7 @@ if 'score' in st.query_params:
         st.query_params.clear()
 
 # ==============================================================================
-# 4. GAME MODULES (IMPROVED)
+# 4. GAME MODULES (ROBUST HANDLING)
 # ==============================================================================
 def get_space_shooter_html(round_num, duration):
     difficulty = round_num * 0.5
@@ -323,8 +357,10 @@ def get_space_shooter_html(round_num, duration):
         body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Courier New', monospace; }}
         canvas {{ display: block; margin: 0 auto; border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); background: rgba(0,0,0,0.6); border-radius: 4px; }}
         #overlay {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00e5ff; text-align: center; pointer-events: none; text-shadow: 0 0 10px #00e5ff; z-index: 10; width: 100%; }}
+        #end-screen {{ display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 20; width: 80%; background: rgba(0,0,0,0.9); padding: 40px; border: 2px solid #FFE81F; }}
         h2 {{ font-size: 40px; margin: 0; letter-spacing: 5px; }}
-        p {{ font-size: 18px; letter-spacing: 2px; }}
+        button {{ background: #FFE81F; color: #000; font-family: 'Courier New'; font-weight: bold; font-size: 20px; padding: 10px 20px; border: none; cursor: pointer; margin-top: 20px; }}
+        button:hover {{ background: #fff; }}
     </style>
     </head>
     <body>
@@ -333,11 +369,18 @@ def get_space_shooter_html(round_num, duration):
         <p>MISSION: DEFEND QUALITY STANDARDS</p>
         <p style="color:#FFE81F; margin-top:20px; font-weight:bold; animation: blink 1s infinite;">CLICK TO ENGAGE</p>
     </div>
+    <div id="end-screen">
+        <h2 id="end-title" style="color: #00ff00;">MISSION COMPLETE</h2>
+        <p id="end-score" style="color: #fff; font-size: 24px;">FINAL SCORE: 0</p>
+        <p style="color: #aaa; font-size: 14px;">TRANSMITTING DATA...</p>
+        <button onclick="forceSubmit()">CLICK TO CONFIRM SCORE</button>
+    </div>
     <canvas id="gameCanvas" width="800" height="500"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const overlay = document.getElementById('overlay');
+        const endScreen = document.getElementById('end-screen');
         
         let gameActive = false;
         let score = 0;
@@ -346,7 +389,7 @@ def get_space_shooter_html(round_num, duration):
         let isSurvival = {is_survival};
         let lastTime = 0;
         let enemyTimer = 0;
-        let timerInterval;
+        let finalScore = 0;
         
         const player = {{ x: 400, y: 450, width: 40, height: 40, color: '#00e5ff', speed: 5 }};
         let bullets = [];
@@ -364,14 +407,20 @@ def get_space_shooter_html(round_num, duration):
         }});
         
         canvas.addEventListener('mousedown', () => {{
-            if(!gameActive && hull > 0) {{
+            if(!gameActive && hull > 0 && endScreen.style.display === 'none') {{
                 gameActive = true;
                 overlay.style.display = 'none';
                 requestAnimationFrame(gameLoop);
-                timerInterval = setInterval(() => {{ 
+                // Use standard interval for timer
+                let timer = setInterval(() => {{ 
                     if(gameActive && !isSurvival) {{
                         timeLeft--; 
-                        if(timeLeft <= 0) endGame(true);
+                        if(timeLeft <= 0) {{
+                            clearInterval(timer);
+                            endGame(true);
+                        }}
+                    }} else if (!gameActive) {{
+                        clearInterval(timer);
                     }}
                 }}, 1000);
             }}
@@ -381,7 +430,6 @@ def get_space_shooter_html(round_num, duration):
         function spawnEnemy() {{
             const rand = Math.random();
             let speedMulti = 1 + ({difficulty} * 0.2);
-            
             if(rand > 0.70) {{
                 enemies.push({{x: Math.random() * (canvas.width - 50), y: -50, width: 50, height: 50, speed: 2 * speedMulti, type: 'ASTEROID', hp: 3, color: '#888'}});
             }} else {{
@@ -397,6 +445,7 @@ def get_space_shooter_html(round_num, duration):
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
+            // Stars
             ctx.fillStyle = '#fff';
             stars.forEach(s => {{ 
                 s.y += s.speed; 
@@ -412,43 +461,37 @@ def get_space_shooter_html(round_num, duration):
                 enemyTimer = 0;
             }}
 
+            // Player
             ctx.save(); 
             ctx.translate(player.x, player.y); 
             ctx.fillStyle = player.color;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = player.color;
-            ctx.beginPath(); 
-            ctx.moveTo(0, -20); ctx.lineTo(-20, 20); ctx.lineTo(0, 10); ctx.lineTo(20, 20); 
-            ctx.closePath(); ctx.fill();
+            ctx.shadowBlur = 10; ctx.shadowColor = player.color;
+            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-20, 20); ctx.lineTo(0, 10); ctx.lineTo(20, 20); ctx.closePath(); ctx.fill();
             ctx.shadowBlur = 0;
-            ctx.fillStyle = '#FFE81F';
-            ctx.beginPath(); ctx.moveTo(-5, 15); ctx.lineTo(0, 30 + Math.random()*10); ctx.lineTo(5, 15); ctx.fill();
+            ctx.fillStyle = '#FFE81F'; ctx.beginPath(); ctx.moveTo(-5, 15); ctx.lineTo(0, 30 + Math.random()*10); ctx.lineTo(5, 15); ctx.fill();
             ctx.restore();
             
+            // Bullets
             ctx.fillStyle = '#00ff00';
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = '#00ff00';
             for(let i = bullets.length - 1; i >= 0; i--) {{
                 let b = bullets[i]; b.y -= b.speed; 
                 ctx.fillRect(b.x - 2, b.y, 4, 15); 
                 if(b.y < 0) bullets.splice(i, 1);
             }}
-            ctx.shadowBlur = 0;
             
+            // Enemies
             for(let i = enemies.length - 1; i >= 0; i--) {{
                 let e = enemies[i]; e.y += e.speed;
-                
                 ctx.fillStyle = e.color;
                 if(e.type === 'ASTEROID') {{ 
                     ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill(); 
                 }} else {{ 
                     ctx.fillRect(e.x, e.y, e.width, e.height); 
-                    ctx.fillStyle = "#000";
-                    ctx.fillRect(e.x + 5, e.y + 5, e.width - 10, e.height - 10);
-                    ctx.fillStyle = e.color;
-                    ctx.fillRect(e.x + 12, e.y + 12, 6, 6);
+                    ctx.fillStyle = "#000"; ctx.fillRect(e.x + 5, e.y + 5, e.width - 10, e.height - 10);
+                    ctx.fillStyle = e.color; ctx.fillRect(e.x + 12, e.y + 12, 6, 6);
                 }}
                 
+                // Collision
                 let dx = player.x - (e.x + e.width/2);
                 let dy = player.y - (e.y + e.height/2);
                 let dist = Math.sqrt(dx*dx + dy*dy);
@@ -464,9 +507,7 @@ def get_space_shooter_html(round_num, duration):
                 for(let j = bullets.length - 1; j >= 0; j--) {{
                     let b = bullets[j];
                     if(b.x > e.x && b.x < e.x + e.width && b.y < e.y + e.height && b.y > e.y) {{
-                        e.hp--; 
-                        bullets.splice(j, 1); 
-                        createExplosion(b.x, b.y, '#fff', 5);
+                        e.hp--; bullets.splice(j, 1); createExplosion(b.x, b.y, '#fff', 5);
                         if(e.hp <= 0) {{ 
                             score += (e.type === 'ASTEROID' ? 250 : 100); 
                             createExplosion(e.x, e.y, e.color, 15); 
@@ -478,22 +519,20 @@ def get_space_shooter_html(round_num, duration):
                 if(e.y > canvas.height) enemies.splice(i, 1);
             }}
             
+            // Particles
             for(let i = particles.length - 1; i >= 0; i--) {{
-                let p = particles[i]; 
-                p.x += p.vx; p.y += p.vy; p.life--; 
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; 
                 ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); 
                 if(p.life <= 0) particles.splice(i, 1);
             }}
             
+            // HUD
             ctx.fillStyle = '#00e5ff'; ctx.font = 'bold 20px Courier New'; ctx.fillText('ROI: $' + score, 20, 30);
-            
             ctx.fillStyle = '#333'; ctx.fillRect(20, 45, 200, 15);
             ctx.fillStyle = hull < 30 ? '#ff0055' : '#00ff00'; ctx.fillRect(20, 45, hull * 2, 15);
             ctx.fillStyle = '#fff'; ctx.font = '12px Courier New'; ctx.fillText('HULL INTEGRITY', 230, 57);
-
-            ctx.fillStyle = '#fff'; 
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 20px Courier New';
             let timerTxt = isSurvival ? "SURVIVAL MODE" : timeLeft + "s";
-            ctx.font = 'bold 20px Courier New';
             ctx.fillText(timerTxt, 650, 30);
 
             requestAnimationFrame(gameLoop);
@@ -507,12 +546,23 @@ def get_space_shooter_html(round_num, duration):
 
         function endGame(success) {{
             gameActive = false;
-            clearInterval(timerInterval);
-            // Force wait to ensure UI update
-            setTimeout(() => {{
-                let finalScore = isSurvival ? score : (success ? score : 0);
-                window.parent.location.search = '?score=' + finalScore; 
-            }}, 500);
+            finalScore = isSurvival ? score : (success ? score : 0);
+            
+            // Update UI immediately so user knows game is over
+            endScreen.style.display = 'block';
+            document.getElementById('end-score').innerText = "FINAL ROI: $" + finalScore;
+            
+            if(!success && !isSurvival) {{
+                document.getElementById('end-title').innerText = "HULL CRITICAL - FAILURE";
+                document.getElementById('end-title').style.color = "#ff0055";
+            }}
+            
+            // Try auto-redirect
+            setTimeout(forceSubmit, 1500);
+        }}
+        
+        function forceSubmit() {{
+            window.parent.location.search = '?score=' + finalScore; 
         }}
         
         const style = document.createElement('style');
@@ -525,7 +575,6 @@ def get_space_shooter_html(round_num, duration):
 
 def get_boxing_html(round_num, duration):
     is_survival = "true" if duration == 9999 else "false"
-    # Lowered CPU HP for balance: Base 80 + (Round * 15)
     cpu_start_hp = 9999 if duration == 9999 else 80 + (round_num * 15)
     
     return f"""
@@ -536,6 +585,10 @@ def get_boxing_html(round_num, duration):
         body {{ margin: 0; overflow: hidden; background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Courier New', monospace; }}
         canvas {{ border: 4px solid #FFE81F; box-shadow: 0 0 30px rgba(255, 232, 31, 0.4); background: rgba(0,0,0,0.8); border-radius: 8px; }}
         #overlay {{ position: absolute; color: #FFE81F; text-align: center; pointer-events: none; width: 100%; text-shadow: 2px 2px #000; z-index: 10; }}
+        #end-screen {{ display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 20; width: 80%; background: rgba(0,0,0,0.9); padding: 40px; border: 2px solid #FFE81F; }}
+        h2 {{ font-size: 40px; margin: 0; letter-spacing: 5px; }}
+        button {{ background: #FFE81F; color: #000; font-family: 'Courier New'; font-weight: bold; font-size: 20px; padding: 10px 20px; border: none; cursor: pointer; margin-top: 20px; }}
+        button:hover {{ background: #fff; }}
     </style>
     </head>
     <body>
@@ -547,11 +600,17 @@ def get_boxing_html(round_num, duration):
         </div>
         <p style="color:#FFE81F; font-size: 24px; font-weight:bold; margin-top:30px; animation: blink 1s infinite;">CLICK TO FIGHT</p>
     </div>
+    <div id="end-screen">
+        <h2 id="end-title" style="color: #00ff00;">MATCH COMPLETE</h2>
+        <p id="end-score" style="color: #fff; font-size: 24px;">SCORE: 0</p>
+        <button onclick="forceSubmit()">CLICK TO CONFIRM SCORE</button>
+    </div>
     <canvas id="gameCanvas" width="600" height="400"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const overlay = document.getElementById('overlay');
+        const endScreen = document.getElementById('end-screen');
         
         let gameActive = false;
         let score = 0;
@@ -560,6 +619,7 @@ def get_boxing_html(round_num, duration):
         let stamina = 100;
         let timeLeft = {duration};
         let isSurvival = {is_survival};
+        let finalScore = 0;
         
         let action = 'IDLE';
         let cpuAction = 'IDLE';
@@ -567,25 +627,38 @@ def get_boxing_html(round_num, duration):
         let msgTimer = 0;
         let msgColor = '#fff';
         
-        let timerInterval;
         let cpuInterval;
         
         canvas.addEventListener('mousedown', () => {{
-            if(!gameActive && playerHP > 0) {{
+            if(!gameActive && playerHP > 0 && endScreen.style.display === 'none') {{
                 gameActive = true;
                 overlay.style.display = 'none';
                 gameLoop();
                 
                 let thinkSpeed = Math.max(500, 1200 - ({round_num} * 100));
                 cpuInterval = setInterval(cpuThink, thinkSpeed); 
-                timerInterval = setInterval(updateTimer, 1000);
+                
+                // Standard timer logic
+                let timer = setInterval(() => {{
+                    if(gameActive && !isSurvival) {{
+                        timeLeft--;
+                        if(timeLeft <= 0) {{
+                            clearInterval(timer);
+                            endGame(true);
+                        }}
+                    }} else if (!gameActive) {{
+                        clearInterval(timer);
+                    }}
+                    // Stamina regen separate from game timer
+                    if(gameActive) stamina = Math.min(100, stamina + 5);
+                }}, 1000);
+                
                 window.addEventListener('keydown', handleInput);
             }}
         }});
 
         function handleInput(e) {{
             if(!gameActive || action !== 'IDLE') return; 
-            
             let key = e.key.toLowerCase();
             if(key === 'a' && stamina >= 15) {{
                 action = 'JAB'; stamina -= 15; checkHit(10 + ({round_num}*2), 0.8); 
@@ -600,17 +673,11 @@ def get_boxing_html(round_num, duration):
         }}
 
         function checkHit(dmg, accuracy) {{
-            if(cpuAction === 'BLOCK') {{ 
-                showMsg("BLOCKED!", '#ffff00'); 
-                return; 
-            }}
+            if(cpuAction === 'BLOCK') {{ showMsg("BLOCKED!", '#ffff00'); return; }}
             if(Math.random() < accuracy) {{
-                cpuHP -= dmg; score += dmg * 10; 
-                showMsg("HIT!", '#00ff00');
+                cpuHP -= dmg; score += dmg * 10; showMsg("HIT!", '#00ff00');
                 if(cpuHP <= 0) endGame(true);
-            }} else {{ 
-                showMsg("MISSED!", '#aaa'); 
-            }}
+            }} else {{ showMsg("MISSED!", '#aaa'); }}
         }}
 
         function showMsg(text, color) {{ message = text; msgTimer = 40; msgColor = color; }}
@@ -618,192 +685,102 @@ def get_boxing_html(round_num, duration):
         function cpuThink() {{
             if(!gameActive) return;
             const rand = Math.random();
-            
             if(rand > 0.6) {{
                 cpuAction = 'WINDUP';
                 setTimeout(() => {{
                     if(!gameActive) return;
                     cpuAction = 'PUNCH';
                     if(action === 'BLOCK') {{ 
-                        stamina = Math.min(100, stamina + 15); 
-                        showMsg("BLOCKED!", '#00e5ff'); 
+                        stamina = Math.min(100, stamina + 15); showMsg("BLOCKED!", '#00e5ff'); 
                     }} else {{ 
-                        playerHP -= 10 + ({round_num} * 3); 
-                        showMsg("OUCH!", '#ff0055'); 
+                        playerHP -= 10 + ({round_num} * 3); showMsg("OUCH!", '#ff0055'); 
                         if(playerHP <= 0) endGame(false); 
                     }}
                     setTimeout(() => cpuAction = 'IDLE', 400);
                 }}, 400);
             }} else if (rand > 0.3) {{
-                cpuAction = 'BLOCK'; 
-                setTimeout(() => cpuAction = 'IDLE', 800);
-            }}
-        }}
-
-        function updateTimer() {{
-            if(!gameActive) return;
-            stamina = Math.min(100, stamina + 5);
-            if(!isSurvival) {{
-                timeLeft--;
-                if(timeLeft <= 0) endGame(true);
+                cpuAction = 'BLOCK'; setTimeout(() => cpuAction = 'IDLE', 800);
             }}
         }}
 
         function endGame(win) {{
             gameActive = false;
-            clearInterval(timerInterval);
             clearInterval(cpuInterval);
-            setTimeout(() => {{
-                let finalScore = score;
-                if (!isSurvival && !win) finalScore = 0;
-                if (isSurvival) finalScore += 500; 
-                else if (win) finalScore += 1000;
-                window.parent.location.search = '?score=' + finalScore;
-            }}, 500);
+            
+            finalScore = score;
+            if (!isSurvival && !win) finalScore = 0;
+            if (isSurvival) finalScore += 500; 
+            else if (win) finalScore += 1000;
+            
+            // Show end screen immediately
+            endScreen.style.display = 'block';
+            document.getElementById('end-score').innerText = "SCORE: " + finalScore;
+            
+            if(!win && !isSurvival) {{
+                 document.getElementById('end-title').innerText = "KNOCKED OUT";
+                 document.getElementById('end-title').style.color = "#ff0055";
+            }}
+            
+            setTimeout(forceSubmit, 1500);
+        }}
+        
+        function forceSubmit() {{
+            window.parent.location.search = '?score=' + finalScore;
         }}
 
-        // --- DRAWING FUNCTIONS FOR REALISTIC FIGHTERS ---
-
         function drawFighter(ctx, x, y, color, pose, isFacingLeft) {{
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 12; // Thicker limbs
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = color;
-            
+            ctx.strokeStyle = color; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowBlur = 15; ctx.shadowColor = color;
             let dir = isFacingLeft ? -1 : 1;
-
-            // HEAD
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y - 60, 18, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // TORSO (Thick line)
-            ctx.beginPath();
-            ctx.moveTo(x, y - 40);
-            ctx.lineTo(x, y + 40);
-            ctx.stroke();
-            
-            // LEGS (Thicker, bent knees)
-            ctx.beginPath();
-            ctx.moveTo(x, y + 40);
-            ctx.lineTo(x - (20 * dir), y + 90); // Back leg
-            ctx.moveTo(x, y + 40);
-            ctx.lineTo(x + (25 * dir), y + 90); // Front leg
-            ctx.stroke();
-            
-            // ARMS
-            ctx.beginPath();
-            let shoulderY = y - 30;
-            
+            // Head
+            ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y - 60, 18, 0, Math.PI * 2); ctx.fill();
+            // Torso
+            ctx.beginPath(); ctx.moveTo(x, y - 40); ctx.lineTo(x, y + 40); ctx.stroke();
+            // Legs
+            ctx.beginPath(); ctx.moveTo(x, y + 40); ctx.lineTo(x - (20 * dir), y + 90); 
+            ctx.moveTo(x, y + 40); ctx.lineTo(x + (25 * dir), y + 90); ctx.stroke();
+            // Arms
+            ctx.beginPath(); let shoulderY = y - 30;
             if (pose === 'IDLE') {{
-                // Guard up (Bent arms)
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (20 * dir), y + 10); // Elbow
-                ctx.lineTo(x + (40 * dir), y - 20); // Hand
-                
-                // Other arm
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (10 * dir), y + 15);
-                ctx.lineTo(x + (30 * dir), y - 10);
-            }} 
-            else if (pose === 'JAB' || pose === 'PUNCH') {{
-                // Punching Arm Straight
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (80 * dir), shoulderY - 5); 
-                // Guard Arm
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (10 * dir), y + 15);
-                ctx.lineTo(x + (30 * dir), y - 10);
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (20 * dir), y + 10); ctx.lineTo(x + (40 * dir), y - 20); 
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (10 * dir), y + 15); ctx.lineTo(x + (30 * dir), y - 10);
+            }} else if (pose === 'JAB' || pose === 'PUNCH') {{
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (80 * dir), shoulderY - 5); 
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (10 * dir), y + 15); ctx.lineTo(x + (30 * dir), y - 10);
+            }} else if (pose === 'HOOK') {{
+                ctx.moveTo(x, shoulderY); ctx.quadraticCurveTo(x + (30*dir), shoulderY - 60, x + (60*dir), shoulderY);
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (10 * dir), y + 15); ctx.lineTo(x + (30 * dir), y - 10);
+            }} else if (pose === 'BLOCK') {{
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (25 * dir), shoulderY - 25);
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (15 * dir), shoulderY - 25);
+            }} else if (pose === 'WINDUP') {{
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x - (30 * dir), shoulderY); 
+                ctx.moveTo(x, shoulderY); ctx.lineTo(x + (10 * dir), y); 
             }}
-            else if (pose === 'HOOK') {{
-                // Wide hook
-                ctx.moveTo(x, shoulderY);
-                ctx.quadraticCurveTo(x + (30*dir), shoulderY - 60, x + (60*dir), shoulderY);
-                // Guard Arm
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (10 * dir), y + 15);
-                ctx.lineTo(x + (30 * dir), y - 10);
-            }}
-            else if (pose === 'BLOCK') {{
-                // Shielding face
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (25 * dir), shoulderY - 25);
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (15 * dir), shoulderY - 25);
-            }}
-            else if (pose === 'WINDUP') {{
-                // Pull back
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x - (30 * dir), shoulderY); 
-                ctx.moveTo(x, shoulderY);
-                ctx.lineTo(x + (10 * dir), y); 
-            }}
-            
-            ctx.stroke();
-            ctx.shadowBlur = 0; 
+            ctx.stroke(); ctx.shadowBlur = 0; 
         }}
 
         function gameLoop() {{
             if(!gameActive) return;
             requestAnimationFrame(gameLoop);
-            
-            // Clear
             ctx.clearRect(0,0,600,400);
-            
-            // Floor
             var grd = ctx.createLinearGradient(0, 300, 0, 400);
-            grd.addColorStop(0, "rgba(50,50,50,0.8)");
-            grd.addColorStop(1, "rgba(0,0,0,0.8)");
-            ctx.fillStyle = grd;
-            ctx.fillRect(0, 320, 600, 80);
-            
-            // Ropes
-            ctx.strokeStyle = '#FFE81F';
-            ctx.lineWidth = 3;
+            grd.addColorStop(0, "rgba(50,50,50,0.8)"); grd.addColorStop(1, "rgba(0,0,0,0.8)");
+            ctx.fillStyle = grd; ctx.fillRect(0, 320, 600, 80);
+            ctx.strokeStyle = '#FFE81F'; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(0, 100); ctx.lineTo(600, 100); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(600, 200); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, 280); ctx.lineTo(600, 280); ctx.stroke();
-
-            // PLAYER (Blue, facing right)
-            let pColor = '#00e5ff';
-            if (action === 'BLOCK') pColor = '#ffffff';
+            let pColor = '#00e5ff'; if (action === 'BLOCK') pColor = '#ffffff';
             drawFighter(ctx, 200, 250, pColor, action, false);
-
-            // OPPONENT (Red, facing left)
-            let eColor = '#ff0055';
-            if (cpuAction === 'BLOCK') eColor = '#aaa';
-            if (cpuAction === 'WINDUP') eColor = '#ffa500';
+            let eColor = '#ff0055'; if (cpuAction === 'BLOCK') eColor = '#aaa'; if (cpuAction === 'WINDUP') eColor = '#ffa500';
             drawFighter(ctx, 400, 250, eColor, cpuAction, true);
-
-            // UI
-            ctx.font = 'bold 20px Courier New'; 
-            ctx.fillStyle = '#00e5ff';
-            ctx.fillText("YOU: " + playerHP + "%", 20, 30);
-            // Stamina
-            ctx.fillStyle = '#00e5ff';
-            ctx.fillRect(20, 40, stamina * 1.5, 8);
-            
-            ctx.fillStyle = '#ff0055'; 
-            ctx.textAlign = "right";
-            ctx.fillText("DR. DEFECT: " + cpuHP, 580, 30);
-            ctx.textAlign = "left";
-
-            // Timer
-            ctx.fillStyle = '#FFE81F'; 
-            ctx.font = 'bold 40px Courier New'; 
-            ctx.textAlign = "center";
-            let timeTxt = isSurvival ? "∞" : timeLeft;
-            ctx.fillText(timeTxt, 300, 50);
-            
-            // Messages
+            ctx.font = 'bold 20px Courier New'; ctx.fillStyle = '#00e5ff'; ctx.fillText("YOU: " + playerHP + "%", 20, 30);
+            ctx.fillStyle = '#00e5ff'; ctx.fillRect(20, 40, stamina * 1.5, 8);
+            ctx.fillStyle = '#ff0055'; ctx.textAlign = "right"; ctx.fillText("DR. DEFECT: " + cpuHP, 580, 30); ctx.textAlign = "left";
+            ctx.fillStyle = '#FFE81F'; ctx.font = 'bold 40px Courier New'; ctx.textAlign = "center";
+            let timeTxt = isSurvival ? "∞" : timeLeft; ctx.fillText(timeTxt, 300, 50);
             if(msgTimer > 0) {{
-                ctx.font = 'bold 30px Courier New'; 
-                ctx.fillStyle = msgColor; 
-                ctx.fillText(message, 300, 150); 
-                msgTimer--;
+                ctx.font = 'bold 30px Courier New'; ctx.fillStyle = msgColor; ctx.fillText(message, 300, 150); msgTimer--;
             }}
             ctx.textAlign = "left"; 
         }}
@@ -817,8 +794,17 @@ def get_boxing_html(round_num, duration):
     """
 
 # ==============================================================================
-# 6. UI COMPONENTS
+# 6. HELPER & UI COMPONENTS
 # ==============================================================================
+
+def find_pdfs(directory="."):
+    """Recursively find all PDF files in a directory."""
+    pdf_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.lower().endswith(".pdf"):
+                pdf_files.append(os.path.join(root, file))
+    return pdf_files
 
 def show_sidebar():
     with st.sidebar:
@@ -864,7 +850,7 @@ def show_sidebar():
             st.rerun()
             
         st.markdown("---")
-        st.caption("Quality Wars v5.2 | Earth Defense")
+        st.caption("Quality Wars v5.3 | Earth Defense")
 
 def show_menu():
     st.markdown("# QUALITY WARS")
@@ -902,15 +888,8 @@ def show_menu():
 def show_viewer():
     st.markdown("## 📂 CLASSIFIED INTEL VIEWER")
     
-    # Scan for PDFs in the current directory
-    # In a real app we might look recursively, but here we look in the known path or current dir
-    target_dir = "aplotlib/returnrx-enterprise/returnrx-enterprise-main"
-    
-    # Fallback to current dir if path doesn't exist (local testing)
-    if not os.path.exists(target_dir):
-        target_dir = "."
-        
-    pdf_files = [f for f in os.listdir(target_dir) if f.lower().endswith('.pdf')]
+    # Smart file finder
+    pdf_files = find_pdfs()
     
     if not pdf_files:
         st.warning("No Classified Intel (PDFs) found in the archives.")
@@ -919,8 +898,11 @@ def show_viewer():
             st.rerun()
         return
 
-    file_choice = st.selectbox("SELECT FILE:", pdf_files)
-    file_path = os.path.join(target_dir, file_choice)
+    # Create relative names for display
+    file_map = {os.path.basename(f): f for f in pdf_files}
+    file_choice = st.selectbox("SELECT FILE:", list(file_map.keys()))
+    
+    file_path = file_map[file_choice]
     
     try:
         with open(file_path, "rb") as f:
@@ -983,9 +965,13 @@ def show_trivia_round():
     
     # Show Congratulatory Message if it exists from the game round
     if st.session_state.last_round_msg:
+        # Use green for success, gold for legendary
+        color = "#00ff00"
+        if "LEGENDARY" in st.session_state.last_round_msg: color = "#FFE81F"
+        
         st.markdown(f"""
-        <div class="result-card" style="text-align:center; border-color:#00ff00;">
-            <h2 style="color:#00ff00; border:none;">{st.session_state.last_round_msg}</h2>
+        <div class="result-card" style="text-align:center; border-color:{color};">
+            <h2 style="color:{color}; border:none; margin:0;">{st.session_state.last_round_msg}</h2>
         </div>
         """, unsafe_allow_html=True)
         st.session_state.last_round_msg = None # Clear it so it doesn't persist
