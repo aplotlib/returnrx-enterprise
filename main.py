@@ -49,24 +49,6 @@ st.markdown("""
         margin-bottom: 0px;
     }
 
-    /* INTEL/SLIDE CARDS */
-    .intel-viewer {
-        background: rgba(16, 20, 24, 0.98);
-        border: 2px solid #00e5ff;
-        box-shadow: 0 0 25px rgba(0, 229, 255, 0.15);
-        border-radius: 12px;
-        padding: 40px;
-        min-height: 600px;
-        position: relative;
-    }
-
-    .slide-content {
-        font-size: 1.1rem;
-        line-height: 1.8;
-        white-space: pre-wrap; 
-        font-family: 'Roboto', sans-serif;
-    }
-
     /* BUTTONS */
     .stButton>button {
         font-family: 'Orbitron', sans-serif;
@@ -87,6 +69,11 @@ st.markdown("""
         transform: translateY(-2px) scale(1.01);
         box-shadow: 0 0 30px rgba(0, 229, 255, 0.8);
         color: white !important;
+    }
+    
+    /* BOXING BUTTON SPECIAL STYLE */
+    div[data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button {
+       border: 1px solid #ff0055;
     }
 
     /* SIDEBAR */
@@ -115,6 +102,34 @@ st.markdown("""
     }
     .metric-label { color: #888; font-size: 0.7rem; letter-spacing: 2px; }
     .metric-value { color: #FFE81F; font-size: 1.5rem; font-weight: bold; }
+    
+    /* INTEL VIEWER */
+    .intel-viewer {
+        background: rgba(16, 20, 24, 0.98);
+        border: 2px solid #00e5ff;
+        box-shadow: 0 0 25px rgba(0, 229, 255, 0.15);
+        border-radius: 12px;
+        padding: 40px;
+        min-height: 600px;
+        position: relative;
+    }
+
+    .intel-header {
+        color: #00e5ff;
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid #00e5ff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        text-align: center;
+    }
+    
+    .slide-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        white-space: pre-wrap; 
+        font-family: 'Roboto', sans-serif;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,96 +141,65 @@ TRIVIA_DB = [
     # --- VIVE HISTORY & STRATEGY ---
     {
         "q": "Vive Health was founded in 2014. How many distribution centers does it strategically operate across the US?",
-        "options": ["Four", "Two", "One", "Six"],
-        "correct": "Four",
+        [cite_start]"options": ["Four [cite: 10]", "Two", "One", "Six"],
+        [cite_start]"correct": "Four [cite: 10]",
         "feedback": "Correct! Four centers allow 1-2 business day delivery across the entire US."
     },
     {
         "q": "Which of the following is a core 'Strategic Advantage' of Vive Health regarding manufacturing?",
-        "options": ["Owns its own Manufacturing Facility", "Outsources to random bidders", "Dropshipping only", "3D Prints everything in-house"],
-        "correct": "Owns its own Manufacturing Facility",
+        [cite_start]"options": ["Owns its own Manufacturing Facility [cite: 10]", "Outsources to random bidders", "Dropshipping only", "3D Prints everything in-house"],
+        [cite_start]"correct": "Owns its own Manufacturing Facility [cite: 10]",
         "feedback": "Correct. Owning manufacturing allows for 'Military Grade Standard' quality control."
     },
     {
         "q": "Vive Health's goal for Amazon FBA Return Rate is </= 7.50%. In Oct 2025, the rate was slashed to:",
-        "options": ["5.54%", "10.2%", "2.1%", "0%"],
-        "correct": "5.54%",
+        [cite_start]"options": ["5.54% [cite: 26]", "10.2%", "2.1%", "0%"],
+        [cite_start]"correct": "5.54% [cite: 26]",
         "feedback": "Correct. The FBA return rate was slashed to 5.54%, exceeding the goal."
     },
     # --- TEAM & CULTURE ---
     {
         "q": "Who leads Product Testing at the Naples Office and is a retired PhD Chemist?",
-        "options": ["Jim Ahearn", "Carolina Silva", "Annie", "Jason"],
-        "correct": "Jim Ahearn",
+        [cite_start]"options": ["Jim Ahearn [cite: 22]", "Carolina Silva", "Annie", "Jason"],
+        [cite_start]"correct": "Jim Ahearn [cite: 22]",
         "feedback": "Correct. Jim leads research and testing."
     },
     {
-        "q": "Who is the Customer Service Troubleshooting Specialist assisting support agents?",
-        "options": ["Luis Hidalgo", "Tom Trump", "Dayna Plummer", "Allen Parker"],
-        "correct": "Luis Hidalgo",
-        "feedback": "Correct. Luis is a Biomedical Engineer who helps train support agents."
-    },
-    {
         "q": "Who is the QC Manager in China managing ~25 inspectors?",
-        "options": ["Annie", "Jessica", "Luis", "Tom"],
-        "correct": "Annie",
+        [cite_start]"options": ["Annie [cite: 22]", "Jessica", "Luis", "Tom"],
+        [cite_start]"correct": "Annie [cite: 22]",
         "feedback": "Correct. Annie contracts inspectors and reviews data in China."
     },
     {
         "q": "Which Core Value states: 'We take full responsibility for our actions, results, and success. No excuses'?",
-        "options": ["Extreme Ownership", "Growth Mindset", "Best Ideas Rise", "Data & System Driven"],
-        "correct": "Extreme Ownership",
+        [cite_start]"options": ["Extreme Ownership [cite: 39]", "Growth Mindset", "Best Ideas Rise", "Data & System Driven"],
+        [cite_start]"correct": "Extreme Ownership [cite: 39]",
         "feedback": "Correct. 'External obstacles are just hurdles, not roadblocks.'"
     },
     # --- QUALITY TOOLS ---
     {
         "q": "In the Project Charter, what captures the problem in the form of a measurement?",
-        "options": ["Problem Statement", "Business Case", "Goal Statement", "Timeline"],
-        "correct": "Problem Statement",
+        [cite_start]"options": ["Problem Statement [cite: 15]", "Business Case", "Goal Statement", "Timeline"],
+        [cite_start]"correct": "Problem Statement [cite: 15]",
         "feedback": "Correct. The Problem Statement defines *what* is wrong in measurable terms."
     },
     {
         "q": "According to the Kano Model, features that customers do not expect but love (the 'Wow' factor) are called:",
-        "options": ["Delighters/Excitement Attributes", "Basic Needs", "Performance Attributes", "Threshold Attributes"],
-        "correct": "Delighters/Excitement Attributes",
+        [cite_start]"options": ["Delighters/Excitement Attributes [cite: 20]", "Basic Needs", "Performance Attributes", "Threshold Attributes"],
+        [cite_start]"correct": "Delighters/Excitement Attributes [cite: 20]",
         "feedback": "Correct. Like Bluetooth speakers or Gucci logos (though those might not add value!)."
     },
     {
         "q": "What tool is used to trace a problem (like 'discomfort') to sources like Man, Machine, Method, Material?",
-        "options": ["Fishbone Diagram (Ishikawa)", "Pareto Chart", "Scatter Plot", "Control Chart"],
-        "correct": "Fishbone Diagram (Ishikawa)",
+        [cite_start]"options": ["Fishbone Diagram (Ishikawa) [cite: 17]", "Pareto Chart", "Scatter Plot", "Control Chart"],
+        [cite_start]"correct": "Fishbone Diagram (Ishikawa) [cite: 17]",
         "feedback": "Correct. It helps move from 'What' is wrong to 'Why' it is happening."
     },
     {
         "q": "In FMEA, what three factors are multiplied to get the Risk Priority Number (RPN)?",
-        "options": ["Severity x Occurrence x Detection", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
-        "correct": "Severity x Occurrence x Detection",
+        [cite_start]"options": ["Severity x Occurrence x Detection [cite: 25]", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
+        [cite_start]"correct": "Severity x Occurrence x Detection [cite: 25]",
         "feedback": "Correct. S x O x D = RPN."
-    },
-    # --- REGULATORY & LEADERSHIP ---
-    {
-        "q": "What is the 'Comfort Trap' in strategic planning?",
-        "options": ["Focusing on activities you control instead of competitive outcomes.", "Buying expensive office chairs.", "Staying in old markets.", "Ignoring safety regulations."],
-        "correct": "Focusing on activities you control instead of competitive outcomes.",
-        "feedback": "Correct. Real strategy requires specifying a competitive outcome you don't control."
-    },
-    {
-        "q": "In Military Leadership models, which level of autonomy minimizes the Commander's cognitive burden?",
-        "options": ["Command by Intent", "Command by Plan", "Command by Directive", "Command by Hope"],
-        "correct": "Command by Intent",
-        "feedback": "Correct. 'Command by Intent' gives goals and constraints, allowing decisions at the point of action."
-    },
-    {
-        "q": "Design Controls (21 CFR 820.30) apply to ALL Class II and III devices, but only select Class I devices. Which Class I device requires it?",
-        "options": ["Devices automated with computer software", "Tongue Depressors", "Elastic Bandages", "Reading Glasses"],
-        "correct": "Devices automated with computer software",
-        "feedback": "Correct. Software-driven Class I devices require Design Controls."
-    },
-    {
-        "q": "What is the difference between Verification and Validation?",
-        "options": ["Verification = Built it Right (Specs); Validation = Built the Right Thing (User Needs)", "Verification = User Needs; Validation = Specs", "They are the same", "Validation is for marketing"],
-        "correct": "Verification = Built it Right (Specs); Validation = Built the Right Thing (User Needs)",
-        "feedback": "Correct! Verification is internal (lab tests); Validation is external (user tests)."
     }
 ]
 
@@ -226,13 +210,12 @@ SLIDE_DECKS = {
         "slides": [
             "**QUALITY APPROVED**\nVive Health - November 2025\n\n---\n\n**VIVE'S QUALITY TEAM**\n\n* **Carolina Silva (Quality Analyst):** Analyzes trends, Biomedical Engineer w/ Data Analytics skill set.\n* **Annie (QC Manager China):** Contracts ~25 inspectors, manages reports/data.\n* **Jim Ahearn (Research & Testing):** Retired PhD Chemist, leads testing in Naples.\n* **Luis Hidalgo (CS Troubleshooting):** Biomedical Engineer, trains support agents.\n* **Jason (QC at MPF):** Leads MPF inspection team (~7 inspectors).\n* **Jessica Marshall (Regulatory Affairs):** Leads ISO 13485 & EU Market Access.",
             "**AGENDA**\n\n1. **Strategic Value:** Our 'Why' - Quality as a market differentiator and revenue generator.\n2. **Performance Review:** The 'What' - A data-driven look at core metrics.\n3. **Process & Proactivity:** The 'How' - Systems for finding, fixing, and preventing issues.",
-            "**WINS: QUALITY AS REVENUE GENERATOR**\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Revenue:** Developed memory foam seat cushion to offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom analytics apps with $0 budget.",
+            "**WINS: QUALITY AS REVENUE GENERATOR**\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Revenue:** Developed memory foam seat cushion to generate revenue/offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom analytics apps with $0 budget.",
             "**GLOBAL MARKET EXPANSION**\n\n* **Class I Market:** EU/UK market size is ~$22B-$37B.\n* **Impact:** 153% increase in market reach (population) and 75% increase in market value.\n* **Goal:** CE Mark submission estimated Nov 2025.",
             "**STRATEGY & PHILOSOPHY**\n\n* **Lifecycle Management:**\n   - *Concept:* Regulatory landscape & Risk analysis.\n   - *Launch:* Factory audits & V&V testing.\n   - *Post-Market:* Root Cause Analysis & CI.\n* **Core Metrics:**\n   - FBA Return Rate: 5.54% (Goal < 7.50%) - EXCEEDING.\n   - B2B Return Rate: 2.29% (Goal < 2.00%) - NEEDS FOCUS.\n   - ISO 13485: 42.5% Complete.",
             "**PERFORMANCE: VoC**\n\n* **Metric:** 77.61% of Listings have 'Good/Excellent' NCX categorization.\n* **Goal:** 85%.\n* **Loop:** Find (Situation) -> Fix (Task/Action) -> Follow-Up (Result).",
             "**CASE STUDY: POST-OP SHOE**\n\n* **Situation:** High return rate (20-40%) due to 'size' complaints.\n* **Action:** Deep analysis against competitors. Found our shoes were 5-11% larger than market leader.\n* **Result:** Data-driven resizing in progress.",
             "**CASE STUDY: PACKAGING MISTAKE**\n\n* **Problem:** Changed to shrink wrap to save FBA fees.\n* **Cost:** Hurt B2B sales perception (net negative).\n* **Solution:** Decisions now require cross-department sign-off (Product + Sales + Quality).",
-            "**ACTIVE PROJECTS**\n\n* **CE for EU/UK:** Project Health: Good.\n* **ISO 13485:** Project Health: Fair (Switched consultants).\n* **Return Rate Reduction:** Project Health: Stable.\n* **Packaging Optimization:** Project Health: Stable.",
             "**MILITARY LEADERSHIP MODEL**\n\n* **Command by Directive:** Low autonomy, micromanagement (High cognitive burden on leader).\n* **Command by Plan:** Mid autonomy.\n* **Command by Intent:** High autonomy. Give goals/constraints, let team decide at point of action. (Goal state).",
             "**EXECUTION TOOLS**\n\n* **Genchi Genbutsu:** 'Go and See' (Visit the source/warehouse).\n* **Kaizen:** Continuous small improvements.\n* **Extreme Ownership:** We own the mission, not just the task.\n* **RACI Matrix:** Defining roles (Responsible, Accountable, Consulted, Informed)."
         ]
@@ -275,21 +258,25 @@ if 'slide_index' not in st.session_state:
     st.session_state.slide_index = 0
 if 'current_deck' not in st.session_state:
     st.session_state.current_deck = 'leadership'
+if 'mission_status' not in st.session_state:
+    st.session_state.mission_status = 'ONGOING'
 
 # --- SCORE SYNC LOGIC ---
 if 'score' in st.query_params:
     try:
         incoming_score = int(st.query_params['score'])
-        # Check which game mode we are in
-        if st.session_state.game_state in ['GAME', 'BOXING_GAME']:
+        
+        # HANDLING MISSION FAILURE (DEATH)
+        if incoming_score == 0:
+            st.session_state.mission_status = 'FAILED'
+            st.session_state.game_state = 'GAMEOVER'
+        
+        # HANDLING SUCCESSFUL ROUND
+        elif st.session_state.game_state in ['GAME', 'BOXING_GAME']:
             st.session_state.game_score += incoming_score
-            
-            # If score is 0, they likely died/lost, but for this logic let's always go to trivia
-            # unless it's a pure fail condition.
-            # However, in this app, "Trivia" acts as the "Respawn/Repair" mechanic too.
             st.session_state.game_state = 'TRIVIA'
             
-            # Prepare questions
+            # Prepare questions for this round
             available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
             if len(available) < 3:
                 st.session_state.questions_asked = [] 
@@ -303,7 +290,7 @@ if 'score' in st.query_params:
         st.query_params.clear()
 
 # ==============================================================================
-# 4. SPACE SHOOTER (FIXED RESET)
+# 4. SPACE SHOOTER (With Hull Safety Reset)
 # ==============================================================================
 def get_space_shooter_html(round_num):
     difficulty = round_num * 0.6
@@ -414,9 +401,10 @@ def get_space_shooter_html(round_num):
                     hull -= (e.type === 'ASTEROID' ? 50 : 20);
                     createExplosion(e.x, e.y, '#ffaa00', 20);
                     enemies.splice(i, 1);
+                    
+                    // DEATH CONDITION - SEND 0 SCORE IMMEDIATELY
                     if(hull <= 0) {{
                         gameActive = false;
-                        // NO ALERT. JUST REDIRECT.
                         window.parent.location.search = '?score=0'; 
                     }}
                 }}
@@ -450,12 +438,9 @@ def get_space_shooter_html(round_num):
     """
 
 # ==============================================================================
-# 5. BOXING MODULE (NEW)
+# 5. BOXING MODULE
 # ==============================================================================
 def get_boxing_html(round_num):
-    """
-    A Punch-Out style boxing game with stamina and blocking.
-    """
     return f"""
     <!DOCTYPE html>
     <html>
@@ -485,7 +470,7 @@ def get_boxing_html(round_num):
         let cpuHP = 100 + ({round_num} * 20);
         let stamina = 100;
         let timeLeft = 60;
-        let action = 'IDLE'; // IDLE, JAB, HAYMAKER, BLOCK, HIT
+        let action = 'IDLE';
         let cpuAction = 'IDLE';
         let message = '';
         
@@ -502,40 +487,26 @@ def get_boxing_html(round_num):
 
         function handleInput(e) {{
             if(!gameActive) return;
-            if(action !== 'IDLE') return; // Wait for animation
+            if(action !== 'IDLE') return; 
             
             if(e.key.toLowerCase() === 'a' && stamina >= 10) {{
-                action = 'JAB';
-                stamina -= 10;
-                checkHit(10, 0.8); // Low dmg, high accuracy
+                action = 'JAB'; stamina -= 10; checkHit(10, 0.8);
                 setTimeout(() => action = 'IDLE', 200);
             }} else if (e.key.toLowerCase() === 's' && stamina >= 30) {{
-                action = 'HAYMAKER';
-                stamina -= 30;
-                checkHit(30, 0.4); // High dmg, low accuracy
+                action = 'HAYMAKER'; stamina -= 30; checkHit(30, 0.4);
                 setTimeout(() => action = 'IDLE', 600);
             }} else if (e.key.toLowerCase() === 'd') {{
-                action = 'BLOCK';
-                stamina = Math.min(100, stamina + 5); // Regen
+                action = 'BLOCK'; stamina = Math.min(100, stamina + 5);
                 setTimeout(() => action = 'IDLE', 300);
             }}
         }}
 
         function checkHit(dmg, accuracy) {{
-            // CPU Block chance
-            if(cpuAction === 'BLOCK') {{
-                message = "BLOCKED!";
-                return;
-            }}
-            
+            if(cpuAction === 'BLOCK') {{ message = "BLOCKED!"; return; }}
             if(Math.random() < accuracy) {{
-                cpuHP -= dmg;
-                score += dmg * 10;
-                message = "HIT!";
+                cpuHP -= dmg; score += dmg * 10; message = "HIT!";
                 if(cpuHP <= 0) endGame(true);
-            }} else {{
-                message = "MISSED!";
-            }}
+            }} else {{ message = "MISSED!"; }}
         }}
 
         function cpuThink() {{
@@ -543,32 +514,26 @@ def get_boxing_html(round_num):
             const rand = Math.random();
             if(rand > 0.6) {{
                 cpuAction = 'PUNCH';
-                // Player Block Check
                 if(action === 'BLOCK') {{
-                    stamina = Math.min(100, stamina + 10);
-                    message = "YOU BLOCKED!";
+                    stamina = Math.min(100, stamina + 10); message = "YOU BLOCKED!";
                 }} else {{
-                    playerHP -= 10 + ({round_num} * 2);
-                    message = "OUCH!";
+                    playerHP -= 10 + ({round_num} * 2); message = "OUCH!";
                     if(playerHP <= 0) endGame(false);
                 }}
                 setTimeout(() => cpuAction = 'IDLE', 400);
             }} else if (rand > 0.3) {{
-                cpuAction = 'BLOCK';
-                setTimeout(() => cpuAction = 'IDLE', 600);
+                cpuAction = 'BLOCK'; setTimeout(() => cpuAction = 'IDLE', 600);
             }}
         }}
 
         function updateTimer() {{
             if(!gameActive) return;
-            timeLeft--;
-            stamina = Math.min(100, stamina + 5); // Passive regen
-            if(timeLeft <= 0) endGame(true); // Win by survival
+            timeLeft--; stamina = Math.min(100, stamina + 5);
+            if(timeLeft <= 0) endGame(true);
         }}
 
         function endGame(win) {{
             gameActive = false;
-            // Send score back
             const finalScore = win ? score + 1000 : 0;
             window.parent.location.search = '?score=' + finalScore;
         }}
@@ -578,44 +543,23 @@ def get_boxing_html(round_num):
         function gameLoop() {{
             if(!gameActive) return;
             requestAnimationFrame(gameLoop);
-            
-            // BG
             drawRect(0, 0, 600, 400, '#222');
             
-            // CPU
             let cpuColor = cpuAction === 'BLOCK' ? '#555' : (cpuAction === 'PUNCH' ? '#ff0000' : '#ff00ff');
             drawRect(250, 100, 100, 200, cpuColor); // Body
             drawRect(270, 60, 60, 40, cpuColor); // Head
             
-            // Player Gloves (Visuals based on action)
-            if(action === 'JAB') drawRect(280, 150, 40, 40, '#00e5ff'); // Left Hand Extended
-            else if(action === 'HAYMAKER') drawRect(320, 120, 50, 50, '#00e5ff'); // Right Hand Smash
-            else if(action === 'BLOCK') drawRect(250, 300, 100, 20, '#00e5ff'); // Block
-            else {{
-                 // Idle Hands
-                 drawRect(200, 350, 50, 50, '#00e5ff');
-                 drawRect(350, 350, 50, 50, '#00e5ff');
-            }}
+            if(action === 'JAB') drawRect(280, 150, 40, 40, '#00e5ff');
+            else if(action === 'HAYMAKER') drawRect(320, 120, 50, 50, '#00e5ff');
+            else if(action === 'BLOCK') drawRect(250, 300, 100, 20, '#00e5ff');
+            else {{ drawRect(200, 350, 50, 50, '#00e5ff'); drawRect(350, 350, 50, 50, '#00e5ff'); }}
 
-            // HUD
-            ctx.font = '16px monospace';
-            ctx.fillStyle = '#fff';
+            ctx.font = '16px monospace'; ctx.fillStyle = '#fff';
             ctx.fillText("YOU: " + playerHP + "%", 20, 30);
             ctx.fillText("STAMINA: " + stamina, 20, 50);
-            
-            ctx.fillStyle = '#ff0055';
-            ctx.fillText("AUDITOR: " + cpuHP, 450, 30);
-            
-            ctx.fillStyle = '#FFD700';
-            ctx.font = '24px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(timeLeft, 300, 40);
-            
-            if(message) {{
-                ctx.font = '30px monospace';
-                ctx.fillStyle = '#fff';
-                ctx.fillText(message, 300, 200);
-            }}
+            ctx.fillStyle = '#ff0055'; ctx.fillText("AUDITOR: " + cpuHP, 450, 30);
+            ctx.fillStyle = '#FFD700'; ctx.font = '24px monospace'; ctx.textAlign = 'center'; ctx.fillText(timeLeft, 300, 40);
+            if(message) {{ ctx.font = '30px monospace'; ctx.fillStyle = '#fff'; ctx.fillText(message, 300, 200); }}
         }}
     </script>
     </body>
@@ -692,6 +636,10 @@ def show_menu():
             st.session_state.game_state = 'TRIVIA'
             available = TRIVIA_DB.copy()
             st.session_state.q_queue = random.sample(available, 3)
+            st.rerun()
+            
+        if st.button("📂 MISSION INTEL (PRESENTATIONS)", key="btn_intel"):
+            st.session_state.game_state = 'VIEWER'
             st.rerun()
 
 def show_viewer():
@@ -796,13 +744,33 @@ def show_trivia_round():
                 st.session_state.q_queue = random.sample(available, 3)
                 st.rerun()
             else:
+                st.session_state.mission_status = 'SUCCESS'
                 st.session_state.game_state = 'GAMEOVER'
                 st.rerun()
 
 def show_gameover():
-    st.markdown("# MISSION DEBRIEF")
     
-    # Scoring
+    # Handling Mission Failed (Death) vs Mission Complete
+    if st.session_state.mission_status == 'FAILED':
+        st.markdown("# 💀 MISSION FAILED")
+        st.markdown("""
+        <div style="text-align:center; padding:40px; border:2px solid #ff0055; border-radius:10px; background:rgba(0,0,0,0.8);">
+            <h1 style="color:#ff0055; font-size:40px !important; margin:0;">HULL BREACHED / KNOCKED OUT</h1>
+            <p>Your vessel has been destroyed by defects. You must restart training.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        if st.button("RESET MISSION (TRY AGAIN)", type="primary"):
+            for k in ['current_round', 'trivia_score', 'game_score']: st.session_state[k] = 0
+            st.session_state.questions_asked = []
+            st.session_state.mission_status = 'ONGOING'
+            st.session_state.game_state = 'MENU'
+            st.rerun()
+        return
+
+    # Standard Scoring for Success
+    st.markdown("# MISSION DEBRIEF")
     max_trivia = st.session_state.total_rounds * 3
     trivia_pct = (st.session_state.trivia_score / max_trivia) * 100
     game_pct = min((st.session_state.game_score / 3000) * 100, 100)
@@ -838,6 +806,7 @@ def show_gameover():
         for k in ['current_round', 'trivia_score', 'game_score']: st.session_state[k] = 0
         st.session_state.current_round = 1
         st.session_state.questions_asked = []
+        st.session_state.mission_status = 'ONGOING'
         st.session_state.game_state = 'MENU'
         st.rerun()
 
