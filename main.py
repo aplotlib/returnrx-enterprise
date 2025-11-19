@@ -130,7 +130,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. CONTENT DATABASES (EXPANDED)
+# 2. CONTENT DATABASES (UPDATED)
 # ==============================================================================
 
 TRIVIA_DB = [
@@ -158,10 +158,10 @@ TRIVIA_DB = [
     },
     {
         "id": 4,
-        "q": "Which certification is Vive Health pursuing to unlock the EU & UK markets?",
-        "options": ["ISO 13485", "ISO 9001", "Six Sigma Black Belt", "GMP Level 4"],
-        "correct": "ISO 13485",
-        "feedback": "Correct. ISO 13485 is the standard for Medical Devices."
+        "q": "Which regulatory marking is required to unlock the EU & UK markets?",
+        "options": ["CE Mark", "ISO 13485", "FDA Clearance", "UL Listing"],
+        "correct": "CE Mark",
+        "feedback": "Correct. CE Mark is the requirement for market access, expanding TAM by +$150B."
     },
     
     # --- QUALITY TOOLS & STRATEGY ---
@@ -945,7 +945,7 @@ def show_intel_briefing():
     """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
-    with c1: 
+    with col1: 
         st.info(msg1)
     with col2: 
         st.warning(msg2)
