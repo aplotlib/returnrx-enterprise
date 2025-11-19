@@ -2,7 +2,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import random
 import time
-import re
 
 # ==============================================================================
 # 1. CONFIGURATION & ASSETS
@@ -11,7 +10,7 @@ st.set_page_config(
     page_title="Quality Wars: The ROI Strikes Back",
     page_icon="⚔️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # CUSTOM CSS: NEON/SPACE THEME & ANIMATIONS
@@ -46,7 +45,7 @@ st.markdown("""
         text-shadow: 0px 0px 20px rgba(255, 232, 31, 0.5);
         text-align: center;
         font-weight: 900;
-        font-size: 3.5rem !important;
+        font-size: 3rem !important;
         margin-bottom: 0px;
     }
 
@@ -65,15 +64,17 @@ st.markdown("""
         font-size: 1.1rem;
         line-height: 1.8;
         white-space: pre-wrap; 
+        font-family: 'Roboto', sans-serif;
     }
 
-    .slide-nav-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 20px;
-        border-top: 1px solid #333;
-        padding-top: 20px;
+    .intel-header {
+        color: #00e5ff;
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid #00e5ff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        text-align: center;
     }
 
     /* BUTTONS */
@@ -98,35 +99,20 @@ st.markdown("""
         color: white !important;
     }
 
-    /* HUD */
-    .hud-container {
-        display: flex;
-        justify-content: space-around;
-        background: rgba(0,0,0,0.9);
-        border-bottom: 2px solid #FFE81F;
-        padding: 15px;
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        backdrop-filter: blur(5px);
-        margin-bottom: 30px;
+    /* SIDEBAR */
+    [data-testid="stSidebar"] {
+        background-color: rgba(10, 10, 15, 0.95);
+        border-right: 1px solid #333;
     }
-    
-    .metric-box {
-        text-align: center;
-        font-family: 'Orbitron', sans-serif;
-    }
-    .metric-label { color: #888; font-size: 0.7rem; letter-spacing: 2px; }
-    .metric-value { color: #FFE81F; font-size: 1.5rem; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. CONTENT DATABASES (Expanded & Specific)
+# 2. EXPANDED CONTENT DATABASES
 # ==============================================================================
 
 TRIVIA_DB = [
-    # VIVE HISTORY & STRATEGY
+    # --- VIVE HISTORY & STRATEGY ---
     {
         "q": "Vive Health was founded in 2014. How many distribution centers does it strategically operate across the US?",
         "options": ["Four", "Two", "One", "Six"],
@@ -145,13 +131,19 @@ TRIVIA_DB = [
         "correct": "5.54%",
         "feedback": "Correct. The FBA return rate was slashed to 5.54%, exceeding the goal."
     },
-    
-    # TEAM & CULTURE
+
+    # --- TEAM & CULTURE ---
     {
         "q": "Who leads Product Testing at the Naples Office and is a retired PhD Chemist?",
         "options": ["Jim Ahearn", "Carolina Silva", "Annie", "Jason"],
         "correct": "Jim Ahearn",
         "feedback": "Correct. Jim leads research and testing."
+    },
+    {
+        "q": "Who is the Customer Service Troubleshooting Specialist assisting support agents?",
+        "options": ["Luis Hidalgo", "Tom Trump", "Dayna Plummer", "Allen Parker"],
+        "correct": "Luis Hidalgo",
+        "feedback": "Correct. Luis is a Biomedical Engineer who helps train support agents."
     },
     {
         "q": "Who is the QC Manager in China managing ~25 inspectors?",
@@ -166,57 +158,88 @@ TRIVIA_DB = [
         "feedback": "Correct. 'External obstacles are just hurdles, not roadblocks.'"
     },
 
-    # QUALITY TOOLS & CONCEPTS
+    # --- QUALITY TOOLS ---
     {
-        "q": "In the context of Strategic Planning, what is 'The Comfort Trap'?",
-        "options": ["Focusing on activities you control (hiring, timelines) instead of competitive outcomes.", "Buying too many office chairs.", "Staying in old markets.", "Ignoring safety regulations."],
-        "correct": "Focusing on activities you control (hiring, timelines) instead of competitive outcomes.",
+        "q": "In the Project Charter, what captures the problem in the form of a measurement?",
+        "options": ["Problem Statement", "Business Case", "Goal Statement", "Timeline"],
+        "correct": "Problem Statement",
+        "feedback": "Correct. The Problem Statement defines *what* is wrong in measurable terms."
+    },
+    {
+        "q": "According to the Kano Model, features that customers do not expect but love (the 'Wow' factor) are called:",
+        "options": ["Delighters/Excitement Attributes", "Basic Needs", "Performance Attributes", "Threshold Attributes"],
+        "correct": "Delighters/Excitement Attributes",
+        "feedback": "Correct. Like Bluetooth speakers or Gucci logos (though those might not add value!)."
+    },
+    {
+        "q": "What tool is used to trace a problem (like 'discomfort') to sources like Man, Machine, Method, Material?",
+        "options": ["Fishbone Diagram (Ishikawa)", "Pareto Chart", "Scatter Plot", "Control Chart"],
+        "correct": "Fishbone Diagram (Ishikawa)",
+        "feedback": "Correct. It helps move from 'What' is wrong to 'Why' it is happening."
+    },
+    {
+        "q": "In FMEA, what three factors are multiplied to get the Risk Priority Number (RPN)?",
+        "options": ["Severity x Occurrence x Detection", "Cost x Time x Scope", "Quality x Speed x Price", "Severity x Frequency x Budget"],
+        "correct": "Severity x Occurrence x Detection",
+        "feedback": "Correct. S x O x D = RPN."
+    },
+
+    # --- REGULATORY & LEADERSHIP ---
+    {
+        "q": "What is the 'Comfort Trap' in strategic planning?",
+        "options": ["Focusing on activities you control instead of competitive outcomes.", "Buying expensive office chairs.", "Staying in old markets.", "Ignoring safety regulations."],
+        "correct": "Focusing on activities you control instead of competitive outcomes.",
         "feedback": "Correct. Real strategy requires specifying a competitive outcome you don't control."
     },
     {
-        "q": "What does 'Genchi Genbutsu' mean in our quality philosophy?",
-        "options": ["Go and See (to the source)", "Continuous Improvement", "Respect for People", "Just in Time"],
-        "correct": "Go and See (to the source)",
-        "feedback": "Correct. We visit the warehouse or factory to understand problems deeply."
+        "q": "In Military Leadership models, which level of autonomy minimizes the Commander's cognitive burden?",
+        "options": ["Command by Intent", "Command by Plan", "Command by Directive", "Command by Hope"],
+        "correct": "Command by Intent",
+        "feedback": "Correct. 'Command by Intent' gives goals and constraints, allowing decisions at the point of action."
     },
     {
-        "q": "In a RACI Matrix, what does the 'R' stand for?",
-        "options": ["Responsible (The person who does the task)", "Reviewer", "Random", "Regulator"],
-        "correct": "Responsible (The person who does the task)",
-        "feedback": "Correct. 'A' is Accountable (the one who answers for it)."
+        "q": "Design Controls (21 CFR 820.30) apply to ALL Class II and III devices, but only select Class I devices. Which Class I device requires it?",
+        "options": ["Devices automated with computer software", "Tongue Depressors", "Elastic Bandages", "Reading Glasses"],
+        "correct": "Devices automated with computer software",
+        "feedback": "Correct. Software-driven Class I devices require Design Controls."
     },
     {
-        "q": "What is the estimated Total Addressable Market (TAM) increase by obtaining the CE Mark for EU/UK expansion?",
-        "options": ["> 2x (More than double)", "10%", "50%", "No change"],
-        "correct": "> 2x (More than double)",
-        "feedback": "Correct. Accessing the EU/UK adds +520M people and ~$150B in accessible device market."
+        "q": "What is the difference between Verification and Validation?",
+        "options": ["Verification = Built it Right (Specs); Validation = Built the Right Thing (User Needs)", "Verification = User Needs; Validation = Specs", "They are the same", "Validation is for marketing"],
+        "correct": "Verification = Built it Right (Specs); Validation = Built the Right Thing (User Needs)",
+        "feedback": "Correct! Verification is internal (lab tests); Validation is external (user tests)."
     }
 ]
 
-# FULL SLIDE CONTENT RECONSTRUCTED FROM UPLOADS
+# --- FULL DOCUMENT CONTENT ---
 SLIDE_DECKS = {
     "leadership": {
-        "title": "Quality Leadership Presentation (11/2025)",
+        "title": "Quality Leadership Presentation 11/2025",
         "slides": [
-            "**TITLE:** QUALITY APPROVED\nVive Health - November 2025\n\n---",
-            "**VIVE'S QUALITY TEAM**\n\n* **Carolina Silva (Quality Analyst):** Analyzes trends, Biomedical Engineer.\n* **Annie (QC Manager China):** Contracts ~25 inspectors, reviews data.\n* **Jim Ahearn (Research & Testing):** Retired PhD Chemist, leads testing in Naples.\n* **Jason (QC at MPF):** Leads MPF inspection team.\n* **Jessica Marshall (Regulatory Affairs):** Leads ISO 13485 & EU Market Access.",
-            "**AGENDA**\n\n1.  **Why we do what we do:** Strategic Value.\n2.  **How we are doing:** Performance Review.\n3.  **What we are doing:** Process & Proactivity.",
-            "**STRATEGIC WINS**\n\n* **Market Expansion:** CE Mark (Nov 2025) & ISO 13485 will >2x our TAM (Total Addressable Market).\n* **Revenue:** Developed memory foam seat cushion to generate revenue/offset costs.\n* **AI Efficiency:** Used Gemini/Claude ('Vibe Coding') to build custom analytics apps with $0 software budget.",
-            "**PERFORMANCE METRICS (NOV 2025)**\n\n* **FBA Return Rate:** 5.54% (Target < 7.50%) - EXCEEDING GOAL.\n* **B2B Return Rate:** 2.29% (Target < 2.00%) - NEEDS FOCUS.\n* **ISO 13485 Implementation:** 42.5% Complete - ON TRACK.\n* **VoC Listing Health:** 77.61% Good/Excellent.",
-            "**CASE STUDY: POST-OP SHOE**\n\n* **Situation:** High return rate due to 'fit/size' complaints.\n* **Action:** Deep analysis against competitors.\n* **Finding:** Our shoes were 5-11% larger than top market brand.\n* **Result:** Data-driven resizing in progress to slash returns.",
-            "**LESSONS LEARNED: PACKAGING**\n\n* **The Mistake:** Changed packaging to Shrink Wrap to save Amazon FBA fees.\n* **The Cost:** It hurt B2B sales perception.\n* **The Fix:** Cross-department sign-offs. We now ask 'Will it be a net positive for the company?' not just one department.",
-            "**PHILOSOPHY & STRATEGY**\n\n* **Philosophy:** 'Ounce of prevention > Pound of cure.'\n* **Strategy:** Shift from Reactive Quality Control (Detecting defects) to Proactive Quality Assurance (Preventing defects).\n* **Military Leadership Model:** Moving from 'Command by Directive' (Micromanagement) to 'Command by Intent' (Autonomy).",
+            "**QUALITY APPROVED**\nVive Health - November 2025\n\n---\n\n**VIVE'S QUALITY TEAM**\n\n* **Carolina Silva (Quality Analyst):** Analyzes trends, Biomedical Engineer w/ Data Analytics skill set.\n* **Annie (QC Manager China):** Contracts ~25 inspectors, manages reports/data.\n* **Jim Ahearn (Research & Testing):** Retired PhD Chemist, leads testing in Naples.\n* **Luis Hidalgo (CS Troubleshooting):** Biomedical Engineer, trains support agents.\n* **Jason (QC at MPF):** Leads MPF inspection team (~7 inspectors).\n* **Jessica Marshall (Regulatory Affairs):** Leads ISO 13485 & EU Market Access.",
+            "**AGENDA**\n\n1. **Strategic Value:** Our 'Why' - Quality as a market differentiator and revenue generator.\n2. **Performance Review:** The 'What' - A data-driven look at core metrics.\n3. **Process & Proactivity:** The 'How' - Systems for finding, fixing, and preventing issues.",
+            "**WINS: QUALITY AS REVENUE GENERATOR**\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Revenue:** Developed memory foam seat cushion to offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom analytics apps with $0 budget.",
+            "**GLOBAL MARKET EXPANSION**\n\n* **Class I Market:** EU/UK market size is ~$22B-$37B.\n* **Impact:** 153% increase in market reach (population) and 75% increase in market value.\n* **Goal:** CE Mark submission estimated Nov 2025.",
+            "**STRATEGY & PHILOSOPHY**\n\n* **Lifecycle Management:**\n   - *Concept:* Regulatory landscape & Risk analysis.\n   - *Launch:* Factory audits & V&V testing.\n   - *Post-Market:* Root Cause Analysis & CI.\n* **Core Metrics:**\n   - FBA Return Rate: 5.54% (Goal < 7.50%) - EXCEEDING.\n   - B2B Return Rate: 2.29% (Goal < 2.00%) - NEEDS FOCUS.\n   - ISO 13485: 42.5% Complete.",
+            "**PERFORMANCE: VoC**\n\n* **Metric:** 77.61% of Listings have 'Good/Excellent' NCX categorization.\n* **Goal:** 85%.\n* **Loop:** Find (Situation) -> Fix (Task/Action) -> Follow-Up (Result).",
+            "**CASE STUDY: POST-OP SHOE**\n\n* **Situation:** High return rate (20-40%) due to 'size' complaints.\n* **Action:** Deep analysis against competitors. Found our shoes were 5-11% larger than market leader.\n* **Result:** Data-driven resizing in progress.",
+            "**CASE STUDY: PACKAGING MISTAKE**\n\n* **Problem:** Changed to shrink wrap to save FBA fees.\n* **Cost:** Hurt B2B sales perception (net negative).\n* **Solution:** Decisions now require cross-department sign-off (Product + Sales + Quality).",
+            "**ACTIVE PROJECTS**\n\n* **CE for EU/UK:** Project Health: Good.\n* **ISO 13485:** Project Health: Fair (Switched consultants).\n* **Return Rate Reduction:** Project Health: Stable.\n* **Packaging Optimization:** Project Health: Stable.",
+            "**MILITARY LEADERSHIP MODEL**\n\n* **Command by Directive:** Low autonomy, micromanagement (High cognitive burden on leader).\n* **Command by Plan:** Mid autonomy.\n* **Command by Intent:** High autonomy. Give goals/constraints, let team decide at point of action. (Goal state).",
+            "**EXECUTION TOOLS**\n\n* **Genchi Genbutsu:** 'Go and See' (Visit the source/warehouse).\n* **Kaizen:** Continuous small improvements.\n* **Extreme Ownership:** We own the mission, not just the task.\n* **RACI Matrix:** Defining roles (Responsible, Accountable, Consulted, Informed)."
         ]
     },
     "product_dev": {
         "title": "Product Dev Quality Strategies",
         "slides": [
-            "**INTRODUCTION**\n\n'How things start is how they'll go...' - FDA Postmarket Branch.\n\nSmall changes with big impacts:\n* Project Charter\n* Risk Assessment\n* Affinity Diagrams",
-            "**PROJECT CHARTER**\n\nA living document outlining:\n* **Problem Statement:** The problem in measurement form.\n* **Business Case:** Why are we doing this?\n* **Scope:** What is IN and OUT.\n* **Timeline & Team:** Who and When.",
-            "**VOICE OF CUSTOMER (VoC)**\n\nWe must move from 'What' to 'Why'.\n\n* **Fishbone Diagram:** Trace problems (e.g., 'discomfort') to sources (Materials, Methods, Environment).\n* **Kano Analysis:** Separate 'Basic Needs' (Breathable fabric) from 'Delighters' (Bluetooth speakers). Don't waste money on features customers don't care about.",
-            "**FMEA (FAILURE MODE & EFFECTS ANALYSIS)**\n\nFormula: **Severity (S) x Occurrence (O) x Detection (D) = RPN (Risk Priority Number)**.\n\n1.  Identify Failure Modes (e.g., Gel pad leaks).\n2.  Score S, O, D (1-10).\n3.  Prioritize highest RPNs for mitigation.\n\n*Goal: Solve problems on the whiteboard, not via costly returns.*",
+            "**INTRODUCTION**\n\n'How things start is how they'll go...' - FDA Postmarket Branch.\n\n**Small Changes, Big Impacts:**\n* Project Charter\n* Risk Assessment\n* Affinity Diagrams\n* Kano Analysis",
+            "**PROJECT CHARTER**\n\nA living document outlining:\n* **Problem Statement:** The problem in measurement form.\n* **Business Case:** Why are we doing this?\n* **Goal Statement:** The target.\n* **Scope:** What is IN and OUT.\n* **Team:** Who is participating.",
+            "**PROJECT RISK ASSESSMENT**\n\nEvaluate risks by:\n* **Probability:** Low/Med/High score (1-3).\n* **Impact:** Low/Med/High score (1-2).\n* **PI Score:** Probability x Impact.\n* *Example Risk:* Scope Creep (Probability 3 x Impact 2 = Score 6).",
+            "**VOICE OF CUSTOMER (VoC)**\n\n* **Fishbone Diagram:** Trace 'discomfort' to Man, Machine, Material, Method, Environment.\n* **Kano Analysis:** \n   - *Basic Needs:* Must be there (Breathable fabric).\n   - *Performance:* More is better (Padding).\n   - *Delighters:* Wow factor (Bluetooth?). Don't waste money on things customers don't care about.",
+            "**FMEA (FAILURE MODE & EFFECTS ANALYSIS)**\n\n* **Formula:** Severity (S) x Occurrence (O) x Detection (D) = RPN.\n* **Goal:** Solve problems on the whiteboard, not via returns.\n* **Example:** Gel pad leak. S(9) x O(4) x D(7) = RPN 252. Prioritize mitigation immediately.",
             "**HOUSE OF QUALITY (LITE)**\n\nA translation map connecting:\n* **Customer 'Whats':** 'Brace must be comfortable.'\n* **Engineering 'Hows':** 'Fabric Air Permeability > 100 CFM.'\n\nPrevents the 'Lost in Translation' gap between Marketing and Engineering.",
-            "**VERIFICATION VS VALIDATION**\n\n* **Verification:** 'Did we build it RIGHT?' (Does it meet specs? Lab testing).\n* **Validation:** 'Did we build the RIGHT THING?' (Does it solve the user's problem? User testing).\n\n*Remember: Reactive = Problem Solving. Proactive = Problem Prevention.*"
+            "**VERIFICATION VS VALIDATION**\n\n* **Verification:** 'Did we build it RIGHT?' (Does it meet specs? Lab testing).\n* **Validation:** 'Did we build the RIGHT THING?' (Does it solve the user's problem? User testing).\n\n*Remember: Reactive = Problem Solving. Proactive = Problem Prevention.*",
+            "**FDA DESIGN CONTROLS**\n\nRequired for Class II/III and **Software-Automated Class I** devices.\n\n*Why?* 44% of recalls could be prevented by design controls.\n*Key Elements:* Design Inputs, Outputs, Reviews, Verification, Validation, Transfer, Changes, History File (DHF)."
         ]
     }
 }
@@ -249,12 +272,11 @@ if 'current_deck' not in st.session_state:
 if 'score' in st.query_params:
     try:
         incoming_score = int(st.query_params['score'])
-        # Only process if score > 0 or we specifically expect a game end
         if st.session_state.game_state == 'GAME':
             st.session_state.game_score += incoming_score
             st.session_state.game_state = 'TRIVIA'
             
-            # Prepare questions
+            # Prepare questions for this round
             available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
             if len(available) < 3:
                 st.session_state.questions_asked = [] 
@@ -268,10 +290,10 @@ if 'score' in st.query_params:
         st.query_params.clear()
 
 # ==============================================================================
-# 4. HTML5 GAME ENGINE (Permadeath & Asteroids)
+# 4. HTML5 GAME ENGINE (Permadeath & Shield)
 # ==============================================================================
 def get_game_html(round_num):
-    difficulty = round_num * 0.5
+    difficulty = round_num * 0.6
     
     return f"""
     <!DOCTYPE html>
@@ -286,8 +308,8 @@ def get_game_html(round_num):
     <body>
     <div id="overlay">
         <h2>SECTOR {round_num}</h2>
-        <p>WARN: ASTEROID FIELD DETECTED</p>
-        <p style="color:#ff0055">HULL INTEGRITY CRITICAL</p>
+        <p>MISSION: PROTECT HULL INTEGRITY</p>
+        <p style="color:#ff0055">WARNING: ASTEROIDS DETECTED</p>
         <p style="font-size: 16px; color: #FFE81F; margin-top:20px;">CLICK TO ENGAGE</p>
     </div>
     <canvas id="gameCanvas" width="800" height="500"></canvas>
@@ -307,7 +329,6 @@ def get_game_html(round_num):
         let particles = [];
         let stars = [];
 
-        // Starfield
         for(let i=0; i<100; i++) {{
             stars.push({{ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: Math.random() * 3 }});
         }}
@@ -333,30 +354,15 @@ def get_game_html(round_num):
         function spawnEnemy() {{
             if(!gameActive) return;
             const rand = Math.random();
-            
-            if(rand > 0.8) {{
-                // ASTEROID (High Damage, Slow)
+            if(rand > 0.75) {{
                 enemies.push({{
-                    x: Math.random() * (canvas.width - 50),
-                    y: -50,
-                    width: 50,
-                    height: 50,
-                    speed: 2,
-                    type: 'ASTEROID',
-                    hp: 3,
-                    color: '#888888'
+                    x: Math.random() * (canvas.width - 50), y: -50, width: 50, height: 50,
+                    speed: 2 + ({difficulty}*0.5), type: 'ASTEROID', hp: 4, color: '#888888'
                 }});
             }} else {{
-                // DEFECT (Standard)
                 enemies.push({{
-                    x: Math.random() * (canvas.width - 30),
-                    y: -30,
-                    width: 30,
-                    height: 30,
-                    speed: 4 + ({difficulty}),
-                    type: 'DEFECT',
-                    hp: 1,
-                    color: '#ff0055'
+                    x: Math.random() * (canvas.width - 30), y: -30, width: 30, height: 30,
+                    speed: 4 + ({difficulty}), type: 'DEFECT', hp: 1, color: '#ff0055'
                 }});
             }}
         }}
@@ -376,11 +382,9 @@ def get_game_html(round_num):
             if(!gameActive) return;
             requestAnimationFrame(gameLoop);
             
-            // Draw BG
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Stars
             ctx.fillStyle = '#fff';
             stars.forEach(s => {{
                 s.y += s.speed;
@@ -388,7 +392,6 @@ def get_game_html(round_num):
                 ctx.fillRect(s.x, s.y, s.size, s.size);
             }});
             
-            // Player
             ctx.fillStyle = player.color;
             ctx.beginPath();
             ctx.moveTo(player.x, player.y);
@@ -396,7 +399,6 @@ def get_game_html(round_num):
             ctx.lineTo(player.x + 15, player.y + 40);
             ctx.fill();
             
-            // Bullets
             ctx.fillStyle = '#FFE81F';
             for(let i = bullets.length - 1; i >= 0; i--) {{
                 let b = bullets[i];
@@ -405,42 +407,34 @@ def get_game_html(round_num):
                 if(b.y < 0) bullets.splice(i, 1);
             }}
             
-            // Enemies
             for(let i = enemies.length - 1; i >= 0; i--) {{
                 let e = enemies[i];
                 e.y += e.speed;
                 
                 ctx.fillStyle = e.color;
                 if(e.type === 'ASTEROID') {{
-                    ctx.beginPath();
-                    ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill();
                 }} else {{
                     ctx.fillRect(e.x, e.y, e.width, e.height);
                 }}
                 
-                // Collision Player (Damage)
                 if(Math.abs(player.x - (e.x + e.width/2)) < 30 && Math.abs(player.y - e.y) < 30) {{
                     hull -= (e.type === 'ASTEROID' ? 50 : 20);
                     createExplosion(e.x, e.y, '#ffaa00', 20);
                     enemies.splice(i, 1);
-                    
                     if(hull <= 0) {{
                         gameActive = false;
-                        // Reset logic handled by UI overlay usually, but here we auto-submit 0
-                        alert("HULL BREACHED. MISSION FAILED.");
+                        alert("HULL CRITICAL. MISSION FAILED.");
                         window.parent.location.search = '?score=0'; 
                     }}
                 }}
                 
-                // Collision Bullet
                 for(let j = bullets.length - 1; j >= 0; j--) {{
                     let b = bullets[j];
-                    if(b.x > e.x && b.x < e.x + e.width && b.y < e.y + e.height && b.y > e.y) {{
+                    if(b.x > e.x - 10 && b.x < e.x + e.width + 10 && b.y < e.y + e.height && b.y > e.y) {{
                         e.hp--;
                         bullets.splice(j, 1);
-                        createExplosion(b.x, b.y, '#fff', 5);
-                        
+                        createExplosion(b.x, b.y, '#fff', 3);
                         if(e.hp <= 0) {{
                             score += (e.type === 'ASTEROID' ? 250 : 100);
                             createExplosion(e.x, e.y, e.color, 15);
@@ -453,18 +447,14 @@ def get_game_html(round_num):
                 if(e.y > canvas.height) enemies.splice(i, 1);
             }}
             
-            // Particles
             for(let i = particles.length - 1; i >= 0; i--) {{
                 let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life--;
+                p.x += p.vx; p.y += p.vy; p.life--;
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 2, 2);
                 if(p.life <= 0) particles.splice(i, 1);
             }}
             
-            // HUD
             ctx.fillStyle = '#00e5ff';
             ctx.font = '20px Orbitron';
             ctx.fillText('SCORE: ' + score, 20, 30);
@@ -480,7 +470,7 @@ def get_game_html(round_num):
                     x: x, y: y,
                     vx: (Math.random() - 0.5) * 10,
                     vy: (Math.random() - 0.5) * 10,
-                    life: 20, color: color
+                    life: 10 + Math.random() * 20, color: color
                 }});
             }}
         }}
@@ -493,23 +483,37 @@ def get_game_html(round_num):
 # 5. UI COMPONENTS
 # ==============================================================================
 
-def show_hud():
-    st.markdown(f"""
-    <div class="hud-container">
-        <div class="metric-box">
-            <div class="metric-label">SECTOR</div>
-            <div class="metric-value">{st.session_state.current_round}/{st.session_state.total_rounds}</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">XP (BATTLE)</div>
-            <div class="metric-value">{st.session_state.game_score}</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">INTEL (TRIVIA)</div>
-            <div class="metric-value">{st.session_state.trivia_score}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+def show_sidebar():
+    with st.sidebar:
+        st.markdown("### MISSION CONTROL")
+        
+        if st.button("🏠 MAIN MENU"):
+            st.session_state.game_state = 'MENU'
+            st.rerun()
+            
+        st.markdown("---")
+        
+        st.markdown("### ACTIVE PROTOCOLS")
+        if st.button("⚔️ CAMPAIGN MODE"):
+            st.session_state.mode = 'CAMPAIGN'
+            st.session_state.game_state = 'INTEL'
+            st.rerun()
+            
+        if st.button("🎓 OFFICER EXAM"):
+            st.session_state.mode = 'TRAINING'
+            st.session_state.game_state = 'TRIVIA'
+            if not st.session_state.q_queue:
+                available = TRIVIA_DB.copy()
+                st.session_state.q_queue = random.sample(available, 3)
+            st.rerun()
+            
+        if st.button("📂 INTEL VIEWER"):
+            st.session_state.game_state = 'VIEWER'
+            st.rerun()
+            
+        st.markdown("---")
+        st.caption("Quality Wars v2.0")
+        st.caption("Vive Health ROI Division")
 
 def show_menu():
     st.markdown("# QUALITY WARS")
@@ -526,21 +530,17 @@ def show_menu():
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("⚔️ START CAMPAIGN (GAME + QUIZ)"):
+        if st.button("⚔️ LAUNCH CAMPAIGN", key="btn_camp"):
             st.session_state.mode = 'CAMPAIGN'
             st.session_state.game_state = 'INTEL'
             st.rerun()
             
-        if st.button("🎓 OFFICER EXAM (QUIZ ONLY)"):
+        if st.button("🎓 TAKE OFFICER EXAM", key="btn_exam"):
             st.session_state.mode = 'TRAINING'
             st.session_state.game_state = 'TRIVIA'
             # Load up queue immediately
             available = TRIVIA_DB.copy()
             st.session_state.q_queue = random.sample(available, 3)
-            st.rerun()
-            
-        if st.button("📂 MISSION INTEL (PRESENTATIONS)"):
-            st.session_state.game_state = 'VIEWER'
             st.rerun()
 
 def show_viewer():
@@ -581,24 +581,6 @@ def show_viewer():
             if st.session_state.slide_index < total_slides - 1:
                 st.session_state.slide_index += 1
                 st.rerun()
-                
-    st.markdown("---")
-    if st.button("RETURN TO MAIN MENU"):
-        st.session_state.game_state = 'MENU'
-        st.rerun()
-
-def show_intel_briefing():
-    st.markdown(f"## SECTOR {st.session_state.current_round}: BRIEFING")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.info("MISSION OBJECTIVE: Survive the asteroid field and eliminate non-conforming units. Prepare for knowledge check immediately following combat.")
-    with col2:
-        st.warning("HAZARD WARNING: Asteroids detected. Heavy damage upon impact. Dodge or destroy.")
-        
-    if st.button("INITIATE LAUNCH SEQUENCE"):
-        st.session_state.game_state = 'GAME'
-        st.rerun()
 
 def show_trivia_round():
     st.markdown(f"## KNOWLEDGE CHECKPOINT: ROUND {st.session_state.current_round}")
@@ -614,8 +596,18 @@ def show_trivia_round():
         score_delta = 0
         for i, q in enumerate(st.session_state.q_queue):
             st.markdown(f"**{i+1}. {q['q']}**")
-            choice = st.radio(f"Options for {i}", q['options'], key=f"q{i}", label_visibility="collapsed")
+            
+            # SHUFFLE OPTIONS & SET DEFAULT TO NONE
+            # We use a consistent seed based on question text so it doesn't reshuffle on simple re-renders,
+            # but stays shuffled for the user session
+            opts = q['options'].copy()
+            random.seed(q['q'] + str(st.session_state.current_round)) 
+            random.shuffle(opts)
+            random.seed() # Reset seed
+            
+            choice = st.radio(f"Options for {i}", opts, key=f"q{i}", index=None, label_visibility="collapsed")
             st.markdown("---")
+            
             if choice == q['correct']:
                 score_delta += 1
         
@@ -635,6 +627,7 @@ def show_trivia_round():
             if st.session_state.current_round < st.session_state.total_rounds:
                 st.session_state.current_round += 1
                 st.session_state.game_state = 'INTEL' if st.session_state.mode == 'CAMPAIGN' else 'TRIVIA'
+                
                 # Re-roll queue
                 available = [q for q in TRIVIA_DB if q not in st.session_state.questions_asked]
                 if len(available) < 3: available = TRIVIA_DB
@@ -647,7 +640,6 @@ def show_trivia_round():
 def show_gameover():
     st.markdown("# MISSION DEBRIEF")
     
-    # Calc Score
     max_trivia = st.session_state.total_rounds * 3
     trivia_pct = (st.session_state.trivia_score / max_trivia) * 100
     game_pct = min((st.session_state.game_score / 3000) * 100, 100)
@@ -690,14 +682,33 @@ def show_gameover():
 # 6. MAIN CONTROLLER
 # ==============================================================================
 
-show_hud()
+show_sidebar()
+
+# Only show top HUD during active gameplay modes
+if st.session_state.game_state not in ['MENU', 'GAMEOVER', 'VIEWER']:
+    st.markdown(f"""
+    <div class="hud-container">
+        <div class="metric-box"><div class="metric-label">SECTOR</div><div class="metric-value">{st.session_state.current_round}/{st.session_state.total_rounds}</div></div>
+        <div class="metric-box"><div class="metric-label">XP</div><div class="metric-value">{st.session_state.game_score}</div></div>
+        <div class="metric-box"><div class="metric-label">INTEL</div><div class="metric-value">{st.session_state.trivia_score}</div></div>
+    </div>
+    """, unsafe_allow_html=True)
 
 if st.session_state.game_state == 'MENU':
     show_menu()
 elif st.session_state.game_state == 'VIEWER':
     show_viewer()
 elif st.session_state.game_state == 'INTEL':
-    show_intel_briefing()
+    # Briefing before game
+    st.markdown(f"## SECTOR {st.session_state.current_round}: BRIEFING")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info("OBJECTIVE: Survive asteroid field. Eliminate defects. Prepare for knowledge check.")
+    with col2:
+        st.warning("THREAT: Heavy Asteroids detected. Avoid impact at all costs.")
+    if st.button("INITIATE LAUNCH"):
+        st.session_state.game_state = 'GAME'
+        st.rerun()
 elif st.session_state.game_state == 'GAME':
     components.html(get_game_html(st.session_state.current_round), height=550)
 elif st.session_state.game_state == 'TRIVIA':
