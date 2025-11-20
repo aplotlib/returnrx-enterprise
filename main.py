@@ -824,8 +824,8 @@ def show_sidebar():
     with st.sidebar:
         st.markdown("### 🛰️ MISSION CONTROL")
         
-        # PRESENTATION LINK IN SIDEBAR
-        st.link_button("📽️ PRESENTATION SLIDES", "https://docs.google.com/presentation/d/16Kb1oiQNBcKXVOExGN8CdQ0V3zxP5kNII69jaELuijo/present")
+        # PRESENTATION LINK IN SIDEBAR (Updated with 'present?start=true')
+        st.link_button("📽️ PRESENTATION SLIDES", "https://docs.google.com/presentation/d/16Kb1oiQNBcKXVOExGN8CdQ0V3zxP5kNII69jaELuijo/present?start=true&usp=sharing")
         
         # SETTINGS
         st.markdown("#### ⚙️ PROTOCOL SETTINGS")
@@ -875,9 +875,9 @@ def show_menu():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # PRESENTATION BUTTON (PROMINENT)
+        # PRESENTATION BUTTON (PROMINENT) with corrected URL
         st.markdown("""
-        <a href="https://docs.google.com/presentation/d/16Kb1oiQNBcKXVOExGN8CdQ0V3zxP5kNII69jaELuijo/present" target="_blank" style="text-decoration:none;">
+        <a href="https://docs.google.com/presentation/d/16Kb1oiQNBcKXVOExGN8CdQ0V3zxP5kNII69jaELuijo/present?start=true&usp=sharing" target="_blank" style="text-decoration:none;">
             <div class="presentation-btn">
                 📽️ LAUNCH PRESENTATION DECK
             </div>
