@@ -155,6 +155,32 @@ st.markdown("""
         color: #fff !important;
         font-family: 'Orbitron', sans-serif;
     }
+    
+    /* PRESENTATION BUTTON STYLE */
+    .presentation-btn {
+        background: linear-gradient(45deg, #00e5ff, #2979ff);
+        color: #000;
+        font-weight: 900;
+        padding: 20px;
+        text-align: center;
+        border-radius: 8px;
+        border: 2px solid #fff;
+        box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        margin-bottom: 30px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        transition: transform 0.2s;
+        display: block;
+        text-decoration: none;
+    }
+    .presentation-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 50px rgba(0, 229, 255, 0.8);
+        color: #fff;
+        text-decoration: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -240,19 +266,6 @@ TRIVIA_DB = [
     }
 ]
 
-SLIDE_DECKS = {
-    "leadership": {
-        "title": "Quality Leadership Presentation (Nov 2025)",
-        "slides": [
-            "**MISSION BRIEFING: QUALITY APPROVED**\n\n**THE SQUAD:**\n* **Carolina Silva:** Quality Analyst (Data/Biomedical).\n* **Annie:** QC Manager China (~25 Inspectors).\n* **Jim Ahearn:** Research & Testing (PhD Chemist).\n* **Luis Hidalgo:** CS Troubleshooting Specialist.\n* **Jason:** QC Lead at MPF (~7 Inspectors).\n* **Jessica Marshall:** Regulatory Affairs (ISO 13485).",
-            "**THE OBJECTIVE: REVENUE GENERATION**\n\nQuality is not just a cost center. It is a revenue generator.\n\n* **Market Expansion:** CE Mark & ISO 13485 will >2x our TAM (Total Addressable Market) by unlocking EU & UK (+$150B market).\n* **Direct Revenue:** Developed memory foam seat cushion to offset costs.\n* **AI Efficiency:** Using Gemini/Claude ('Vibe Coding') to build custom apps for free.",
-            "**STATUS REPORT: METRICS**\n\n* **FBA Return Rate:** 5.54% (Goal < 7.50%) - [EXCEEDING]\n* **B2B Return Rate:** 2.29% (Goal < 2.00%) - [NEEDS FOCUS]\n* **ISO 13485:** 42.5% Implementation Complete.\n* **VoC Health:** 77.61% Listings 'Good/Excellent'.",
-            "**TACTICAL WIN: POST-OP SHOE**\n\n**Situation:** Returns were 20-40% due to 'size' complaints.\n**Action:** Analyzed competitors. Found our shoes were 5-11% larger than market leader.\n**Result:** Data-driven resizing initiated.\n\n*Lesson: Don't accept the status quo.*",
-            "**CAUTIONARY TALE: THE PACKAGING MISTAKE**\n\n**Problem:** Switched to shrink wrap to save Amazon FBA fees.\n**Blowback:** Damaged B2B sales perception. Net negative for company.\n**Solution:** Cross-department sign-offs required. Don't optimize one metric at the expense of the whole."
-        ]
-    }
-}
-
 # ==============================================================================
 # 3. STATE MANAGEMENT & LOGIC
 # ==============================================================================
@@ -288,7 +301,6 @@ if 'score' in st.query_params:
         
         if st.session_state.game_state in ['GAME', 'BOXING_GAME']:
             # HANDLING DEATH / FAILURE (Strictly < 0 hull/health)
-            # The games return 0 if failed.
             if incoming_score == 0 and duration != 9999:
                 st.session_state.mission_status = 'FAILED'
                 st.session_state.game_state = 'GAMEOVER'
@@ -412,7 +424,6 @@ def get_space_shooter_html(round_num, duration):
                 gameActive = true;
                 overlay.style.display = 'none';
                 requestAnimationFrame(gameLoop);
-                // Use standard interval for timer
                 let timer = setInterval(() => {{ 
                     if(gameActive && !isSurvival) {{
                         timeLeft--; 
@@ -446,7 +457,6 @@ def get_space_shooter_html(round_num, duration):
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Stars
             ctx.fillStyle = '#fff';
             stars.forEach(s => {{ 
                 s.y += s.speed; 
@@ -462,7 +472,6 @@ def get_space_shooter_html(round_num, duration):
                 enemyTimer = 0;
             }}
 
-            // Player
             ctx.save(); 
             ctx.translate(player.x, player.y); 
             ctx.fillStyle = player.color;
@@ -472,7 +481,6 @@ def get_space_shooter_html(round_num, duration):
             ctx.fillStyle = '#FFE81F'; ctx.beginPath(); ctx.moveTo(-5, 15); ctx.lineTo(0, 30 + Math.random()*10); ctx.lineTo(5, 15); ctx.fill();
             ctx.restore();
             
-            // Bullets
             ctx.fillStyle = '#00ff00';
             for(let i = bullets.length - 1; i >= 0; i--) {{
                 let b = bullets[i]; b.y -= b.speed; 
@@ -480,7 +488,6 @@ def get_space_shooter_html(round_num, duration):
                 if(b.y < 0) bullets.splice(i, 1);
             }}
             
-            // Enemies
             for(let i = enemies.length - 1; i >= 0; i--) {{
                 let e = enemies[i]; e.y += e.speed;
                 ctx.fillStyle = e.color;
@@ -492,7 +499,6 @@ def get_space_shooter_html(round_num, duration):
                     ctx.fillStyle = e.color; ctx.fillRect(e.x + 12, e.y + 12, 6, 6);
                 }}
                 
-                // Collision
                 let dx = player.x - (e.x + e.width/2);
                 let dy = player.y - (e.y + e.height/2);
                 let dist = Math.sqrt(dx*dx + dy*dy);
@@ -520,14 +526,12 @@ def get_space_shooter_html(round_num, duration):
                 if(e.y > canvas.height) enemies.splice(i, 1);
             }}
             
-            // Particles
             for(let i = particles.length - 1; i >= 0; i--) {{
                 let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; 
                 ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); 
                 if(p.life <= 0) particles.splice(i, 1);
             }}
             
-            // HUD
             ctx.fillStyle = '#00e5ff'; ctx.font = 'bold 20px Courier New'; ctx.fillText('ROI: $' + score, 20, 30);
             ctx.fillStyle = '#333'; ctx.fillRect(20, 45, 200, 15);
             ctx.fillStyle = hull < 30 ? '#ff0055' : '#00ff00'; ctx.fillRect(20, 45, hull * 2, 15);
@@ -550,7 +554,6 @@ def get_space_shooter_html(round_num, duration):
             gameEnded = true;
             finalScore = isSurvival ? score : (success ? score : 0);
             
-            // Update UI immediately so user knows game is over
             endScreen.style.display = 'block';
             document.getElementById('end-score').innerText = "FINAL ROI: $" + finalScore;
             
@@ -559,7 +562,6 @@ def get_space_shooter_html(round_num, duration):
                 document.getElementById('end-title').style.color = "#ff0055";
             }}
             
-            // Try auto-redirect
             setTimeout(forceSubmit, 1500);
         }}
         
@@ -641,7 +643,6 @@ def get_boxing_html(round_num, duration):
                 let thinkSpeed = Math.max(500, 1200 - ({round_num} * 100));
                 cpuInterval = setInterval(cpuThink, thinkSpeed); 
                 
-                // Standard timer logic
                 let timer = setInterval(() => {{
                     if(gameActive && !isSurvival) {{
                         timeLeft--;
@@ -652,7 +653,6 @@ def get_boxing_html(round_num, duration):
                     }} else if (!gameActive) {{
                         clearInterval(timer);
                     }}
-                    // Stamina regen separate from game timer
                     if(gameActive) stamina = Math.min(100, stamina + 5);
                 }}, 1000);
                 
@@ -716,7 +716,6 @@ def get_boxing_html(round_num, duration):
             if (isSurvival) finalScore += 500; 
             else if (win) finalScore += 1000;
             
-            // Show end screen immediately
             endScreen.style.display = 'block';
             document.getElementById('end-score').innerText = "SCORE: " + finalScore;
             
@@ -735,14 +734,10 @@ def get_boxing_html(round_num, duration):
         function drawFighter(ctx, x, y, color, pose, isFacingLeft) {{
             ctx.strokeStyle = color; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowBlur = 15; ctx.shadowColor = color;
             let dir = isFacingLeft ? -1 : 1;
-            // Head
             ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y - 60, 18, 0, Math.PI * 2); ctx.fill();
-            // Torso
             ctx.beginPath(); ctx.moveTo(x, y - 40); ctx.lineTo(x, y + 40); ctx.stroke();
-            // Legs
             ctx.beginPath(); ctx.moveTo(x, y + 40); ctx.lineTo(x - (20 * dir), y + 90); 
             ctx.moveTo(x, y + 40); ctx.lineTo(x + (25 * dir), y + 90); ctx.stroke();
-            // Arms
             ctx.beginPath(); let shoulderY = y - 30;
             if (pose === 'IDLE') {{
                 ctx.moveTo(x, shoulderY); ctx.lineTo(x + (20 * dir), y + 10); ctx.lineTo(x + (40 * dir), y - 20); 
@@ -814,16 +809,23 @@ def find_pdfs():
     
     # Fallback for different execution environments
     if not pdf_files:
-        for root, dirs, files in os.walk("."):
-             for file in files:
-                if file.lower().endswith(".pdf"):
-                    pdf_files.append(os.path.join(root, file))
+        try:
+            current_dir = os.getcwd()
+            for root, dirs, files in os.walk(current_dir):
+                 for file in files:
+                    if file.lower().endswith(".pdf"):
+                        pdf_files.append(os.path.join(root, file))
+        except:
+            pass
                     
     return sorted(list(set(pdf_files))) # Remove duplicates
 
 def show_sidebar():
     with st.sidebar:
         st.markdown("### 🛰️ MISSION CONTROL")
+        
+        # PRESENTATION LINK IN SIDEBAR
+        st.link_button("📽️ PRESENTATION SLIDES", "https://docs.google.com/presentation/d/16Kb1oiQNBcKXVOExGN8CdQ0V3zxP5kNII69jaELuijo/present")
         
         # SETTINGS
         st.markdown("#### ⚙️ PROTOCOL SETTINGS")
@@ -873,6 +875,15 @@ def show_menu():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        # PRESENTATION BUTTON (PROMINENT)
+        st.markdown("""
+        <a href="https://docs.google.com/presentation/d/16Kb1oiQNBcKXVOExGN8CdQ0V3zxP5kNII69jaELuijo/present" target="_blank" style="text-decoration:none;">
+            <div class="presentation-btn">
+                📽️ LAUNCH PRESENTATION DECK
+            </div>
+        </a>
+        """, unsafe_allow_html=True)
+
         st.markdown("""
         <div style="background:rgba(0,20,40,0.8); padding:30px; border:1px solid #00e5ff; border-top: 5px solid #FFE81F; border-radius:4px; margin-bottom:30px; text-align:center; box-shadow: 0 0 50px rgba(0,229,255,0.1);">
             <p style="color: #ccc; font-size: 1.2rem; line-height: 1.6;">
